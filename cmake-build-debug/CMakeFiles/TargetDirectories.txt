@@ -1,0 +1,3 @@
+/home/dcat/osdev/w2/cmake-build-debug/CMakeFiles/edit_cache.dir
+/home/dcat/osdev/w2/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+/home/dcat/osdev/w2/cmake-build-debug/CMakeFiles/MyExecutable.dir
