@@ -24,10 +24,10 @@
 #define putln(x) {puts(x);putc('\n');}
 #define puterr(x) {screenSetColor(COLOR_RED,COLOR_BLACK);puts(x);putc('\n');}
 #define putn() putc('\n')
-#define dumphex(name,x) {puts_const(name); \
+#define dumphex(name, x) {puts_const(name); \
     puthex(x); \
 putn(); }
-#define dumpint(name,x) {puts_const(name); \
+#define dumpint(name, x) {puts_const(name); \
     putdec(x); \
 putn(); }
 typedef unsigned char uint8_t;
@@ -45,5 +45,9 @@ void screenClear();
 void puthex(uint32_t n);
 
 void putdec(long long n);
+
+void pause();
+
+void on_keyboard_event(int kc);
 
 #endif //W2_SCREEN_H

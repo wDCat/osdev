@@ -5,7 +5,7 @@
 #include "include/timer.h"
 #include "include/irqs.h"
 
-unsigned long timer_count = 1;
+static unsigned long timer_count = 1;
 
 void timer_handler(struct regs *r) {
     timer_count++;

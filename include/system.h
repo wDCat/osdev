@@ -15,6 +15,10 @@
 screenSetColor(COLOR_RED,COLOR_BLACK);\
 puts_const("[ERROR]Assertion Failed:");\
 puts_const(#x);\
+puts_const(" at ");\
+puts_const(__FILE__);\
+puts_const(" : ");\
+putint(__LINE__);\
 putc('\n');\
 for(;;);\
 }\
@@ -23,6 +27,10 @@ for(;;);\
 screenSetColor(COLOR_RED,COLOR_BLACK);\
 puts_const("[PANIC]");\
 puts_const(x);\
+puts_const(" at ");\
+puts_const(__FILE__);\
+puts_const(" : ");\
+putint(__LINE__);\
 putc('\n');\
 for(;;);\
 }
@@ -36,6 +44,8 @@ typedef struct regs {
 /* MAIN.C */
 extern unsigned char *memcpy(unsigned char *dest, const unsigned char *src, int count);
 
+extern unsigned char *dmemcpy(unsigned char *dest, const unsigned char *src, int count);
+
 extern unsigned char *memset(unsigned char *dest, unsigned char val, int count);
 
 extern unsigned char inportb(unsigned short _port);
@@ -43,5 +53,7 @@ extern unsigned char inportb(unsigned short _port);
 extern void outportb(unsigned short _port, unsigned char _data);
 
 extern inline const char *itoa(int i, char result[]);
+
 extern void k_delay(uint32_t time);
+
 #endif

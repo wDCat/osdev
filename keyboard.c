@@ -28,6 +28,8 @@ void keyboard_handler(struct regs *r) {
                 break;
             }
         }*/
+        //For screen's pause
+        on_keyboard_event(scancode);
         if (scancode < 10) {
             putint(scancode - 1);
         } else {

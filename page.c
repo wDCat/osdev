@@ -5,10 +5,10 @@
 #include <kmalloc.h>
 #include <idt.h>
 #include <irqs.h>
+#include <heap.h>
 #include "include/page.h"
 
-page_directory_t *current_dir;
-page_directory_t *kernel_dir;
+
 static uint32_t *frame_status = NULL;//保存frame状态的数组
 static uint32_t frame_max_count = 0;//frame 计数
 void set_frame_status(uint32_t frame_addr, uint32_t status) {
@@ -79,9 +79,6 @@ void free_frame(page_t *page) {
     }
 }
 
-#define KHEAP_START         0xC0000000
-#define KHEAP_INITIAL_SIZE  0x100000
-
 void paging_install() {
     uint32_t mem_end_page = 0x1000000;
     frame_max_count = mem_end_page / 0x1000;
@@ -98,9 +95,17 @@ void paging_install() {
     dumphex("heap placement start:", &end);
     dumphex("heap placement now:", heap_placement_addr);
     int i = 0;
-    for (i = KHEAP_START; i < KHEAP_START + KHEAP_INITIAL_SIZE; i += 0x1000)
-        get_page(i, 1, kernel_dir);
-    for (uint32_t i = 0; i < 0x10c000 + 0x1000; i += 0x1000) {
+    uint32_t kernel_area = heap_placement_addr;
+    if (kernel_area < SCREEN_MEMORY_BASE + (SCREEN_MAX_X * SCREEN_MAX_Y) / 2) {
+        kernel_area = SCREEN_MEMORY_BASE + (SCREEN_MAX_X * SCREEN_MAX_Y) / 2;
+    }
+    for (uint32_t i = KHEAP_START; i < KHEAP_START + KHEAP_SIZE + 0x1000; i += 0x1000) {
+        get_page(i, true, kernel_dir);
+    }
+    for (uint32_t i = 0; i < kernel_area + 0x1000; i += 0x1000) {
+        alloc_frame(get_page(i, true, kernel_dir), false, false);
+    }
+    for (uint32_t i = KHEAP_START; i < KHEAP_START + KHEAP_SIZE + 0x1000; i += 0x1000) {
         alloc_frame(get_page(i, true, kernel_dir), false, false);
     }
     dumphex("place:", heap_placement_addr);
@@ -109,8 +114,6 @@ void paging_install() {
          i < SCREEN_MEMORY_BASE + (SCREEN_MAX_X * SCREEN_MAX_Y) / 2; i += 0x1000) {
         alloc_frame(get_page(i, true, kernel_dir), false, false);
     }*/
-    for (i = KHEAP_START; i < KHEAP_START + KHEAP_INITIAL_SIZE; i += 0x1000)
-        alloc_frame(get_page(i, 1, kernel_dir), 0, 0);
     switch_page_directory(kernel_dir);
     kmalloc(1024);
 }
@@ -133,7 +136,7 @@ page_t *get_page(uint32_t addr, int make, page_directory_t *dir) {
         return &(dir->tables[table_idx]->pages[frame_no % 1024]);
     } else if (make) {
         uint32_t phyaddr;
-        dumpint("sizeof(page_table_t)", sizeof(page_table_t));
+        //dumpint("sizeof(page_table_t)", sizeof(page_table_t));
         dir->tables[table_idx] = (page_table_t *) kmalloc_ap(sizeof(page_table_t), &phyaddr);
         memset(dir->tables[table_idx], 0, 0x1000);
         dir->table_physical_addr[table_idx] = phyaddr | 0x7;

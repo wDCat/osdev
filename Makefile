@@ -8,6 +8,8 @@ all:
 	do \
 	gcc $(C_FLAGS) -o $$name.o $$name;\
 	done
+	gcc $(C_FLAGS) -o heap_array_list.c.o heap_array_list.c
+	gcc $(C_FLAGS) -o heap.c.o heap.c
 	ld $(LD_FLAGS) -o kernel.bin start.o *.c.o
 	rm -f /home/dcat/osdev/bgrub/kernel.bin
 	cp kernel.bin /home/dcat/osdev/bgrub/

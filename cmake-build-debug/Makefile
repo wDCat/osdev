@@ -177,6 +177,33 @@ heap.c.s:
 	$(MAKE) -f CMakeFiles/MyExecutable.dir/build.make CMakeFiles/MyExecutable.dir/heap.c.s
 .PHONY : heap.c.s
 
+heap_array_list.o: heap_array_list.c.o
+
+.PHONY : heap_array_list.o
+
+# target to build an object file
+heap_array_list.c.o:
+	$(MAKE) -f CMakeFiles/MyExecutable.dir/build.make CMakeFiles/MyExecutable.dir/heap_array_list.c.o
+.PHONY : heap_array_list.c.o
+
+heap_array_list.i: heap_array_list.c.i
+
+.PHONY : heap_array_list.i
+
+# target to preprocess a source file
+heap_array_list.c.i:
+	$(MAKE) -f CMakeFiles/MyExecutable.dir/build.make CMakeFiles/MyExecutable.dir/heap_array_list.c.i
+.PHONY : heap_array_list.c.i
+
+heap_array_list.s: heap_array_list.c.s
+
+.PHONY : heap_array_list.s
+
+# target to generate assembly for a file
+heap_array_list.c.s:
+	$(MAKE) -f CMakeFiles/MyExecutable.dir/build.make CMakeFiles/MyExecutable.dir/heap_array_list.c.s
+.PHONY : heap_array_list.c.s
+
 idt.o: idt.c.o
 
 .PHONY : idt.o
@@ -311,6 +338,33 @@ kmalloc.s: kmalloc.c.s
 kmalloc.c.s:
 	$(MAKE) -f CMakeFiles/MyExecutable.dir/build.make CMakeFiles/MyExecutable.dir/kmalloc.c.s
 .PHONY : kmalloc.c.s
+
+linkedlist.o: linkedlist.c.o
+
+.PHONY : linkedlist.o
+
+# target to build an object file
+linkedlist.c.o:
+	$(MAKE) -f CMakeFiles/MyExecutable.dir/build.make CMakeFiles/MyExecutable.dir/linkedlist.c.o
+.PHONY : linkedlist.c.o
+
+linkedlist.i: linkedlist.c.i
+
+.PHONY : linkedlist.i
+
+# target to preprocess a source file
+linkedlist.c.i:
+	$(MAKE) -f CMakeFiles/MyExecutable.dir/build.make CMakeFiles/MyExecutable.dir/linkedlist.c.i
+.PHONY : linkedlist.c.i
+
+linkedlist.s: linkedlist.c.s
+
+.PHONY : linkedlist.s
+
+# target to generate assembly for a file
+linkedlist.c.s:
+	$(MAKE) -f CMakeFiles/MyExecutable.dir/build.make CMakeFiles/MyExecutable.dir/linkedlist.c.s
+.PHONY : linkedlist.c.s
 
 main.o: main.c.o
 
@@ -462,6 +516,9 @@ help:
 	@echo "... heap.o"
 	@echo "... heap.i"
 	@echo "... heap.s"
+	@echo "... heap_array_list.o"
+	@echo "... heap_array_list.i"
+	@echo "... heap_array_list.s"
 	@echo "... idt.o"
 	@echo "... idt.i"
 	@echo "... idt.s"
@@ -477,6 +534,9 @@ help:
 	@echo "... kmalloc.o"
 	@echo "... kmalloc.i"
 	@echo "... kmalloc.s"
+	@echo "... linkedlist.o"
+	@echo "... linkedlist.i"
+	@echo "... linkedlist.s"
 	@echo "... main.o"
 	@echo "... main.i"
 	@echo "... main.s"

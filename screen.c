@@ -1,14 +1,15 @@
 //
 // Created by dcat on 3/11/17.
 //
+#include <kmalloc.h>
 #include "include/system.h"
 #include "include/screen.h"
 #include "include/str.h"
 
-
-static int scrX = 0,
+static bool key_waiter = 0;
+int scrX = 0,
         scrY = 0;
-static uint8_t frontColor = COLOR_WHITE,
+uint8_t frontColor = COLOR_WHITE,
         backColor = COLOR_BLACK;
 
 inline unsigned char *calcPos(int x, int y) {
@@ -22,6 +23,20 @@ void moveCsr(void) {
     outportb(0x3D5, temp >> 8);
     outportb(0x3D4, 15);
     outportb(0x3D5, temp);
+}
+
+void on_keyboard_event(int kc) {
+    //ASSERT(key_waiter);
+    key_waiter = true;
+}
+
+void pause() {
+    key_waiter = false;
+    putln_const("Press any key to continue...");
+    while (!key_waiter) {
+        k_delay(3000);
+    }
+    key_waiter = false;
 }
 
 int putc(char c_arg) {

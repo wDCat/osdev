@@ -92,6 +92,9 @@
 		<Unit filename="/home/dcat/osdev/w2/heap.c">
 			<Option target="MyExecutable"/>
 		</Unit>
+		<Unit filename="/home/dcat/osdev/w2/heap_array_list.c">
+			<Option target="MyExecutable"/>
+		</Unit>
 		<Unit filename="/home/dcat/osdev/w2/idt.c">
 			<Option target="MyExecutable"/>
 		</Unit>
@@ -105,6 +108,9 @@
 			<Option target="MyExecutable"/>
 		</Unit>
 		<Unit filename="/home/dcat/osdev/w2/kmalloc.c">
+			<Option target="MyExecutable"/>
+		</Unit>
+		<Unit filename="/home/dcat/osdev/w2/linkedlist.c">
 			<Option target="MyExecutable"/>
 		</Unit>
 		<Unit filename="/home/dcat/osdev/w2/main.c">

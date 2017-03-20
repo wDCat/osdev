@@ -1,6 +1,7 @@
 #include <isrs.h>
 #include <irqs.h>
 #include <kmalloc.h>
+#include <heap_array_list.h>
 #include "gdt.h"
 #include "idt.h"
 #include "include/system.h"
@@ -9,6 +10,7 @@
 #include "include/timer.h"
 #include "include/keyboard.h"
 #include "page.h"
+#include "heap.h"
 
 unsigned char *memcpy(unsigned char *dest, const unsigned char *src, int count) {
     /*
@@ -18,12 +20,24 @@ unsigned char *memcpy(unsigned char *dest, const unsigned char *src, int count) 
     const uint8_t *sp = (const uint8_t *) src;
     uint8_t *dp = (uint8_t *) dest;
     for (; count != 0; count--) *dp++ = *sp++;
+    return NULL;
+}
+
+unsigned char *dmemcpy(unsigned char *dest, const unsigned char *src, int count) {
+    /*
+    for (int x = 0; x < count; x++) {
+        dest[x] = src[x];
+    }*/
+    const uint8_t *sp = (const uint8_t *) src + count;
+    uint8_t *dp = (uint8_t *) dest + count;
+    for (; count != 0; count--) *dp-- = *sp--;
 }
 
 unsigned char *memset(unsigned char *dest, unsigned char val, int count) {
     for (int x = 0; x < count; x++) {
         dest[x] = val;
     }
+    return NULL;
 }
 
 unsigned char inportb(unsigned short _port) {
@@ -75,6 +89,22 @@ void intAssert() {
     ASSERT(sizeof(uint32_t) == 4);
 }
 
+void dump_al(heap_array_list_t *al) {
+    putln_const("------------------------")
+    for (int x = 0; x < al->size; x++) {
+        puts_const("AL[");
+        putint(x);
+        puts_const("] st:")
+        puthex(al->headers[x].addr);
+        puts_const("  size:");
+        puthex(al->headers[x].size);
+        puts_const("  used:")
+        putint(al->headers[x].used);
+        putn();
+    }
+    putln_const("------------------------")
+}
+
 int main() {
     gdt_install();
     idt_install();
@@ -85,23 +115,51 @@ int main() {
     intAssert();
     kmalloc_install();
     paging_install();
-    screenClear();
     putln_const("NEKO");
     //PANIC("STOP");
     putln_const("[+] main called.");
     ASSERT(strlen(STR("Hello DCat")) == 10);
-    char *p = (char *) kmalloc(sizeof(char));
-    *p = 'a';
-    putc(*p);
     putln_const("[+] Super Neko");
     puts_const("Ha?:");
     putint(12450);
     putln_const("+1s");
     putln_const("[+] Now enable IRQs");
     __asm__ __volatile__ ("sti");
-    //uint32_t *ptr = (uint32_t *) 0xFFFFFF00;
-    //*ptr = 12121;
+    puts_const("[+] heap test");
+    heap_t *heap = create_heap(KHEAP_START, KHEAP_START + KHEAP_SIZE, KHEAP_START + KHEAP_SIZE * 2, kernel_dir);
+    void *mem = halloc(heap, 4096, false);
+    dumphex("alloced mem addr:", mem);
+    void *mem2 = halloc(heap, 4096, false);
+    dumphex("alloced mem addr:", mem2);
+    void *mem3 = halloc(heap, 4096, false);
+    dumphex("alloced mem addr:", mem3);
+    dump_al(heap->al);
+    dumphex("header size:", HOLE_HEADER_SIZE);
+    dumphex("footer size:", HOLE_FOOTER_SIZE);
+    pause();
+    hfree(heap, mem2);
+    dump_al(heap->al);
+    pause();
+    hfree(heap, mem3);
+    dump_al(heap->al);
+    pause();
+    void *mem4 = halloc(heap, 1024, false);
+    dumphex("alloced mem addr:", mem4);
+    dump_al(heap->al);
+    pause();
+    void *mem5 = halloc(heap, 1024 * 200, false);
+    dumphex("alloced mem addr:", mem5);
+    dump_al(heap->al);
+    pause();
+    hfree(heap, mem4);
+    dump_al(heap->al);
+    pause();
+    hfree(heap, mem5);
+    dump_al(heap->al);
+    pause();
+    hfree(heap, mem);
+    dump_al(heap->al);
+    pause();
     puts_const("[+] main done.");
-    //__asm__ __volatile__ ("hlt");
     for (;;);
 }

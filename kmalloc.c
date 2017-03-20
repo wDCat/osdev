@@ -36,3 +36,7 @@ uint32_t kmalloc_internal(uint32_t sz, bool align, uint32_t *phys) {
     putln_const("");*/
     return tmp;
 }
+
+void kfree(void *ptr) {
+    //哪来的kfree.....
+}

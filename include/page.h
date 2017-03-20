@@ -41,6 +41,9 @@ typedef struct page_directory_struct {
     uint32_t physical_addr;
 } page_directory_t;
 
+static page_directory_t *current_dir;
+static page_directory_t *kernel_dir;
+
 extern void _switch_page_dir_internal(uint32_t addr);
 
 #define FRAME_STATUS_USED 1
