@@ -3,8 +3,7 @@ ENTRY(start)
 phys = 0x00100000;
 SECTIONS
 {
-    .boot 0x100000:
-    {
+    .boot 0x00100000 : {
         *(.mboot)
         . = ALIGN(4096);
     }
@@ -25,7 +24,8 @@ SECTIONS
         *(.bss)
         . = ALIGN(4096);
     }
-    . = ALIGN(4096);
+    initrd = .;
+
     end = .;
 
 }

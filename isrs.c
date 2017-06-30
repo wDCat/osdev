@@ -13,11 +13,14 @@
 void fault_handler(struct regs *r) {
     int a = 0;
     switch (r->int_no) {
-        case 0: puterr("[-] Division by zero fault.");
+        case 0: puterr_const("[-] Division by zero fault.");
             break;
-        case 1: puterr("[-] Debug exception.");
+        case 1: puterr_const("[-] Debug exception.");
             break;
-        case 2: puterr("[-] Non maskable interrupt exception");
+        case 2: puterr_const("[-] Non maskable interrupt exception");
+            break;
+        case 13: puterr_const("[-] General Protection Fault Exception");
+            dumpint("        ErrorCode:", r->err_code);
             break;
         case 14: {
             uint32_t cr0;
@@ -28,7 +31,10 @@ void fault_handler(struct regs *r) {
             page_fault_handler(r);
         }
             break;
-        default: putln_const("Unknown Error.");
+        default:
+            puts_const("FAULT(Unknown):");
+            putint(r->int_no);
+            putn();
             break;
     }
     for (;;);

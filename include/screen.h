@@ -15,12 +15,13 @@
 #define COLOR_WHITE 0xF
 #define COLOR_RED 0x4
 //For const string. like "Hello world"
-#define puts_const(x) puts_(STR(x));
+#define puts_const(x) puts_(STR(x))
+
 #define putln_const(x) {puts_const(x);putc('\n');}
 #define puterr_const(x) {screenSetColor(COLOR_RED,COLOR_BLACK);puts_const(x);putc('\n');}
 
 //For var. like itoa(12)
-#define puts(x) puts_(x);
+#define puts(x) puts_(x)
 #define putln(x) {puts(x);putc('\n');}
 #define puterr(x) {screenSetColor(COLOR_RED,COLOR_BLACK);puts(x);putc('\n');}
 #define putn() putc('\n')

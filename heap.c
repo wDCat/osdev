@@ -7,6 +7,8 @@
 #include <page.h>
 #include "heap.h"
 
+extern heap_t *kernel_heap;
+
 inline void insert_default_header(heap_t *heap) {
     heap_array_list_t *al = heap->al;
     header_info_t info;
@@ -19,15 +21,15 @@ inline void insert_default_header(heap_t *heap) {
     header->magic = HOLE_HEADER_MAGIC;
     header->used = false;
     header->size = info.size;
-    dumphex("create footer addr:", footer);
+    //dumphex("create footer addr:", footer);
     footer->magic = HOLE_FOOTER_MAGIC;
     footer->header = header;
     insert_item_ordered(al, &info);
 }
 
 heap_t *create_heap(uint32_t start_addr, uint32_t end_addr, uint32_t max_addr, page_directory_t *dir) {
-    putln_const("creating heaping...");
-    putln_const("page alloced.");
+    //putln_const("creating heaping...");
+    //putln_const("page alloced.");
     heap_t *ret = (heap_t *) kmalloc(sizeof(heap_t));
     ret->start_addr = start_addr;
     ret->end_addr = end_addr;
@@ -47,22 +49,22 @@ void *halloc(heap_t *heap, uint32_t size, bool page_align) {
     ASSERT(!hinfo->used);
     hole_header_t *header = (hole_header_t *) hinfo->addr;
     hole_footer_t *footer = (hole_footer_t *) (hinfo->addr + HOLE_HEADER_SIZE + header->size);
-    dumphex("headeraddr:", header);
-    dumphex("footeraddr:", footer);
+    //dumphex("headeraddr:", header);
+    //dumphex("footeraddr:", footer);
     ASSERT(header->magic == HOLE_HEADER_MAGIC);
     ASSERT(footer->magic == HOLE_FOOTER_MAGIC);
     ASSERT(footer->header == header);
     //分配新的头和尾
     hole_header_t *new_header = (hole_header_t *) (hinfo->addr + HOLE_HEADER_SIZE + size + HOLE_FOOTER_SIZE);
     hole_footer_t *new_footer = (hole_footer_t *) (hinfo->addr + HOLE_HEADER_SIZE + size);
-    dumphex("new_header addr:", new_header);
-    dumphex("new_footer addr:", new_footer);
+    //dumphex("new_header addr:", new_header);
+    //dumphex("new_footer addr:", new_footer);
     new_footer->magic = HOLE_FOOTER_MAGIC;
     new_footer->header = header;
     new_header->magic = HOLE_HEADER_MAGIC;
     new_header->used = false;
     new_header->size = hinfo->size - size - HOLE_HEADER_SIZE - HOLE_FOOTER_SIZE;
-    dumphex("size:", new_header->size);
+    //dumphex("size:", new_header->size);
     //Update
     header->size = size;
     footer->header = new_header;
@@ -79,7 +81,7 @@ void *halloc(heap_t *heap, uint32_t size, bool page_align) {
     insert_item_ordered(heap->al, &h2info);
     header->used = true;
     //memset(hinfo->addr + HOLE_HEADER_SIZE, 0, size);
-    return (void *) ((uint32_t)header + HOLE_HEADER_SIZE);
+    return (void *) ((uint32_t) header + HOLE_HEADER_SIZE);
 }
 
 hole_header_t *combine_two_hole(heap_t *heap, hole_header_t *h1, hole_header_t *h2) {
@@ -105,9 +107,9 @@ void hfree(heap_t *heap, uint32_t addr) {
     ASSERT(heap);
     hole_header_t *header = (hole_header_t *) (addr - HOLE_HEADER_SIZE);
     hole_footer_t *footer = (hole_footer_t *) (addr + header->size);
-    dumphex("free_size:", header->size);
-    dumphex("free_headeraddr:", header);
-    dumphex("free_footeraddr:", footer);
+    //dumphex("free_size:", header->size);
+    //dumphex("free_headeraddr:", header);
+    //dumphex("free_footeraddr:", footer);
     ASSERT(header->magic == HOLE_HEADER_MAGIC);
     ASSERT(footer->magic == HOLE_FOOTER_MAGIC);
     header->used = false;

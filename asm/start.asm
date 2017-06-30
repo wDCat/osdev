@@ -2,11 +2,10 @@
 ; or we can use this to setup the stack or other nice stuff, like
 ; perhaps setting up the GDT and segments. Please note that interrupts
 ; are disabled at this point: More on interrupts later!
-
+%include "asm/rmode.asm"
 [BITS 32]
 global start
 start:
-    mov esp, _sys_stack     ; This points the stack to our new stack area
     jmp stublet
 
 ; This part MUST be 4byte aligned, so we solve that issue using 'ALIGN 4'
@@ -37,8 +36,17 @@ mboot:
 ; This is an endless loop here. Make a note of this: Later on, we
 ; will insert an 'extern _main', followed by 'call _main', right
 ; before the 'jmp $'.
+enter_protected_mode:
+    cli
+    mov eax,cr0
+    or al,1
+    mov cr0,eax
+    ret
 stublet:
+    mov esp, _sys_stack
     extern main
+    ;for multiboot_header
+    push ebx
     call main
     hlt
 

@@ -8,7 +8,7 @@
 #include <heap.h>
 #include "include/page.h"
 
-
+extern heap_t *kernel_heap;
 static uint32_t *frame_status = NULL;//保存frame状态的数组
 static uint32_t frame_max_count = 0;//frame 计数
 void set_frame_status(uint32_t frame_addr, uint32_t status) {
@@ -102,20 +102,16 @@ void paging_install() {
     for (uint32_t i = KHEAP_START; i < KHEAP_START + KHEAP_SIZE + 0x1000; i += 0x1000) {
         get_page(i, true, kernel_dir);
     }
-    for (uint32_t i = 0; i < kernel_area + 0x1000; i += 0x1000) {
+    //多分配10个页
+    for (uint32_t i = 0; i < kernel_area + 0x10000; i += 0x1000) {
         alloc_frame(get_page(i, true, kernel_dir), false, false);
     }
     for (uint32_t i = KHEAP_START; i < KHEAP_START + KHEAP_SIZE + 0x1000; i += 0x1000) {
         alloc_frame(get_page(i, true, kernel_dir), false, false);
     }
-    dumphex("place:", heap_placement_addr);
-/*
-    for (uint32_t i = SCREEN_MEMORY_BASE & 0xFFFFF000;
-         i < SCREEN_MEMORY_BASE + (SCREEN_MAX_X * SCREEN_MAX_Y) / 2; i += 0x1000) {
-        alloc_frame(get_page(i, true, kernel_dir), false, false);
-    }*/
+    dumphex("heap_placement_addr:", heap_placement_addr);
     switch_page_directory(kernel_dir);
-    kmalloc(1024);
+    kernel_heap = create_heap(KHEAP_START, KHEAP_START + KHEAP_SIZE, KHEAP_START + KHEAP_SIZE * 2, kernel_dir);
 }
 
 void switch_page_directory(page_directory_t *dir) {
@@ -163,7 +159,7 @@ void page_fault_handler(regs_t *r) {
     if (rw) { puts_const("read-only "); }
     if (us) { puts_const("user-mode "); }
     if (reserved) { puts_const("reserved "); }
-    puts_const(") at 0x");
+    puts_const(") at ");
     puthex(faulting_address);
     putn();
 }

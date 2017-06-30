@@ -23,6 +23,22 @@ putc('\n');\
 for(;;);\
 }\
 }
+#define ASSERTM(x, y) {\
+    if(!(x)){\
+screenSetColor(COLOR_RED,COLOR_BLACK);\
+puts_const("[ERROR]Assertion Failed");\
+puts_const("(");\
+puts_const(y);\
+puts_const("):");\
+puts_const(#x);\
+puts_const(" at ");\
+puts_const(__FILE__);\
+puts_const(" : ");\
+putint(__LINE__);\
+putc('\n');\
+for(;;);\
+}\
+}
 #define PANIC(x) { \
 screenSetColor(COLOR_RED,COLOR_BLACK);\
 puts_const("[PANIC]");\

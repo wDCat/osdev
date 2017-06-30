@@ -6,11 +6,14 @@
 #define W2_KMALLOC_H
 
 #include "intdef.h"
+#include "heap.h"
 
 extern uint32_t end;
- uint32_t heap_placement_addr;
+extern uint32_t heap_placement_addr;
+
 
 void kmalloc_install();
+
 
 uint32_t kmalloc_internal(uint32_t sz, bool align, uint32_t *phys);
 

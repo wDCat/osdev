@@ -18,7 +18,7 @@ int insert_item_ordered(heap_array_list_t *al, header_info_t *info) {
     int x = 0;
     for (; x < al->size + 1; x++) {
         if (x == al->size || info->size < al->headers[x].size) {
-            dumpint("insert into:", x);
+            //dumpint("insert into:", x);
             dmemcpy(&al->headers[x + 1], &al->headers[x], sizeof(header_info_t) * (al->size - x));
             memset(&al->headers[x], 0, sizeof(header_info_t));
             memcpy(&al->headers[x], info, sizeof(header_info_t));
@@ -37,7 +37,7 @@ int insert_item_ordered(heap_array_list_t *al, header_info_t *info) {
 void remove_item(heap_array_list_t *al, int index) {
     ASSERT(al);
     ASSERT(index < al->size);
-    dumpint("remove:", index);
+    //dumpint("remove:", index);
     if (index == al->size - 1) {
         memset(&al->headers[index], 0, sizeof(header_info_t));
     } else {

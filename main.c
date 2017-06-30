@@ -2,6 +2,7 @@
 #include <irqs.h>
 #include <kmalloc.h>
 #include <heap_array_list.h>
+#include <ide.h>
 #include "gdt.h"
 #include "idt.h"
 #include "include/system.h"
@@ -11,26 +12,19 @@
 #include "include/keyboard.h"
 #include "page.h"
 #include "heap.h"
+#include "multiboot.h"
 
 unsigned char *memcpy(unsigned char *dest, const unsigned char *src, int count) {
-    /*
     for (int x = 0; x < count; x++) {
         dest[x] = src[x];
-    }*/
-    const uint8_t *sp = (const uint8_t *) src;
-    uint8_t *dp = (uint8_t *) dest;
-    for (; count != 0; count--) *dp++ = *sp++;
-    return NULL;
+    }
 }
 
 unsigned char *dmemcpy(unsigned char *dest, const unsigned char *src, int count) {
-    /*
-    for (int x = 0; x < count; x++) {
+
+    for (int x = count - 1; x >= 0; x--) {
         dest[x] = src[x];
-    }*/
-    const uint8_t *sp = (const uint8_t *) src + count;
-    uint8_t *dp = (uint8_t *) dest + count;
-    for (; count != 0; count--) *dp-- = *sp--;
+    }
 }
 
 unsigned char *memset(unsigned char *dest, unsigned char val, int count) {
@@ -51,7 +45,7 @@ void outportb(unsigned short _port, unsigned char _data) {
 }
 
 void k_delay(uint32_t time) {
-    for (int x = 0; x < time; x++) {
+    for (int x = 0; x < time * 1000; x++) {
         for (int y = 0; y < 100000; y++) {
             int al = 2, bl = 4;
             if (al + bl == 1024) {
@@ -94,37 +88,18 @@ void dump_al(heap_array_list_t *al) {
     for (int x = 0; x < al->size; x++) {
         puts_const("AL[");
         putint(x);
-        puts_const("] st:")
+        puts_const("] st:");
         puthex(al->headers[x].addr);
         puts_const("  size:");
         puthex(al->headers[x].size);
-        puts_const("  used:")
+        puts_const("  used:");
         putint(al->headers[x].used);
         putn();
     }
     putln_const("------------------------")
 }
 
-int main() {
-    gdt_install();
-    idt_install();
-    isrs_install();
-    irq_install();
-    timer_install();
-    keyboard_install();
-    intAssert();
-    kmalloc_install();
-    paging_install();
-    putln_const("NEKO");
-    //PANIC("STOP");
-    putln_const("[+] main called.");
-    ASSERT(strlen(STR("Hello DCat")) == 10);
-    putln_const("[+] Super Neko");
-    puts_const("Ha?:");
-    putint(12450);
-    putln_const("+1s");
-    putln_const("[+] Now enable IRQs");
-    __asm__ __volatile__ ("sti");
+void heap_test() {
     puts_const("[+] heap test");
     heap_t *heap = create_heap(KHEAP_START, KHEAP_START + KHEAP_SIZE, KHEAP_START + KHEAP_SIZE * 2, kernel_dir);
     void *mem = halloc(heap, 4096, false);
@@ -160,6 +135,51 @@ int main() {
     hfree(heap, mem);
     dump_al(heap->al);
     pause();
+    puts_const("[+] heap test done.");
+}
+
+void install_all() {
+    gdt_install();
+    idt_install();
+    isrs_install();
+    irq_install();
+    timer_install();
+    keyboard_install();
+    intAssert();
+    //kmalloc_install();
+    paging_install();
+}
+
+int main(multiboot_info_t *mul_arg) {
+    multiboot_info_t mul;
+    uint32_t initrd_start = *((uint32_t *) mul_arg->mods_addr);
+    uint32_t initrd_end = *(uint32_t *) (mul_arg->mods_addr + 4);
+    heap_placement_addr = initrd_end;
+    //mul may lost....
+    memcpy(&mul, mul_arg, sizeof(multiboot_info_t));
+    //MUL HEADER LOST AFTER INSTALL!!!
+    install_all();
+    putln_const("NEKO");
+    putln_const("[+] main called.");
+    ASSERT(strlen(STR("Hello DCat")) == 10);
+    putln_const("[+] Super Neko");
+    puts_const("[+] Time:");
+    putint(12450);
+    putln_const("+1s");
+    putln_const("[+] Now enable IRQs");
+    __asm__ __volatile__ ("sti");
+    void *amem = (void *) kmalloc(4096);
+    dumphex("amem:", amem);
+    if (mul.mods_count <= 0) {
+        PANIC("module not found..")
+    }
+    dumphex("mod count:", mul.mods_count);
+    dumphex("initrd_start:", initrd_start);
+    dumphex("initrd_end:", initrd_end);
+    uint8_t *initrd_raw = (uint8_t *) initrd_start;
+    for (int x = 0; x < initrd_end - initrd_start; x++) {
+        putc(initrd_raw[x]);
+    }
     puts_const("[+] main done.");
     for (;;);
 }
