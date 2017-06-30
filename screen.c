@@ -139,6 +139,10 @@ void putdec(long long n) {
     }
     //FIXME 65536
     int acc = (int) n;
+    if (acc < 0) {
+        putc('-');
+        acc = -acc;
+    }
     char c[32];
     int i = 0;
     while (acc > 0) {

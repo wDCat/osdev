@@ -9,3 +9,174 @@ uint strlen(const char *str) {
     for (retval = 0; *str != '\0'; str++) retval++;
     return retval;
 }
+
+int strstr(const char *str, const char *substr) {
+    int lstr = strlen(str);
+    int lsubstr = strlen(substr);
+    if (lsubstr > lstr)return -1;
+    for (int x = 0; x < lstr; x++) {
+        if (str[x] == substr[0]) {
+            bool match = true;
+            for (int y = 0; y < lsubstr; y++) {
+                if (str[x + y] != substr[y]) {
+                    match = false;
+                    break;
+                }
+            }
+            if (match)return x;
+        }
+    }
+    return -1;
+}
+
+char *strchr(const char *str, char c) {
+    int len = strlen(str);
+    for (int x = 0; x < len; x++)
+        if (str[x] == c)
+            return (char *) (str + x);
+    return NULL;
+}
+
+uint strcpy(char *target, const char *src) {
+    int len = strlen(src);
+    for (int x = 0; x < len + 1; x++) {
+        target[x] = src[x];
+    }
+    return len;
+}
+
+uint strncpy(char *target, const char *src, int len) {
+    for (int x = 0; x < len; x++) {
+        target[x] = src[x];
+    }
+    return len;
+}
+
+uint strcat(char *target, const char *src) {
+    int len = strlen(target);
+    return strcpy(&target[len], src);
+}
+
+char *strfmt_insspace(char *out, int tok_pos, int tok_len, int buff_len) {
+    int len = strlen(out);
+    int movlen = buff_len - tok_len;
+    if (movlen < 0) {
+        for (int x = tok_pos + tok_len; x < len + 1; x++) {
+            out[x + movlen] = out[x];
+        }
+    } else {
+        for (int x = len; x >= tok_pos + tok_len; x--) {
+            out[x + movlen] = out[x];
+        }
+    }
+    return &out[tok_pos];
+}
+
+uint itos(const int num, char *c2) {
+    //FIXME 65536
+
+
+    if (num == 0) {
+        strcpy(c2, STR("0"));
+        return 0;
+    }
+    int acc = (int) num;
+    bool neg = false;
+    if (acc < 0) {
+        acc = -acc;
+        neg = true;
+    }
+    char c[32];
+    int i = 0;
+    while (acc > 0) {
+        c[i] = (char) ('0' + acc % 10);
+        acc /= 10;
+        i++;
+    }
+    if (neg)
+        c[i++] = '-';
+    c[i] = 0;
+    c2[i--] = 0;
+    int j = 0;
+    while (i >= 0) {
+        c2[i--] = c[j++];
+    }
+    return 0;
+}
+
+uint itohexs(const int num, char *out) {
+    out[0] = '\0';
+    uint32_t tmp;
+    strcat(out, STR("0x"));
+    int len = 2;
+
+    char noZeroes = 1;
+
+    int i;
+    for (i = 28; i > 0; i -= 4) {
+        tmp = (num >> i) & 0xF;
+        if (tmp == 0 && noZeroes != 0) {
+            continue;
+        }
+
+        if (tmp >= 0xA) {
+            noZeroes = 0;
+            out[len++] = (tmp - 0xA + 'A');
+        } else {
+            noZeroes = 0;
+            out[len++] = (tmp + '0');
+        }
+    }
+
+    tmp = num & 0xF;
+    if (tmp >= 0xA) {
+        out[len++] = (tmp - 0xA + 'A');
+    } else {
+        out[len++] = (tmp + '0');
+    }
+    out[len] = '\0';
+}
+
+uint strformat(char *out, const char *fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    strcpy(out, fmt);
+    int pos = 0;
+    while (true) {
+        char *nextmk = strchr(out + pos, '%');
+        if (nextmk <= 0)break;
+        int off = (int) (nextmk - out);
+        pos += off;
+        char tok = nextmk[1];
+        switch (tok) {
+            case 's': {
+                char *data = va_arg(args, char*);
+                int nlen = strlen(data);
+                char *b = strfmt_insspace(out, off, 2, nlen);
+                strncpy(b, data, nlen);
+            }
+                break;
+            case 'd': {
+                int n = va_arg(args, int);
+                char c2[32];
+                itos(n, c2);
+                int nlen = strlen(c2);
+                char *b = strfmt_insspace(out, off, 2, nlen);
+                strncpy(b, c2, nlen);
+            }
+                break;
+            case 'x': {
+                int n = va_arg(args, int);
+                char c2[32];
+                itohexs(n, c2);
+                int nlen = strlen(c2);
+                char *b = strfmt_insspace(out, off, 2, nlen);
+                strncpy(b, c2, nlen);
+            }
+                break;
+            default:
+                continue;
+        }
+    }
+    va_end(args);
+}

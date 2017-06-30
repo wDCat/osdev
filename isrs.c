@@ -19,6 +19,8 @@ void fault_handler(struct regs *r) {
             break;
         case 2: puterr_const("[-] Non maskable interrupt exception");
             break;
+        case 6: puterr_const("[-] Invalid Opcode")
+            break;
         case 13: puterr_const("[-] General Protection Fault Exception");
             dumpint("        ErrorCode:", r->err_code);
             break;

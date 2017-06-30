@@ -13,6 +13,7 @@
 #include "page.h"
 #include "heap.h"
 #include "multiboot.h"
+#include "catmfs.h"
 
 unsigned char *memcpy(unsigned char *dest, const unsigned char *src, int count) {
     for (int x = 0; x < count; x++) {
@@ -150,6 +151,36 @@ void install_all() {
     paging_install();
 }
 
+void str_test() {
+    char a[1024];
+    strcpy(a, STR("Hello%sCat."));
+    putln(a);
+    char b[1024];
+    strformat(b, STR("Need%s:%x"), STR("Hello"), 11);
+    //char *p = strfmt_insspace(a, 5, 2, 1);
+    //p[0] = 'a';
+    //p[1] = 's';
+    //p[2] = 'b';
+    putln(b);
+}
+
+void catmfs_test(uint32_t *addr) {
+    catmfs_t *fs = catmfs_init(addr);
+    fs_node_t *node;
+    catmfs_dumpfilelist(fs);
+    if (catmfs_findbyname(fs, STR("neko2"), &node)) {
+        putf(STR("found:%s\n"), node->name);
+        char data[25];
+        read_fs(node, 0, 10, data);
+        puts_const("data:");
+        puts(data);
+        putln("");
+        //putf(STR("read data:%s\n"), data);
+    } else {
+        PANIC("file not found.")
+    }
+}
+
 int main(multiboot_info_t *mul_arg) {
     multiboot_info_t mul;
     uint32_t initrd_start = *((uint32_t *) mul_arg->mods_addr);
@@ -176,10 +207,12 @@ int main(multiboot_info_t *mul_arg) {
     dumphex("mod count:", mul.mods_count);
     dumphex("initrd_start:", initrd_start);
     dumphex("initrd_end:", initrd_end);
+    /*
     uint8_t *initrd_raw = (uint8_t *) initrd_start;
     for (int x = 0; x < initrd_end - initrd_start; x++) {
         putc(initrd_raw[x]);
-    }
+    }*/
+    catmfs_test(initrd_start);
     puts_const("[+] main done.");
     for (;;);
 }
