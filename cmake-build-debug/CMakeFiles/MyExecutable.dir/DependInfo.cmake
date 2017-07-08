@@ -4,9 +4,12 @@ set(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 set(CMAKE_DEPENDS_CHECK_C
+  "/home/dcat/osdev/w2/catmfs.c" "/home/dcat/osdev/w2/cmake-build-debug/CMakeFiles/MyExecutable.dir/catmfs.c.o"
+  "/home/dcat/osdev/w2/fs_node.c" "/home/dcat/osdev/w2/cmake-build-debug/CMakeFiles/MyExecutable.dir/fs_node.c.o"
   "/home/dcat/osdev/w2/gdt.c" "/home/dcat/osdev/w2/cmake-build-debug/CMakeFiles/MyExecutable.dir/gdt.c.o"
   "/home/dcat/osdev/w2/heap.c" "/home/dcat/osdev/w2/cmake-build-debug/CMakeFiles/MyExecutable.dir/heap.c.o"
   "/home/dcat/osdev/w2/heap_array_list.c" "/home/dcat/osdev/w2/cmake-build-debug/CMakeFiles/MyExecutable.dir/heap_array_list.c.o"
+  "/home/dcat/osdev/w2/ide.c" "/home/dcat/osdev/w2/cmake-build-debug/CMakeFiles/MyExecutable.dir/ide.c.o"
   "/home/dcat/osdev/w2/idt.c" "/home/dcat/osdev/w2/cmake-build-debug/CMakeFiles/MyExecutable.dir/idt.c.o"
   "/home/dcat/osdev/w2/irqs.c" "/home/dcat/osdev/w2/cmake-build-debug/CMakeFiles/MyExecutable.dir/irqs.c.o"
   "/home/dcat/osdev/w2/isrs.c" "/home/dcat/osdev/w2/cmake-build-debug/CMakeFiles/MyExecutable.dir/isrs.c.o"

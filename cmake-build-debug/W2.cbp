@@ -86,6 +86,12 @@
 				</MakeCommands>
 			</Target>
 		</Build>
+		<Unit filename="/home/dcat/osdev/w2/catmfs.c">
+			<Option target="MyExecutable"/>
+		</Unit>
+		<Unit filename="/home/dcat/osdev/w2/fs_node.c">
+			<Option target="MyExecutable"/>
+		</Unit>
 		<Unit filename="/home/dcat/osdev/w2/gdt.c">
 			<Option target="MyExecutable"/>
 		</Unit>
@@ -93,6 +99,9 @@
 			<Option target="MyExecutable"/>
 		</Unit>
 		<Unit filename="/home/dcat/osdev/w2/heap_array_list.c">
+			<Option target="MyExecutable"/>
+		</Unit>
+		<Unit filename="/home/dcat/osdev/w2/ide.c">
 			<Option target="MyExecutable"/>
 		</Unit>
 		<Unit filename="/home/dcat/osdev/w2/idt.c">

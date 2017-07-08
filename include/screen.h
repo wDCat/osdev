@@ -31,16 +31,14 @@ putn(); }
 #define dumpint(name, x) {puts_const(name); \
     putdec(x); \
 putn(); }
-#define putf(fmt, args...){\
- char data[256];\
- strformat(data,fmt,##args);\
-puts(data);\
-}
+
 #define putnf(fmt, size, args...){\
  char data[size];\
  strformat(data,fmt,##args);\
 puts(data);\
 }
+#define putf(fmt, args...) putnf(fmt,256,##args)
+#define putf_const(fmt, args...) putnf(STR(fmt),256,##args)
 typedef unsigned char uint8_t;
 
 void putint(int num);

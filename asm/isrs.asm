@@ -9,6 +9,7 @@
     jmp _isr_common_stub
 %endmacro
 extern fault_handler
+global _isr_common_stub
 _isr_common_stub:
     pusha
     push ds

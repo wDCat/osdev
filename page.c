@@ -6,6 +6,7 @@
 #include <idt.h>
 #include <irqs.h>
 #include <heap.h>
+#include <page.h>
 #include "include/page.h"
 
 extern heap_t *kernel_heap;
@@ -41,6 +42,7 @@ uint32_t page_to_bit(page_t *p) {
     return r;
 }
 
+/**为一个页分配一个frame*/
 void alloc_frame(page_t *page, bool is_kernel, bool is_rw) {
     ASSERT(page);
     ASSERT(frame_status != NULL);
@@ -89,7 +91,7 @@ void paging_install() {
     memset(kernel_dir, 0, sizeof(page_directory_t));
     memset(kernel_dir->table_physical_addr, 0, sizeof(uint32_t) * 1024);
     memset(kernel_dir->tables, 0, sizeof(page_table_t *) * 1024);
-    kernel_dir->physical_addr = 0;
+    kernel_dir->physical_addr = (uint32_t) kernel_dir->table_physical_addr;
     current_dir = kernel_dir;
     putln_const("");
     dumphex("heap placement start:", &end);
@@ -162,4 +164,69 @@ void page_fault_handler(regs_t *r) {
     puts_const(") at ");
     puthex(faulting_address);
     putn();
+}
+
+void copy_frame_physical(uint32_t target, uint32_t src) {
+    __asm__ __volatile__("cli;");
+    //disable paging...
+    uint32_t cr0;
+    __asm__ __volatile__("mov %%cr0, %0":"=r"(cr0));
+    cr0 ^= 0x80000000;
+    __asm__ __volatile__("mov %0, %%cr0"::"r"(cr0));
+    uint32_t *src_p = (uint32_t *) (src * 0x1000);
+    uint32_t *target_p = (uint32_t *) (target * 0x1000);
+    for (int x = 0; x < 1024; x++) {
+        target_p[x] = src_p[x];
+    }
+    cr0 |= 0x80000000;
+    __asm__ __volatile__("mov %0, %%cr0"::"r"(cr0));
+    __asm__ __volatile__("sti;");
+}
+
+page_table_t *clone_page_table(page_table_t *src, uint32_t *phy_out) {
+    uint32_t phy_addr;
+    page_table_t *target = (page_table_t *) kmalloc_ap(sizeof(page_table_t), &phy_addr);
+    *phy_out = phy_addr;
+    memset(target, 0, sizeof(page_table_t));
+    for (int x = 0; x < 1024; x++) {
+        if (src->pages[x].frame) {//Available
+            alloc_frame(&target->pages[x], false, false);
+            if (src->pages[x].present)target->pages[x].present = true;
+            if (src->pages[x].rw)target->pages[x].rw = true;
+            if (src->pages[x].user)target->pages[x].user = true;
+            if (src->pages[x].accessed)target->pages[x].accessed = true;
+            if (src->pages[x].dirty)target->pages[x].dirty = true;
+            copy_frame_physical(target->pages[x].frame, src->pages[x].frame);
+        }
+    }
+}
+
+page_directory_t *clone_page_directory(page_directory_t *src) {
+    uint32_t phy_addr;
+    page_directory_t *target = (page_directory_t *) kmalloc_ap(sizeof(page_directory_t), &phy_addr);
+    memset(target, 0, sizeof(page_directory_t));
+    //calc offset
+    uint32_t offset = (uint32_t) target->table_physical_addr - (uint32_t) target;
+    target->physical_addr = phy_addr + offset;
+    for (int x = 0; x < 1024; x++) {
+        if (src->tables[x]) {
+            if (src->tables[x] == kernel_dir->tables[x]) {
+                target->tables[x] = kernel_dir->tables[x];
+                target->table_physical_addr[x] = kernel_dir->table_physical_addr[x];
+            } else {
+                uint32_t table_phy;
+                page_table_t *table = clone_page_table(src->tables[x], &table_phy);
+                target->tables[x] = table;
+                target->table_physical_addr[x] = table_phy | 0x7;
+            }
+        }
+    }
+    return target;
+}
+
+void flush_TLB() {
+    __asm__ __volatile__("push %eax;"
+            "mov %cr3,%eax;"
+            "mov %eax,%cr3;"
+            "pop %eax;");
 }

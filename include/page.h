@@ -37,8 +37,8 @@ typedef struct page_table_struct {
 }__attribute__((packed)) page_table_t;
 typedef struct page_directory_struct {
     page_table_t *tables[1024];
-    uint32_t table_physical_addr[1024];
-    uint32_t physical_addr;
+    uint32_t table_physical_addr[1024];//上面tables的物理地址
+    uint32_t physical_addr;//上面的物理地址
 } page_directory_t;
 
 static page_directory_t *current_dir;
@@ -69,4 +69,9 @@ void page_fault_handler(regs_t *r);
 
 uint32_t page_to_bit(page_t *p);
 
+page_table_t *clone_page_table(page_table_t *src, uint32_t *phy_out);
+
+page_directory_t *clone_page_directory(page_directory_t *src);
+
+void flush_TLB();
 #endif //W2_PAGE_H

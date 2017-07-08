@@ -14,21 +14,29 @@ catmfs_t *catmfs_init(uint32_t mem_addr) {
     fs->tables = (catmfs_obj_table_t *) (mem_addr + (uint32_t) sizeof(catmfs_raw_header_t));
     fs->table_count = fs->header->obj_table_count;
     putf(STR("[CATMFS]size:%x table_count:%x\n"), fs->header->length, fs->header->obj_table_count);
-    uint32_t data_magic = *(uint32_t *) (mem_addr + sizeof(catmfs_raw_header_t) +
-                                         fs->table_count * sizeof(catmfs_obj_table_t));
-    dumphex("data magic:", data_magic);
+    uint32_t *data_magic_a = (uint32_t *) (mem_addr + sizeof(catmfs_raw_header_t) +
+                                           fs->table_count * sizeof(catmfs_obj_table_t));
+    uint32_t data_magic = *data_magic_a;
+    dumphex("data magic a:", data_magic_a);
     ASSERT(data_magic == CATMFS_DATA_START_MAGIC);
-    fs->data_addr = (uint32_t) (&data_magic + sizeof(uint32_t));
+    fs->data_addr = (uint32_t) ((uint32_t) data_magic_a + sizeof(uint32_t));
+    for (int cur_table_no = 0; cur_table_no < fs->table_count; cur_table_no++) {
+        catmfs_obj_table_t *table = fs->tables + sizeof(catmfs_obj_table_t) * cur_table_no;
+        for (int x = 0; x < table->count; x++) {
+            table->objects[x].fs = fs;
+        }
+    }
     return fs;
 }
 
 uint32_t catmfs_read_inner(catmfs_obj_t *fs_obj, uint32_t offset, uint32_t size, uint8_t *buff) {
     catmfs_t *fs = fs_obj->fs;
     uint32_t saddr = fs->data_addr + fs_obj->offset + offset;
+    putf(STR("Reading %s data:%x offset:%x\n"), fs_obj->name, fs->data_addr, saddr);
     if (offset >= fs_obj->length) {
         return 0;
     } else if (offset + size > fs_obj->length) {
-        return (uint32_t) memcpy(buff, saddr, fs_obj->length - (offset + size));
+        return (uint32_t) memcpy(buff, saddr, fs_obj->length - offset);
     } else
         return (uint32_t) memcpy(buff, saddr, size);
 }

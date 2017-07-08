@@ -123,6 +123,60 @@ MyExecutable/fast:
 	$(MAKE) -f CMakeFiles/MyExecutable.dir/build.make CMakeFiles/MyExecutable.dir/build
 .PHONY : MyExecutable/fast
 
+catmfs.o: catmfs.c.o
+
+.PHONY : catmfs.o
+
+# target to build an object file
+catmfs.c.o:
+	$(MAKE) -f CMakeFiles/MyExecutable.dir/build.make CMakeFiles/MyExecutable.dir/catmfs.c.o
+.PHONY : catmfs.c.o
+
+catmfs.i: catmfs.c.i
+
+.PHONY : catmfs.i
+
+# target to preprocess a source file
+catmfs.c.i:
+	$(MAKE) -f CMakeFiles/MyExecutable.dir/build.make CMakeFiles/MyExecutable.dir/catmfs.c.i
+.PHONY : catmfs.c.i
+
+catmfs.s: catmfs.c.s
+
+.PHONY : catmfs.s
+
+# target to generate assembly for a file
+catmfs.c.s:
+	$(MAKE) -f CMakeFiles/MyExecutable.dir/build.make CMakeFiles/MyExecutable.dir/catmfs.c.s
+.PHONY : catmfs.c.s
+
+fs_node.o: fs_node.c.o
+
+.PHONY : fs_node.o
+
+# target to build an object file
+fs_node.c.o:
+	$(MAKE) -f CMakeFiles/MyExecutable.dir/build.make CMakeFiles/MyExecutable.dir/fs_node.c.o
+.PHONY : fs_node.c.o
+
+fs_node.i: fs_node.c.i
+
+.PHONY : fs_node.i
+
+# target to preprocess a source file
+fs_node.c.i:
+	$(MAKE) -f CMakeFiles/MyExecutable.dir/build.make CMakeFiles/MyExecutable.dir/fs_node.c.i
+.PHONY : fs_node.c.i
+
+fs_node.s: fs_node.c.s
+
+.PHONY : fs_node.s
+
+# target to generate assembly for a file
+fs_node.c.s:
+	$(MAKE) -f CMakeFiles/MyExecutable.dir/build.make CMakeFiles/MyExecutable.dir/fs_node.c.s
+.PHONY : fs_node.c.s
+
 gdt.o: gdt.c.o
 
 .PHONY : gdt.o
@@ -203,6 +257,33 @@ heap_array_list.s: heap_array_list.c.s
 heap_array_list.c.s:
 	$(MAKE) -f CMakeFiles/MyExecutable.dir/build.make CMakeFiles/MyExecutable.dir/heap_array_list.c.s
 .PHONY : heap_array_list.c.s
+
+ide.o: ide.c.o
+
+.PHONY : ide.o
+
+# target to build an object file
+ide.c.o:
+	$(MAKE) -f CMakeFiles/MyExecutable.dir/build.make CMakeFiles/MyExecutable.dir/ide.c.o
+.PHONY : ide.c.o
+
+ide.i: ide.c.i
+
+.PHONY : ide.i
+
+# target to preprocess a source file
+ide.c.i:
+	$(MAKE) -f CMakeFiles/MyExecutable.dir/build.make CMakeFiles/MyExecutable.dir/ide.c.i
+.PHONY : ide.c.i
+
+ide.s: ide.c.s
+
+.PHONY : ide.s
+
+# target to generate assembly for a file
+ide.c.s:
+	$(MAKE) -f CMakeFiles/MyExecutable.dir/build.make CMakeFiles/MyExecutable.dir/ide.c.s
+.PHONY : ide.c.s
 
 idt.o: idt.c.o
 
@@ -510,6 +591,12 @@ help:
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... MyExecutable"
+	@echo "... catmfs.o"
+	@echo "... catmfs.i"
+	@echo "... catmfs.s"
+	@echo "... fs_node.o"
+	@echo "... fs_node.i"
+	@echo "... fs_node.s"
 	@echo "... gdt.o"
 	@echo "... gdt.i"
 	@echo "... gdt.s"
@@ -519,6 +606,9 @@ help:
 	@echo "... heap_array_list.o"
 	@echo "... heap_array_list.i"
 	@echo "... heap_array_list.s"
+	@echo "... ide.o"
+	@echo "... ide.i"
+	@echo "... ide.s"
 	@echo "... idt.o"
 	@echo "... idt.i"
 	@echo "... idt.s"

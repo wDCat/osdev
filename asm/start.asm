@@ -80,10 +80,12 @@ _idt_load:
 %include "asm/isrs.asm"
 %include "asm/irqs.asm"
 %include "asm/page.asm"
+%include "asm/ring.asm"
 ; Here is the definition of our BSS section. Right now, we'll use
 ; it just to store the stack. Remember that a stack actually grows
 ; downwards, so we declare the size of the data before declaring
 ; the identifier '_sys_stack'
 SECTION .bss
     resb 8192               ; This reserves 8KBytes of memory here
+global _sys_stack
 _sys_stack:

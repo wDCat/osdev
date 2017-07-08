@@ -1,7 +1,10 @@
 file(REMOVE_RECURSE
+  "CMakeFiles/MyExecutable.dir/catmfs.c.o"
+  "CMakeFiles/MyExecutable.dir/fs_node.c.o"
   "CMakeFiles/MyExecutable.dir/gdt.c.o"
   "CMakeFiles/MyExecutable.dir/heap.c.o"
   "CMakeFiles/MyExecutable.dir/heap_array_list.c.o"
+  "CMakeFiles/MyExecutable.dir/ide.c.o"
   "CMakeFiles/MyExecutable.dir/idt.c.o"
   "CMakeFiles/MyExecutable.dir/irqs.c.o"
   "CMakeFiles/MyExecutable.dir/isrs.c.o"

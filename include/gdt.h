@@ -4,13 +4,11 @@
 
 #ifndef W2_GDT_H
 #define W2_GDT_H
-#include "system.h"
 
-/* Defines a GDT entry. We say packed, because it prevents the
-*  compiler from doing things that it thinks is best: Prevent
-*  compiler "optimization" by packing */
-struct gdt_entry
-{
+#include "system.h"
+#include "tss.h"
+
+struct gdt_entry {
     unsigned short limit_low;
     unsigned short base_low;
     unsigned char base_middle;
@@ -18,21 +16,33 @@ struct gdt_entry
     unsigned char granularity;
     unsigned char base_high;
 } __attribute__((packed));
+struct gdt_entry_access {
+    unsigned int accessed :1;
+    unsigned int read_write :1; //readable for code, writable for data
+    unsigned int conforming_expand_down :1; //conforming for code, expand down for data
+    unsigned int code :1; //1 for code, 0 for data
+    unsigned int always_1 :1; //should be 1 for everything but TSS and LDT
+    unsigned int DPL :2; //priviledge level 0 = highest (kernel), 3 = lowest (user applications).
+    unsigned int present :1;
+}__attribute__((packed));
 
-/* Special pointer which includes the limit: The max bytes
-*  taken up by the GDT, minus 1. Again, this NEEDS to be packed */
-struct gdt_ptr
-{
+struct gdt_entry_granularity {
+    unsigned int limit_high :4;
+    unsigned int available :1;
+    unsigned int always_0 :1; //should always be 0
+    unsigned int big :1; //32bit opcodes for code, uint32_t stack for data
+    unsigned int gran :1; //1 to use 4k page addressing, 0 for byte addressing
+}__attribute__((packed));
+struct gdt_ptr {
     unsigned short limit;
     unsigned int base;
 } __attribute__((packed));
 
-/* Our GDT, with 3 entries, and finally our special GDT pointer */
-struct gdt_entry gdt[3];
-struct gdt_ptr gp;
+typedef struct gdt_entry gdt_entry_t;
+typedef struct gdt_ptr gdt_ptr_t;
 
-/* This will be a function in start.asm. We use this to properly
-*  reload the new segment registers */
-extern void gdt_flush();
+void gdt_flush(gdt_entry_t *gdt, uint32_t size);
+
 void gdt_install();
+
 #endif //W2_GDT_H

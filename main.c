@@ -14,7 +14,7 @@
 #include "heap.h"
 #include "multiboot.h"
 #include "catmfs.h"
-
+#include "syscall.h"
 unsigned char *memcpy(unsigned char *dest, const unsigned char *src, int count) {
     for (int x = 0; x < count; x++) {
         dest[x] = src[x];
@@ -149,6 +149,7 @@ void install_all() {
     intAssert();
     //kmalloc_install();
     paging_install();
+    syscall_install();
 }
 
 void str_test() {
@@ -168,17 +169,61 @@ void catmfs_test(uint32_t *addr) {
     catmfs_t *fs = catmfs_init(addr);
     fs_node_t *node;
     catmfs_dumpfilelist(fs);
-    if (catmfs_findbyname(fs, STR("neko2"), &node)) {
+    if (catmfs_findbyname(fs, STR("neko.1"), &node)) {
         putf(STR("found:%s\n"), node->name);
-        char data[25];
-        read_fs(node, 0, 10, data);
-        puts_const("data:");
+        char data[250];
+        memset(data, 0xCC, sizeof(char) * 250);
+        uint32_t count = read_fs(node, 0, 200, data);
+        data[count] = '\0';
+        putf(STR("[%d]read data:"), count);
         puts(data);
         putln("");
-        //putf(STR("read data:%s\n"), data);
     } else {
         PANIC("file not found.")
     }
+}
+
+void user_app() {
+    __asm__ __volatile__("mov $0x12,%eax");
+    //__asm__ __volatile__("int $0x60;");
+    for (;;);
+}
+
+void ring3() {
+    dumphex("ring3:", ring3);
+    __asm__ __volatile__(
+    "cli;"
+            "mov $0x23,%ax;"
+            "mov %ax,%ds;"
+            "mov %ax,%es;"
+            "mov %ax,%fs;"
+            "mov %ax,%gs;"
+            "mov %esp,%eax;"
+            "pushl $0x23;"
+            "pushl %eax;"
+            "pushf;"
+            "pop %eax;"
+            "or $0x200,%eax;"
+            "pushl %eax;"
+            "pushl $0x1B;"
+            "push $1f;"
+            "iret;"
+            "1:");
+
+    //user_app();
+    for (;;);
+}
+
+void usermode_test() {
+    extern void enter_usermode();
+    putf_const("enter_usermode:%x\n", enter_usermode);
+    __asm__ __volatile__("mov $0x24,%eax;"
+            "int $0x60;");
+    putf_const("syscall done.\n");
+    k_delay(3);
+    //enter_usermode();
+    ring3();
+    for (;;);
 }
 
 int main(multiboot_info_t *mul_arg) {
@@ -212,7 +257,8 @@ int main(multiboot_info_t *mul_arg) {
     for (int x = 0; x < initrd_end - initrd_start; x++) {
         putc(initrd_raw[x]);
     }*/
-    catmfs_test(initrd_start);
+    //catmfs_test(initrd_start);
+    usermode_test();
     puts_const("[+] main done.");
     for (;;);
 }

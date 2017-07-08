@@ -7,6 +7,7 @@ pre:
 all:
 	rm -rf *.o
 	nasm -felf -f aout -o start.o asm/start.asm
+	nasm -felf -f aout -o syscall.asm.o asm/syscall.asm
 	for name in `ls *.c`; \
 	do \
 	gcc $(C_FLAGS) -o $$name.o $$name;\
@@ -15,7 +16,7 @@ all:
 	gcc $(C_FLAGS) -o heap.c.o heap.c
 	gcc $(C_FLAGS) -o ide.c.o ide.c
 	gcc $(C_FLAGS) -o catmfs.c.o catmfs.c
-	ld $(LD_FLAGS) -o kernel.bin start.o *.c.o
+	ld $(LD_FLAGS) -o kernel.bin start.o *.asm.o *.c.o
 	sudo rm -f /home/dcat/osdev/bgrub/kernel.bin
 	sudo cp kernel.bin /home/dcat/osdev/bgrub/
 	sudo cp ../initrd /home/dcat/osdev/bgrub/
@@ -24,7 +25,7 @@ all:
 	#sudo umount /dev/loop1
 	#sudo mount /dev/loop1 /home/dcat/osdev/bgrub/
 	rm -rf *.o # kernel.bin
-	qemu-system-i386 -hda ../bgrub.img -hdb ../initrd -m 16 -k en-us -sdl  -s -d guest_errors,cpu_reset,pcall
+	qemu-system-i386 -hda ../bgrub.img -hdb ../initrd -m 16 -k en-us -sdl  -s -d guest_errors,cpu_reset,pcall,cpu_reset  -no-reboot
 run:
 	qemu-system-i386 -hda ../bgrub.img -fdb ../initrd -m 512 -k en-us -sdl  -s
 clean:

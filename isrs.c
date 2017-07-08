@@ -3,12 +3,20 @@
 //
 
 #include <page.h>
+#include <str.h>
 #include "include/isrs.h"
 #include "include/idt.h"
 #include "include/system.h"
 #include "intdef.h"
+#include "syscall.h"
 
 #define MEMORY(x) ((uint8_t*)(x))
+#define disable_paging(){\
+uint32_t cr0;\
+__asm__ __volatile__("mov %%cr0, %0":"=r"(cr0));\
+cr0 ^= 0x80000000;\
+__asm__ __volatile__("mov %0, %%cr0"::"r"(cr0));\
+}
 
 void fault_handler(struct regs *r) {
     int a = 0;
@@ -19,27 +27,39 @@ void fault_handler(struct regs *r) {
             break;
         case 2: puterr_const("[-] Non maskable interrupt exception");
             break;
+        case 8: {
+            disable_paging();
+            puterr_const("[-] Double Fault.");
+        }
+            break;
         case 6: puterr_const("[-] Invalid Opcode")
             break;
         case 13: puterr_const("[-] General Protection Fault Exception");
             dumpint("        ErrorCode:", r->err_code);
+            dumphex("        PC:", r->eip);
             break;
         case 14: {
-            uint32_t cr0;
-            __asm__ __volatile__("mov %%cr0, %0":"=r"(cr0));
-            cr0 ^= 0x80000000;
-            __asm__ __volatile__("mov %0, %%cr0"::"r"(cr0));
+            disable_paging();
             puterr_const("Page Fault.Paging has been disabled.");
             page_fault_handler(r);
         }
             break;
-        default:
+        case 0x60: {
+            syscall_handler(r);
+        }
+            break;
+        default: {
+            disable_paging();
             puts_const("FAULT(Unknown):");
             putint(r->int_no);
             putn();
+        }
             break;
     }
-    for (;;);
+    if (r->int_no <= 18) {
+        putln("Loop.");
+        for (;;);
+    }
 }
 
 void isrs_install() {

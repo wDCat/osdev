@@ -16,16 +16,26 @@ In file included from ./include/catmfs.h:10:0,
 ./include/fs_node.h:26:49: warning: ‘struct fs_node’ declared inside parameter list [enabled by default]
  typedef struct dirent *(*readdir_type_t)(struct fs_node *, uint32_t);
                                                  ^
+catmfs.c: In function ‘catmfs_init’:
+catmfs.c:20:5: warning: passing argument 1 of ‘puthex’ makes integer from pointer without a cast [enabled by default]
+     dumphex("data magic a:", data_magic_a);
+     ^
+In file included from ./include/system.h:4:0,
+                 from ./include/catmfs.h:8,
+                 from catmfs.c:5:
+./include/screen.h:54:6: note: expected ‘uint32_t’ but argument is of type ‘uint32_t *’
+ void puthex(uint32_t n);
+      ^
 catmfs.c: In function ‘catmfs_read_inner’:
-catmfs.c:32:9: warning: passing argument 2 of ‘memcpy’ makes pointer from integer without a cast [enabled by default]
-         return (uint32_t) memcpy(buff, saddr, fs_obj->length - (offset + size));
+catmfs.c:39:9: warning: passing argument 2 of ‘memcpy’ makes pointer from integer without a cast [enabled by default]
+         return (uint32_t) memcpy(buff, saddr, fs_obj->length - offset);
          ^
 In file included from ./include/catmfs.h:8:0,
                  from catmfs.c:5:
 ./include/system.h:61:23: note: expected ‘const unsigned char *’ but argument is of type ‘uint32_t’
  extern unsigned char *memcpy(unsigned char *dest, const unsigned char *src, int count);
                        ^
-catmfs.c:34:9: warning: passing argument 2 of ‘memcpy’ makes pointer from integer without a cast [enabled by default]
+catmfs.c:41:9: warning: passing argument 2 of ‘memcpy’ makes pointer from integer without a cast [enabled by default]
          return (uint32_t) memcpy(buff, saddr, size);
          ^
 In file included from ./include/catmfs.h:8:0,
@@ -34,7 +44,7 @@ In file included from ./include/catmfs.h:8:0,
  extern unsigned char *memcpy(unsigned char *dest, const unsigned char *src, int count);
                        ^
 catmfs.c: In function ‘catmfs_create_fs_node’:
-catmfs.c:45:5: warning: passing argument 1 of ‘memset’ from incompatible pointer type [enabled by default]
+catmfs.c:56:5: warning: passing argument 1 of ‘memset’ from incompatible pointer type [enabled by default]
      memset(node, 0, sizeof(fs_node_t));
      ^
 In file included from ./include/catmfs.h:8:0,
@@ -42,7 +52,7 @@ In file included from ./include/catmfs.h:8:0,
 ./include/system.h:65:23: note: expected ‘unsigned char *’ but argument is of type ‘struct fs_node_t *’
  extern unsigned char *memset(unsigned char *dest, unsigned char val, int count);
                        ^
-catmfs.c:46:5: warning: pointer targets in passing argument 1 of ‘memcpy’ differ in signedness [-Wpointer-sign]
+catmfs.c:57:5: warning: pointer targets in passing argument 1 of ‘memcpy’ differ in signedness [-Wpointer-sign]
      memcpy(node->name, fs_obj->name, 256);
      ^
 In file included from ./include/catmfs.h:8:0,
@@ -50,7 +60,7 @@ In file included from ./include/catmfs.h:8:0,
 ./include/system.h:61:23: note: expected ‘unsigned char *’ but argument is of type ‘char *’
  extern unsigned char *memcpy(unsigned char *dest, const unsigned char *src, int count);
                        ^
-catmfs.c:46:5: warning: pointer targets in passing argument 2 of ‘memcpy’ differ in signedness [-Wpointer-sign]
+catmfs.c:57:5: warning: pointer targets in passing argument 2 of ‘memcpy’ differ in signedness [-Wpointer-sign]
      memcpy(node->name, fs_obj->name, 256);
      ^
 In file included from ./include/catmfs.h:8:0,
@@ -58,17 +68,17 @@ In file included from ./include/catmfs.h:8:0,
 ./include/system.h:61:23: note: expected ‘const unsigned char *’ but argument is of type ‘char *’
  extern unsigned char *memcpy(unsigned char *dest, const unsigned char *src, int count);
                        ^
-catmfs.c:49:16: warning: assignment from incompatible pointer type [enabled by default]
+catmfs.c:60:16: warning: assignment from incompatible pointer type [enabled by default]
      node->read = catmfs_read;
                 ^
-catmfs.c:50:17: warning: assignment from incompatible pointer type [enabled by default]
+catmfs.c:61:17: warning: assignment from incompatible pointer type [enabled by default]
      node->write = catmfs_write;
                  ^
 catmfs.c: In function ‘catmfs_findbyname’:
-catmfs.c:60:17: warning: passing argument 1 of ‘catmfs_create_fs_node’ from incompatible pointer type [enabled by default]
+catmfs.c:71:17: warning: passing argument 1 of ‘catmfs_create_fs_node’ from incompatible pointer type [enabled by default]
                  *fs_node_out = catmfs_create_fs_node(table->objects[x].name);
                  ^
-catmfs.c:42:12: note: expected ‘struct catmfs_obj_t *’ but argument is of type ‘char *’
+catmfs.c:49:12: note: expected ‘struct catmfs_obj_t *’ but argument is of type ‘char *’
  fs_node_t *catmfs_create_fs_node(catmfs_obj_t *fs_obj) {
             ^
 In file included from ./include/catmfs.h:8:0,
@@ -105,20 +115,31 @@ In file included from fs_node.c:5:0:
 ./include/fs_node.h:26:49: warning: ‘struct fs_node’ declared inside parameter list [enabled by default]
  typedef struct dirent *(*readdir_type_t)(struct fs_node *, uint32_t);
                                                  ^
+fs_node.c: In function ‘read_fs’:
+fs_node.c:9:5: warning: passing argument 1 of ‘node->read’ from incompatible pointer type [enabled by default]
+     return node->read(node, offset, size, buff);
+     ^
+fs_node.c:9:5: note: expected ‘struct fs_node *’ but argument is of type ‘struct fs_node_t *’
+fs_node.c: In function ‘write_fs’:
+fs_node.c:14:5: warning: passing argument 1 of ‘node->write’ from incompatible pointer type [enabled by default]
+     return node->write(node, offset, size, buff);
+     ^
+fs_node.c:14:5: note: expected ‘struct fs_node *’ but argument is of type ‘struct fs_node_t *’
 In file included from ./include/fs_node.h:8:0,
                  from fs_node.c:5:
+fs_node.c: At top level:
 ./include/system.h:71:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
  extern inline const char *itoa(int i, char result[]);
                            ^
 ./include/system.h:71:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
-gdt.c: In function ‘gdt_install’:
-gdt.c:31:13: warning: assignment makes integer from pointer without a cast [enabled by default]
-     gp.base = &gdt;
+gdt.c: In function ‘gdt_flush’:
+gdt.c:27:13: warning: assignment makes integer from pointer without a cast [enabled by default]
+     gp.base = gdt_;
              ^
-gdt.c:49:5: warning: implicit declaration of function ‘_gdt_flush’ [-Wimplicit-function-declaration]
-     _gdt_flush();
-     ^
-In file included from include/gdt.h:7:0,
+gdt.c:29:12: warning: type defaults to ‘int’ in declaration of ‘_gdt_flush’ [enabled by default]
+     extern _gdt_flush();
+            ^
+In file included from include/gdt.h:8:0,
                  from gdt.c:5:
 gdt.c: At top level:
 include/system.h:71:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
@@ -225,7 +246,7 @@ heap.c:135:17: warning: passing argument 1 of ‘puthex’ makes integer from po
 In file included from ./include/system.h:4:0,
                  from ./include/heap.h:8,
                  from heap.c:5:
-./include/screen.h:46:6: note: expected ‘uint32_t’ but argument is of type ‘struct hole_header_t *’
+./include/screen.h:54:6: note: expected ‘uint32_t’ but argument is of type ‘struct hole_header_t *’
  void puthex(uint32_t n);
       ^
 In file included from ./include/heap.h:8:0,
@@ -275,7 +296,7 @@ ide.c:276:13: warning: pointer targets in passing argument 1 of ‘puts_’ diff
 In file included from ./include/system.h:4:0,
                  from ./include/ide.h:8,
                  from ide.c:5:
-./include/screen.h:40:5: note: expected ‘const char *’ but argument is of type ‘unsigned char *’
+./include/screen.h:48:5: note: expected ‘const char *’ but argument is of type ‘unsigned char *’
  int puts_(const char str[]);
      ^
 ide.c: In function ‘ide_ata_access’:
@@ -335,7 +356,7 @@ include/system.h:71:27: warning: inline function ‘itoa’ declared but never d
                            ^
 include/system.h:71:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
 isrs.c: In function ‘fault_handler’:
-isrs.c:14:9: warning: unused variable ‘a’ [-Wunused-variable]
+isrs.c:15:9: warning: unused variable ‘a’ [-Wunused-variable]
      int a = 0;
          ^
 In file included from ./include/page.h:8:0,
@@ -440,7 +461,7 @@ main.c:107:5: warning: passing argument 1 of ‘puthex’ makes integer from poi
 In file included from ./include/system.h:4:0,
                  from ./include/isrs.h:8,
                  from main.c:1:
-./include/screen.h:46:6: note: expected ‘uint32_t’ but argument is of type ‘void *’
+./include/screen.h:54:6: note: expected ‘uint32_t’ but argument is of type ‘void *’
  void puthex(uint32_t n);
       ^
 main.c:109:5: warning: passing argument 1 of ‘puthex’ makes integer from pointer without a cast [enabled by default]
@@ -449,7 +470,7 @@ main.c:109:5: warning: passing argument 1 of ‘puthex’ makes integer from poi
 In file included from ./include/system.h:4:0,
                  from ./include/isrs.h:8,
                  from main.c:1:
-./include/screen.h:46:6: note: expected ‘uint32_t’ but argument is of type ‘void *’
+./include/screen.h:54:6: note: expected ‘uint32_t’ but argument is of type ‘void *’
  void puthex(uint32_t n);
       ^
 main.c:111:5: warning: passing argument 1 of ‘puthex’ makes integer from pointer without a cast [enabled by default]
@@ -458,7 +479,7 @@ main.c:111:5: warning: passing argument 1 of ‘puthex’ makes integer from poi
 In file included from ./include/system.h:4:0,
                  from ./include/isrs.h:8,
                  from main.c:1:
-./include/screen.h:46:6: note: expected ‘uint32_t’ but argument is of type ‘void *’
+./include/screen.h:54:6: note: expected ‘uint32_t’ but argument is of type ‘void *’
  void puthex(uint32_t n);
       ^
 main.c:116:5: warning: passing argument 2 of ‘hfree’ makes integer from pointer without a cast [enabled by default]
@@ -483,7 +504,7 @@ main.c:123:5: warning: passing argument 1 of ‘puthex’ makes integer from poi
 In file included from ./include/system.h:4:0,
                  from ./include/isrs.h:8,
                  from main.c:1:
-./include/screen.h:46:6: note: expected ‘uint32_t’ but argument is of type ‘void *’
+./include/screen.h:54:6: note: expected ‘uint32_t’ but argument is of type ‘void *’
  void puthex(uint32_t n);
       ^
 main.c:127:5: warning: passing argument 1 of ‘puthex’ makes integer from pointer without a cast [enabled by default]
@@ -492,7 +513,7 @@ main.c:127:5: warning: passing argument 1 of ‘puthex’ makes integer from poi
 In file included from ./include/system.h:4:0,
                  from ./include/isrs.h:8,
                  from main.c:1:
-./include/screen.h:46:6: note: expected ‘uint32_t’ but argument is of type ‘void *’
+./include/screen.h:54:6: note: expected ‘uint32_t’ but argument is of type ‘void *’
  void puthex(uint32_t n);
       ^
 main.c:130:5: warning: passing argument 2 of ‘hfree’ makes integer from pointer without a cast [enabled by default]
@@ -520,48 +541,70 @@ In file included from ./include/kmalloc.h:9:0,
  void hfree(heap_t *heap, uint32_t addr);
       ^
 main.c: In function ‘catmfs_test’:
-main.c:155:5: warning: passing argument 1 of ‘catmfs_init’ makes integer from pointer without a cast [enabled by default]
+main.c:168:5: warning: passing argument 1 of ‘catmfs_init’ makes integer from pointer without a cast [enabled by default]
      catmfs_t *fs = catmfs_init(addr);
      ^
 In file included from main.c:16:0:
 ./include/catmfs.h:14:11: note: expected ‘uint32_t’ but argument is of type ‘uint32_t *’
  catmfs_t *catmfs_init(uint32_t mem_addr);
            ^
-main.c:155:15: warning: unused variable ‘fs’ [-Wunused-variable]
-     catmfs_t *fs = catmfs_init(addr);
-               ^
+main.c:171:5: warning: passing argument 2 of ‘catmfs_findbyname’ discards ‘const’ qualifier from pointer target type [enabled by default]
+     if (catmfs_findbyname(fs, STR("neko.1"), &node)) {
+     ^
+In file included from main.c:16:0:
+./include/catmfs.h:29:9: note: expected ‘char *’ but argument is of type ‘const char *’
+ uint8_t catmfs_findbyname(catmfs_t *fs, char *fn, fs_node_t **fs_node_out);
+         ^
+main.c:174:9: warning: pointer targets in passing argument 1 of ‘memset’ differ in signedness [-Wpointer-sign]
+         memset(data, 0xCC, sizeof(char) * 250);
+         ^
+main.c:31:16: note: expected ‘unsigned char *’ but argument is of type ‘char *’
+ unsigned char *memset(unsigned char *dest, unsigned char val, int count) {
+                ^
+main.c:175:9: warning: pointer targets in passing argument 4 of ‘read_fs’ differ in signedness [-Wpointer-sign]
+         uint32_t count = read_fs(node, 0, 200, data);
+         ^
+In file included from ./include/catmfs.h:10:0,
+                 from main.c:16:
+./include/fs_node.h:48:10: note: expected ‘unsigned char *’ but argument is of type ‘char *’
+ uint32_t read_fs(fs_node_t *node, uint32_t offset, uint32_t size, uint8_t *buff);
+          ^
+main.c: In function ‘ring3’:
+main.c:186:5: warning: passing argument 1 of ‘puthex’ makes integer from pointer without a cast [enabled by default]
+     dumphex("ring3:",ring3);
+     ^
+In file included from ./include/system.h:4:0,
+                 from ./include/isrs.h:8,
+                 from main.c:1:
+./include/screen.h:54:6: note: expected ‘uint32_t’ but argument is of type ‘void (*)()’
+ void puthex(uint32_t n);
+      ^
 main.c: At top level:
-main.c:158:5: warning: first argument of ‘main’ should be ‘int’ [-Wmain]
+main.c:221:5: warning: first argument of ‘main’ should be ‘int’ [-Wmain]
  int main(multiboot_info_t *mul_arg) {
      ^
-main.c:158:5: warning: ‘main’ takes only zero or two arguments [-Wmain]
+main.c:221:5: warning: ‘main’ takes only zero or two arguments [-Wmain]
 main.c: In function ‘main’:
-main.c:164:5: warning: passing argument 1 of ‘memcpy’ from incompatible pointer type [enabled by default]
+main.c:227:5: warning: passing argument 1 of ‘memcpy’ from incompatible pointer type [enabled by default]
      memcpy(&mul, mul_arg, sizeof(multiboot_info_t));
      ^
 main.c:18:16: note: expected ‘unsigned char *’ but argument is of type ‘struct multiboot_info_t *’
  unsigned char *memcpy(unsigned char *dest, const unsigned char *src, int count) {
                 ^
-main.c:164:5: warning: passing argument 2 of ‘memcpy’ from incompatible pointer type [enabled by default]
+main.c:227:5: warning: passing argument 2 of ‘memcpy’ from incompatible pointer type [enabled by default]
      memcpy(&mul, mul_arg, sizeof(multiboot_info_t));
      ^
 main.c:18:16: note: expected ‘const unsigned char *’ but argument is of type ‘struct multiboot_info_t *’
  unsigned char *memcpy(unsigned char *dest, const unsigned char *src, int count) {
                 ^
-main.c:177:5: warning: passing argument 1 of ‘puthex’ makes integer from pointer without a cast [enabled by default]
+main.c:240:5: warning: passing argument 1 of ‘puthex’ makes integer from pointer without a cast [enabled by default]
      dumphex("amem:", amem);
      ^
 In file included from ./include/system.h:4:0,
                  from ./include/isrs.h:8,
                  from main.c:1:
-./include/screen.h:46:6: note: expected ‘uint32_t’ but argument is of type ‘void *’
+./include/screen.h:54:6: note: expected ‘uint32_t’ but argument is of type ‘void *’
  void puthex(uint32_t n);
-      ^
-main.c:189:5: warning: passing argument 1 of ‘catmfs_test’ makes pointer from integer without a cast [enabled by default]
-     catmfs_test(initrd_start);
-     ^
-main.c:154:6: note: expected ‘uint32_t *’ but argument is of type ‘uint32_t’
- void catmfs_test(uint32_t *addr) {
       ^
 In file included from main.c:2:0:
 main.c: At top level:
@@ -647,7 +690,7 @@ In file included from ./include/system.h:4:0,
                  from ./include/heap.h:8,
                  from ./include/kmalloc.h:9,
                  from page.c:5:
-./include/screen.h:46:6: note: expected ‘uint32_t’ but argument is of type ‘uint32_t *’
+./include/screen.h:54:6: note: expected ‘uint32_t’ but argument is of type ‘uint32_t *’
  void puthex(uint32_t n);
       ^
 page.c:97:9: warning: unused variable ‘i’ [-Wunused-variable]
@@ -694,14 +737,14 @@ In file included from ./include/heap.h:8:0,
  extern unsigned char *memset(unsigned char *dest, unsigned char val, int count);
                        ^
 screen.c: At top level:
-screen.c:161:13: warning: conflicting types for ‘scroll’ [enabled by default]
+screen.c:165:13: warning: conflicting types for ‘scroll’ [enabled by default]
  inline void scroll() {
              ^
 screen.c:56:13: note: previous implicit declaration of ‘scroll’ was here
              scroll();
              ^
 screen.c: In function ‘scroll’:
-screen.c:166:9: warning: passing argument 1 of ‘memset’ makes pointer from integer without a cast [enabled by default]
+screen.c:170:9: warning: passing argument 1 of ‘memset’ makes pointer from integer without a cast [enabled by default]
          memset((SCREEN_MEMORY_BASE + ((SCREEN_MAX_Y - 1) * SCREEN_MAX_X) * 2), 0, SCREEN_MAX_X * 2);
          ^
 In file included from ./include/heap.h:8:0,
@@ -724,25 +767,18 @@ In file included from ./include/heap.h:11:0,
 ./include/page.h:45:26: warning: ‘kernel_dir’ defined but not used [-Wunused-variable]
  static page_directory_t *kernel_dir;
                           ^
-str.c: In function ‘strformat’:
-str.c:33:5: error: unknown type name ‘va_list’
-     va_list args;
-     ^
-str.c:34:5: warning: implicit declaration of function ‘va_start’ [-Wimplicit-function-declaration]
-     va_start(args, fmt);
-     ^
-str.c:35:5: warning: implicit declaration of function ‘va_end’ [-Wimplicit-function-declaration]
-     va_end(args);
-     ^
-In file included from include/str.h:8:0,
+In file included from include/str.h:9:0,
                  from str.c:5:
-str.c: At top level:
 include/system.h:71:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
  extern inline const char *itoa(int i, char result[]);
                            ^
 include/system.h:71:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
+str.c: In function ‘itohexs’:
+str.c:138:1: warning: control reaches end of non-void function [-Wreturn-type]
+ }
+ ^
 str.c: In function ‘strformat’:
-str.c:36:1: warning: control reaches end of non-void function [-Wreturn-type]
+str.c:182:1: warning: control reaches end of non-void function [-Wreturn-type]
  }
  ^
 In file included from include/timer.h:8:0,
@@ -755,6 +791,24 @@ In file included from timer.c:6:0:
 include/irqs.h:43:14: warning: ‘irq_routines’ defined but not used [-Wunused-variable]
  static void *irq_routines[16] = {
               ^
+tss.c: In function ‘write_tss’:
+tss.c:15:5: warning: implicit declaration of function ‘gdt_set_gate’ [-Wimplicit-function-declaration]
+     gdt_set_gate(num, base, limit, 0xE9, 0x00);
+     ^
+tss.c:18:5: warning: passing argument 1 of ‘memset’ from incompatible pointer type [enabled by default]
+     memset(&tss_entry, 0, sizeof(tss_entry));
+     ^
+In file included from ./include/gdt.h:8:0,
+                 from ./include/tss.h:9,
+                 from tss.c:5:
+./include/system.h:65:23: note: expected ‘unsigned char *’ but argument is of type ‘struct tss_entry_t *’
+ extern unsigned char *memset(unsigned char *dest, unsigned char val, int count);
+                       ^
+tss.c: At top level:
+./include/system.h:71:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
+ extern inline const char *itoa(int i, char result[]);
+                           ^
+./include/system.h:71:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
 In file included from ./include/heap_array_list.h:23:0,
                  from heap_array_list.c:5:
 heap_array_list.c: In function ‘create_heap_array_list’:
@@ -855,7 +909,7 @@ heap.c:135:17: warning: passing argument 1 of ‘puthex’ makes integer from po
 In file included from ./include/system.h:4:0,
                  from ./include/heap.h:8,
                  from heap.c:5:
-./include/screen.h:46:6: note: expected ‘uint32_t’ but argument is of type ‘struct hole_header_t *’
+./include/screen.h:54:6: note: expected ‘uint32_t’ but argument is of type ‘struct hole_header_t *’
  void puthex(uint32_t n);
       ^
 In file included from ./include/heap.h:8:0,
@@ -905,7 +959,7 @@ ide.c:276:13: warning: pointer targets in passing argument 1 of ‘puts_’ diff
 In file included from ./include/system.h:4:0,
                  from ./include/ide.h:8,
                  from ide.c:5:
-./include/screen.h:40:5: note: expected ‘const char *’ but argument is of type ‘unsigned char *’
+./include/screen.h:48:5: note: expected ‘const char *’ but argument is of type ‘unsigned char *’
  int puts_(const char str[]);
      ^
 ide.c: In function ‘ide_ata_access’:
@@ -954,16 +1008,26 @@ In file included from ./include/catmfs.h:10:0,
 ./include/fs_node.h:26:49: warning: ‘struct fs_node’ declared inside parameter list [enabled by default]
  typedef struct dirent *(*readdir_type_t)(struct fs_node *, uint32_t);
                                                  ^
+catmfs.c: In function ‘catmfs_init’:
+catmfs.c:20:5: warning: passing argument 1 of ‘puthex’ makes integer from pointer without a cast [enabled by default]
+     dumphex("data magic a:", data_magic_a);
+     ^
+In file included from ./include/system.h:4:0,
+                 from ./include/catmfs.h:8,
+                 from catmfs.c:5:
+./include/screen.h:54:6: note: expected ‘uint32_t’ but argument is of type ‘uint32_t *’
+ void puthex(uint32_t n);
+      ^
 catmfs.c: In function ‘catmfs_read_inner’:
-catmfs.c:32:9: warning: passing argument 2 of ‘memcpy’ makes pointer from integer without a cast [enabled by default]
-         return (uint32_t) memcpy(buff, saddr, fs_obj->length - (offset + size));
+catmfs.c:39:9: warning: passing argument 2 of ‘memcpy’ makes pointer from integer without a cast [enabled by default]
+         return (uint32_t) memcpy(buff, saddr, fs_obj->length - offset);
          ^
 In file included from ./include/catmfs.h:8:0,
                  from catmfs.c:5:
 ./include/system.h:61:23: note: expected ‘const unsigned char *’ but argument is of type ‘uint32_t’
  extern unsigned char *memcpy(unsigned char *dest, const unsigned char *src, int count);
                        ^
-catmfs.c:34:9: warning: passing argument 2 of ‘memcpy’ makes pointer from integer without a cast [enabled by default]
+catmfs.c:41:9: warning: passing argument 2 of ‘memcpy’ makes pointer from integer without a cast [enabled by default]
          return (uint32_t) memcpy(buff, saddr, size);
          ^
 In file included from ./include/catmfs.h:8:0,
@@ -972,7 +1036,7 @@ In file included from ./include/catmfs.h:8:0,
  extern unsigned char *memcpy(unsigned char *dest, const unsigned char *src, int count);
                        ^
 catmfs.c: In function ‘catmfs_create_fs_node’:
-catmfs.c:45:5: warning: passing argument 1 of ‘memset’ from incompatible pointer type [enabled by default]
+catmfs.c:56:5: warning: passing argument 1 of ‘memset’ from incompatible pointer type [enabled by default]
      memset(node, 0, sizeof(fs_node_t));
      ^
 In file included from ./include/catmfs.h:8:0,
@@ -980,7 +1044,7 @@ In file included from ./include/catmfs.h:8:0,
 ./include/system.h:65:23: note: expected ‘unsigned char *’ but argument is of type ‘struct fs_node_t *’
  extern unsigned char *memset(unsigned char *dest, unsigned char val, int count);
                        ^
-catmfs.c:46:5: warning: pointer targets in passing argument 1 of ‘memcpy’ differ in signedness [-Wpointer-sign]
+catmfs.c:57:5: warning: pointer targets in passing argument 1 of ‘memcpy’ differ in signedness [-Wpointer-sign]
      memcpy(node->name, fs_obj->name, 256);
      ^
 In file included from ./include/catmfs.h:8:0,
@@ -988,7 +1052,7 @@ In file included from ./include/catmfs.h:8:0,
 ./include/system.h:61:23: note: expected ‘unsigned char *’ but argument is of type ‘char *’
  extern unsigned char *memcpy(unsigned char *dest, const unsigned char *src, int count);
                        ^
-catmfs.c:46:5: warning: pointer targets in passing argument 2 of ‘memcpy’ differ in signedness [-Wpointer-sign]
+catmfs.c:57:5: warning: pointer targets in passing argument 2 of ‘memcpy’ differ in signedness [-Wpointer-sign]
      memcpy(node->name, fs_obj->name, 256);
      ^
 In file included from ./include/catmfs.h:8:0,
@@ -996,17 +1060,17 @@ In file included from ./include/catmfs.h:8:0,
 ./include/system.h:61:23: note: expected ‘const unsigned char *’ but argument is of type ‘char *’
  extern unsigned char *memcpy(unsigned char *dest, const unsigned char *src, int count);
                        ^
-catmfs.c:49:16: warning: assignment from incompatible pointer type [enabled by default]
+catmfs.c:60:16: warning: assignment from incompatible pointer type [enabled by default]
      node->read = catmfs_read;
                 ^
-catmfs.c:50:17: warning: assignment from incompatible pointer type [enabled by default]
+catmfs.c:61:17: warning: assignment from incompatible pointer type [enabled by default]
      node->write = catmfs_write;
                  ^
 catmfs.c: In function ‘catmfs_findbyname’:
-catmfs.c:60:17: warning: passing argument 1 of ‘catmfs_create_fs_node’ from incompatible pointer type [enabled by default]
+catmfs.c:71:17: warning: passing argument 1 of ‘catmfs_create_fs_node’ from incompatible pointer type [enabled by default]
                  *fs_node_out = catmfs_create_fs_node(table->objects[x].name);
                  ^
-catmfs.c:42:12: note: expected ‘struct catmfs_obj_t *’ but argument is of type ‘char *’
+catmfs.c:49:12: note: expected ‘struct catmfs_obj_t *’ but argument is of type ‘char *’
  fs_node_t *catmfs_create_fs_node(catmfs_obj_t *fs_obj) {
             ^
 In file included from ./include/catmfs.h:8:0,
@@ -1026,10 +1090,59 @@ In file included from ./include/heap.h:11:0,
 ./include/page.h:45:26: warning: ‘kernel_dir’ defined but not used [-Wunused-variable]
  static page_directory_t *kernel_dir;
                           ^
-catmfs.c.o: In function `catmfs_findbyname':
-catmfs.c:(.text+0x4fe): undefined reference to `strstr'
-main.c.o: In function `main':
-main.c:(.text+0x7f4): undefined reference to `strlen'
-screen.c.o: In function `puts_':
-screen.c:(.text+0x1d8): undefined reference to `strlen'
-make: *** [all] Error 1
+CPU Reset (CPU 0)
+EAX=00000000 EBX=00000000 ECX=00000000 EDX=00000000
+ESI=00000000 EDI=00000000 EBP=00000000 ESP=00000000
+EIP=00000000 EFL=00000000 [-------] CPL=0 II=0 A20=0 SMM=0 HLT=0
+ES =0000 00000000 00000000 00000000
+CS =0000 00000000 00000000 00000000
+SS =0000 00000000 00000000 00000000
+DS =0000 00000000 00000000 00000000
+FS =0000 00000000 00000000 00000000
+GS =0000 00000000 00000000 00000000
+LDT=0000 00000000 00000000 00000000
+TR =0000 00000000 00000000 00000000
+GDT=     00000000 00000000
+IDT=     00000000 00000000
+CR0=00000000 CR2=00000000 CR3=00000000 CR4=00000000
+DR0=00000000 DR1=00000000 DR2=00000000 DR3=00000000 
+DR6=00000000 DR7=00000000
+CCS=00000000 CCD=00000000 CCO=DYNAMIC 
+EFER=0000000000000000
+FCW=0000 FSW=0000 [ST=0] FTW=ff MXCSR=00000000
+FPR0=0000000000000000 0000 FPR1=0000000000000000 0000
+FPR2=0000000000000000 0000 FPR3=0000000000000000 0000
+FPR4=0000000000000000 0000 FPR5=0000000000000000 0000
+FPR6=0000000000000000 0000 FPR7=0000000000000000 0000
+XMM00=00000000000000000000000000000000 XMM01=00000000000000000000000000000000
+XMM02=00000000000000000000000000000000 XMM03=00000000000000000000000000000000
+XMM04=00000000000000000000000000000000 XMM05=00000000000000000000000000000000
+XMM06=00000000000000000000000000000000 XMM07=00000000000000000000000000000000
+CPU Reset (CPU 0)
+EAX=00000000 EBX=00000000 ECX=00000000 EDX=00000663
+ESI=00000000 EDI=00000000 EBP=00000000 ESP=00000000
+EIP=0000fff0 EFL=00000002 [-------] CPL=0 II=0 A20=1 SMM=0 HLT=0
+ES =0000 00000000 0000ffff 00009300
+CS =f000 ffff0000 0000ffff 00009b00
+SS =0000 00000000 0000ffff 00009300
+DS =0000 00000000 0000ffff 00009300
+FS =0000 00000000 0000ffff 00009300
+GS =0000 00000000 0000ffff 00009300
+LDT=0000 00000000 0000ffff 00008200
+TR =0000 00000000 0000ffff 00008b00
+GDT=     00000000 0000ffff
+IDT=     00000000 0000ffff
+CR0=60000010 CR2=00000000 CR3=00000000 CR4=00000000
+DR0=00000000 DR1=00000000 DR2=00000000 DR3=00000000 
+DR6=ffff0ff0 DR7=00000400
+CCS=00000000 CCD=00000000 CCO=DYNAMIC 
+EFER=0000000000000000
+FCW=037f FSW=0000 [ST=0] FTW=00 MXCSR=00001f80
+FPR0=0000000000000000 0000 FPR1=0000000000000000 0000
+FPR2=0000000000000000 0000 FPR3=0000000000000000 0000
+FPR4=0000000000000000 0000 FPR5=0000000000000000 0000
+FPR6=0000000000000000 0000 FPR7=0000000000000000 0000
+XMM00=00000000000000000000000000000000 XMM01=00000000000000000000000000000000
+XMM02=00000000000000000000000000000000 XMM03=00000000000000000000000000000000
+XMM04=00000000000000000000000000000000 XMM05=00000000000000000000000000000000
+XMM06=00000000000000000000000000000000 XMM07=00000000000000000000000000000000
