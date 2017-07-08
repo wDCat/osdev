@@ -115,12 +115,13 @@ void paging_install() {
     for (uint32_t i = KHEAP_START; i < KHEAP_START + KHEAP_SIZE + 0x1000; i += 0x1000) {
         alloc_frame(get_page(i, true, kernel_dir), false, false);
     }
-    for (uint32_t i = 0xE0FF6000; i < 0xE1000000; i += 0x1000) {
-        alloc_frame(get_page(i, true, kernel_dir), false, false);
-    }
+    /*
+    */
     dumphex("heap_placement_addr:", heap_placement_addr);
     switch_page_directory(kernel_dir);
+    //FIXME 这条语句之后会导致alloc_frame 失效
     kernel_heap = create_heap(KHEAP_START, KHEAP_START + KHEAP_SIZE, KHEAP_START + KHEAP_SIZE * 2, kernel_dir);
+
 }
 
 void switch_page_directory(page_directory_t *dir) {
@@ -144,7 +145,7 @@ page_t *get_page(uint32_t addr, int make, page_directory_t *dir) {
     } else if (make) {
         uint32_t phyaddr;
         //dumpint("sizeof(page_table_t)", sizeof(page_table_t));
-        dir->tables[table_idx] = (page_table_t *) kmalloc_ap(sizeof(page_table_t), &phyaddr);
+        dir->tables[table_idx] = (page_table_t *) kmalloc_internal(sizeof(page_table_t), true, &phyaddr, false);
         memset(dir->tables[table_idx], 0, sizeof(page_table_t));
         dir->table_physical_addr[table_idx] = phyaddr | 0x7;
         return &(dir->tables[table_idx]->pages[frame_no % 1024]);

@@ -26,7 +26,10 @@ all:
 	#sudo umount /dev/loop1
 	#sudo mount /dev/loop1 /home/dcat/osdev/bgrub/
 	rm -rf *.o # kernel.bin
-	qemu-system-i386 -hda ../bgrub.img -hdb ../initrd -m 256 -k en-us -sdl  -s -d guest_errors,cpu_reset,pcall,cpu_reset  -no-reboot
+bochs:
+	bochs -f ../bochsrc.txt
+qemu:
+	qemu-system-i386 -hda ../bgrub.img -hdb ../initrd -m 256 -k en-us -sdl  -s -d guest_errors,cpu_reset,pcall,cpu_reset -no-reboot
 run:
 	qemu-system-i386 -hda ../bgrub.img -fdb ../initrd -m 512 -k en-us -sdl  -s
 clean:

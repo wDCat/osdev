@@ -50,6 +50,8 @@ putint(__LINE__);\
 putc('\n');\
 for(;;);\
 }
+#define cli() __asm__ __volatile__ ("cli")
+#define sti() __asm__ __volatile__ ("sti")
 typedef struct regs {
     unsigned int gs, fs, es, ds;      /* pushed the segs last */
     unsigned int edi, esi, ebp, esp, ebx, edx, ecx, eax;  /* pushed by 'pusha' */

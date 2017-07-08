@@ -211,7 +211,6 @@ void ring3() {
             "push $1f;"
             "iret;"
             "1:");
-
     //user_app();
     for (;;);
 }
@@ -223,7 +222,7 @@ void usermode_test() {
     __asm__ __volatile__("mov $0x24,%eax;"
             "int $0x60;");
     putf_const("syscall done.\n");
-    k_delay(3);
+    //k_delay(5);
     //enter_usermode();
     ring3();
     for (;;);
