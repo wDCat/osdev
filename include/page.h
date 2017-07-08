@@ -41,14 +41,25 @@ typedef struct page_directory_struct {
     uint32_t physical_addr;//上面的物理地址
 } page_directory_t;
 
-static page_directory_t *current_dir;
-static page_directory_t *kernel_dir;
+extern page_directory_t *current_dir;
+extern page_directory_t *kernel_dir;
 
 extern void _switch_page_dir_internal(uint32_t addr);
 
 #define FRAME_STATUS_USED 1
 #define FRAME_STATUS_FREE 0
-
+#define disable_paging(){\
+uint32_t cr0;\
+__asm__ __volatile__("mov %%cr0, %0":"=r"(cr0));\
+cr0 ^= 0x80000000;\
+__asm__ __volatile__("mov %0, %%cr0"::"r"(cr0));\
+}
+#define enable_paging(){\
+uint32_t cr0;\
+__asm__ __volatile__("mov %%cr0, %0":"=r"(cr0));\
+cr0 |= 0x80000000;\
+__asm__ __volatile__("mov %0, %%cr0"::"r"(cr0));\
+}
 void set_frame_status(uint32_t frame_addr, uint32_t status);
 
 uint32_t get_frame_status(uint32_t frame_addr);

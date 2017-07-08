@@ -7,11 +7,15 @@
 #include <irqs.h>
 #include <heap.h>
 #include <page.h>
+#include <str.h>
 #include "include/page.h"
 
 extern heap_t *kernel_heap;
-static uint32_t *frame_status = NULL;//保存frame状态的数组
-static uint32_t frame_max_count = 0;//frame 计数
+uint32_t *frame_status = NULL;//保存frame状态的数组
+uint32_t frame_max_count = 0;//frame 计数
+page_directory_t *current_dir;
+page_directory_t *kernel_dir;
+
 void set_frame_status(uint32_t frame_addr, uint32_t status) {
     uint32_t frame_no = frame_addr / 0x1000;//4k=0x1000
     ASSERT(frame_status != NULL);
@@ -49,7 +53,6 @@ void alloc_frame(page_t *page, bool is_kernel, bool is_rw) {
     if (!page->frame) {
         for (uint32_t x = 0; x < frame_max_count; x++) {
             if (frame_status[x] == FRAME_STATUS_FREE) {
-                //dumpint("avaliable frame:", x);
                 memset(page, 0, sizeof(page_t));
                 page->present = true;
                 page->frame = x;
@@ -60,12 +63,14 @@ void alloc_frame(page_t *page, bool is_kernel, bool is_rw) {
                 //(*(uint32_t *) page) = r;
                 //dumphex("page data:", (*(uint32_t *) page));
                 set_frame_status(x * 0x1000, FRAME_STATUS_USED);
+                return;
                 break;
             } else if (x == frame_max_count) {
                 //No more frame
                 PANIC("No more frame.")
             }
         }
+        PANIC("Unknown Error")
     }
 }
 
@@ -92,7 +97,6 @@ void paging_install() {
     memset(kernel_dir->table_physical_addr, 0, sizeof(uint32_t) * 1024);
     memset(kernel_dir->tables, 0, sizeof(page_table_t *) * 1024);
     kernel_dir->physical_addr = (uint32_t) kernel_dir->table_physical_addr;
-    current_dir = kernel_dir;
     putln_const("");
     dumphex("heap placement start:", &end);
     dumphex("heap placement now:", heap_placement_addr);
@@ -109,6 +113,9 @@ void paging_install() {
         alloc_frame(get_page(i, true, kernel_dir), false, false);
     }
     for (uint32_t i = KHEAP_START; i < KHEAP_START + KHEAP_SIZE + 0x1000; i += 0x1000) {
+        alloc_frame(get_page(i, true, kernel_dir), false, false);
+    }
+    for (uint32_t i = 0xE0FF6000; i < 0xE1000000; i += 0x1000) {
         alloc_frame(get_page(i, true, kernel_dir), false, false);
     }
     dumphex("heap_placement_addr:", heap_placement_addr);
@@ -130,13 +137,15 @@ void switch_page_directory(page_directory_t *dir) {
 page_t *get_page(uint32_t addr, int make, page_directory_t *dir) {
     uint32_t frame_no = addr / 0x1000;//4K
     uint32_t table_idx = frame_no / 1024;//一个page table里有1024个page table entry
+    //putf_const("[GETP]%x %x\n", frame_no, table_idx);
+    ASSERT(table_idx < 1024);
     if (dir->tables[table_idx]) {
         return &(dir->tables[table_idx]->pages[frame_no % 1024]);
     } else if (make) {
         uint32_t phyaddr;
         //dumpint("sizeof(page_table_t)", sizeof(page_table_t));
         dir->tables[table_idx] = (page_table_t *) kmalloc_ap(sizeof(page_table_t), &phyaddr);
-        memset(dir->tables[table_idx], 0, 0x1000);
+        memset(dir->tables[table_idx], 0, sizeof(page_table_t));
         dir->table_physical_addr[table_idx] = phyaddr | 0x7;
         return &(dir->tables[table_idx]->pages[frame_no % 1024]);
     } else {
@@ -163,6 +172,7 @@ void page_fault_handler(regs_t *r) {
     if (reserved) { puts_const("reserved "); }
     puts_const(") at ");
     puthex(faulting_address);
+    dumphex("\nEIP:", r->eip);
     putn();
 }
 

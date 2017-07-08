@@ -56,7 +56,7 @@ typedef struct regs {
     unsigned int int_no, err_code;    /* our 'push byte #' and ecodes do this */
     unsigned int eip, cs, eflags, useresp, ss;   /* pushed by the processor automatically */
 } regs_t;
-
+extern uint32_t init_esp;
 /* MAIN.C */
 extern unsigned char *memcpy(unsigned char *dest, const unsigned char *src, int count);
 

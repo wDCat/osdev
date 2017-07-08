@@ -45,6 +45,8 @@ enter_protected_mode:
 stublet:
     mov esp, _sys_stack
     extern main
+    ;for stack start addr
+    push esp
     ;for multiboot_header
     push ebx
     call main

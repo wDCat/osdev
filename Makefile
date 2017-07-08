@@ -16,6 +16,7 @@ all:
 	gcc $(C_FLAGS) -o heap.c.o heap.c
 	gcc $(C_FLAGS) -o ide.c.o ide.c
 	gcc $(C_FLAGS) -o catmfs.c.o catmfs.c
+	gcc $(C_FLAGS) -o proc.c.o proc.c
 	ld $(LD_FLAGS) -o kernel.bin start.o *.asm.o *.c.o
 	sudo rm -f /home/dcat/osdev/bgrub/kernel.bin
 	sudo cp kernel.bin /home/dcat/osdev/bgrub/
@@ -25,7 +26,7 @@ all:
 	#sudo umount /dev/loop1
 	#sudo mount /dev/loop1 /home/dcat/osdev/bgrub/
 	rm -rf *.o # kernel.bin
-	qemu-system-i386 -hda ../bgrub.img -hdb ../initrd -m 16 -k en-us -sdl  -s -d guest_errors,cpu_reset,pcall,cpu_reset  -no-reboot
+	qemu-system-i386 -hda ../bgrub.img -hdb ../initrd -m 256 -k en-us -sdl  -s -d guest_errors,cpu_reset,pcall,cpu_reset  -no-reboot
 run:
 	qemu-system-i386 -hda ../bgrub.img -fdb ../initrd -m 512 -k en-us -sdl  -s
 clean:

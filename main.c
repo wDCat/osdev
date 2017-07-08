@@ -15,6 +15,7 @@
 #include "multiboot.h"
 #include "catmfs.h"
 #include "syscall.h"
+#include "proc.h"
 unsigned char *memcpy(unsigned char *dest, const unsigned char *src, int count) {
     for (int x = 0; x < count; x++) {
         dest[x] = src[x];
@@ -166,6 +167,7 @@ void str_test() {
 }
 
 void catmfs_test(uint32_t *addr) {
+
     catmfs_t *fs = catmfs_init(addr);
     fs_node_t *node;
     catmfs_dumpfilelist(fs);
@@ -215,6 +217,7 @@ void ring3() {
 }
 
 void usermode_test() {
+    create_user_stack(0xE1000000, 0x6000);
     extern void enter_usermode();
     putf_const("enter_usermode:%x\n", enter_usermode);
     __asm__ __volatile__("mov $0x24,%eax;"
@@ -226,7 +229,10 @@ void usermode_test() {
     for (;;);
 }
 
-int main(multiboot_info_t *mul_arg) {
+uint32_t init_esp;
+
+int main(multiboot_info_t *mul_arg, uint32_t init_esp_arg) {
+    init_esp = init_esp_arg;
     multiboot_info_t mul;
     uint32_t initrd_start = *((uint32_t *) mul_arg->mods_addr);
     uint32_t initrd_end = *(uint32_t *) (mul_arg->mods_addr + 4);
