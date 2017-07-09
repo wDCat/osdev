@@ -60,6 +60,7 @@ __asm__ __volatile__("mov %%cr0, %0":"=r"(cr0));\
 cr0 |= 0x80000000;\
 __asm__ __volatile__("mov %0, %%cr0"::"r"(cr0));\
 }
+
 void set_frame_status(uint32_t frame_addr, uint32_t status);
 
 uint32_t get_frame_status(uint32_t frame_addr);
@@ -84,5 +85,8 @@ page_table_t *clone_page_table(page_table_t *src, uint32_t *phy_out);
 
 page_directory_t *clone_page_directory(page_directory_t *src);
 
+uint32_t get_physical_address(uint32_t va);
+
 void flush_TLB();
+
 #endif //W2_PAGE_H

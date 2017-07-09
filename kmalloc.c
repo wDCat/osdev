@@ -3,6 +3,7 @@
 //
 
 #include <system.h>
+#include <page.h>
 #include "include/intdef.h"
 #include "include/kmalloc.h"
 
@@ -21,8 +22,12 @@ uint32_t kmalloc_internal(uint32_t sz, bool align, uint32_t *phys, bool with_pag
     if (kernel_heap && with_paging) {
         void *ret = halloc(kernel_heap, sz, align);
         if (phys != 0) {
+            //FIXME  错误的phys返回值  使用 get_physical_address  代替
+            /*
             page_t *page = get_page((uint32_t) ret, 0, kernel_dir);
-            *phys = page->frame * 0x1000 + (uint32_t) ret & 0xFFF;
+            ASSERT(page->frame);
+            *phys = page->frame * 0x1000 + (uint32_t) ret & 0xFFF;*/
+            *phys = get_physical_address(ret);
         }
         return ret;
     } else {

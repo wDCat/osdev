@@ -2,9 +2,8 @@
 #define __SYSTEM_H
 
 #include "screen.h"
-
+#include "bochs_debug.h"
 #include "intdef.h"
-
 #define true 1
 #define false 0
 //String cannot be used as a argument directly.

@@ -109,7 +109,7 @@ void paging_install() {
         get_page(i, true, kernel_dir);
     }
     //多分配10个页
-    for (uint32_t i = 0; i < kernel_area + 0x10000; i += 0x1000) {
+    for (uint32_t i = 0; i < kernel_area + 0x30000; i += 0x1000) {
         alloc_frame(get_page(i, true, kernel_dir), false, false);
     }
     for (uint32_t i = KHEAP_START; i < KHEAP_START + KHEAP_SIZE + 0x1000; i += 0x1000) {
@@ -119,6 +119,7 @@ void paging_install() {
     */
     dumphex("heap_placement_addr:", heap_placement_addr);
     switch_page_directory(kernel_dir);
+    enable_paging();
     //FIXME 这条语句之后会导致alloc_frame 失效
     kernel_heap = create_heap(KHEAP_START, KHEAP_START + KHEAP_SIZE, KHEAP_START + KHEAP_SIZE * 2, kernel_dir);
 
@@ -127,11 +128,12 @@ void paging_install() {
 void switch_page_directory(page_directory_t *dir) {
     current_dir = dir;
     //_switch_page_dir_internal(&dir->table_physical_addr);
-    __asm__ __volatile__("mov %0, %%cr3"::"r"(&dir->table_physical_addr));
+    __asm__ __volatile__("mov %0, %%cr3"::"r"(dir->physical_addr));
+    /*
     uint32_t cr0;
     __asm__ __volatile__("mov %%cr0, %0":"=r"(cr0));
     cr0 |= 0x80000000;
-    __asm__ __volatile__("mov %0, %%cr0"::"r"(cr0));
+    __asm__ __volatile__("mov %0, %%cr0"::"r"(cr0));*/
 
 }
 
@@ -152,6 +154,19 @@ page_t *get_page(uint32_t addr, int make, page_directory_t *dir) {
     } else {
         return NULL;
     }
+}
+
+uint32_t get_physical_address(uint32_t va) {
+    page_t *page = get_page(va, false, current_dir);
+    if (page == NULL) {
+        PANIC("No such page.");//Debug
+        return NULL;
+    }
+    if (!page->frame) {
+        PANIC("No allocated frame.");//Debug
+        return NULL;
+    }
+    return (page->frame) * 0x1000 + (va & 0xFFF);
 }
 
 void page_fault_handler(regs_t *r) {
@@ -214,17 +229,24 @@ page_table_t *clone_page_table(page_table_t *src, uint32_t *phy_out) {
 
 page_directory_t *clone_page_directory(page_directory_t *src) {
     uint32_t phy_addr;
-    page_directory_t *target = (page_directory_t *) kmalloc_ap(sizeof(page_directory_t), &phy_addr);
+    page_directory_t *target = (page_directory_t *) kmalloc_internal(sizeof(page_directory_t), true, &phy_addr, false);
+
     memset(target, 0, sizeof(page_directory_t));
-    //calc offset
+    //calc offset 1024*pointer = 1K
     uint32_t offset = (uint32_t) target->table_physical_addr - (uint32_t) target;
     target->physical_addr = phy_addr + offset;
+    putf_const("[PT]new table at:%x offset:%x ->phyaddr:%x\n", phy_addr, offset, target->physical_addr);
+    uint8_t count[3];
+    memset(count, 0, sizeof(uint8_t) * 3);
     for (int x = 0; x < 1024; x++) {
         if (src->tables[x]) {
+            count[0]++;
             if (src->tables[x] == kernel_dir->tables[x]) {
+                count[1]++;
                 target->tables[x] = kernel_dir->tables[x];
                 target->table_physical_addr[x] = kernel_dir->table_physical_addr[x];
             } else {
+                count[2]++;
                 uint32_t table_phy;
                 page_table_t *table = clone_page_table(src->tables[x], &table_phy);
                 target->tables[x] = table;
@@ -232,6 +254,7 @@ page_directory_t *clone_page_directory(page_directory_t *src) {
             }
         }
     }
+    putf_const("[PT]copied %x PTs [Kernel:%x]\n", count[0], count[1]);
     return target;
 }
 

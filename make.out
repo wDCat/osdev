@@ -32,7 +32,7 @@ catmfs.c:39:9: warning: passing argument 2 of ‘memcpy’ makes pointer from in
          ^
 In file included from ./include/catmfs.h:8:0,
                  from catmfs.c:5:
-./include/system.h:61:23: note: expected ‘const unsigned char *’ but argument is of type ‘uint32_t’
+./include/system.h:62:23: note: expected ‘const unsigned char *’ but argument is of type ‘uint32_t’
  extern unsigned char *memcpy(unsigned char *dest, const unsigned char *src, int count);
                        ^
 catmfs.c:41:9: warning: passing argument 2 of ‘memcpy’ makes pointer from integer without a cast [enabled by default]
@@ -40,7 +40,7 @@ catmfs.c:41:9: warning: passing argument 2 of ‘memcpy’ makes pointer from in
          ^
 In file included from ./include/catmfs.h:8:0,
                  from catmfs.c:5:
-./include/system.h:61:23: note: expected ‘const unsigned char *’ but argument is of type ‘uint32_t’
+./include/system.h:62:23: note: expected ‘const unsigned char *’ but argument is of type ‘uint32_t’
  extern unsigned char *memcpy(unsigned char *dest, const unsigned char *src, int count);
                        ^
 catmfs.c: In function ‘catmfs_create_fs_node’:
@@ -49,7 +49,7 @@ catmfs.c:56:5: warning: passing argument 1 of ‘memset’ from incompatible poi
      ^
 In file included from ./include/catmfs.h:8:0,
                  from catmfs.c:5:
-./include/system.h:65:23: note: expected ‘unsigned char *’ but argument is of type ‘struct fs_node_t *’
+./include/system.h:66:23: note: expected ‘unsigned char *’ but argument is of type ‘struct fs_node_t *’
  extern unsigned char *memset(unsigned char *dest, unsigned char val, int count);
                        ^
 catmfs.c:57:5: warning: pointer targets in passing argument 1 of ‘memcpy’ differ in signedness [-Wpointer-sign]
@@ -57,7 +57,7 @@ catmfs.c:57:5: warning: pointer targets in passing argument 1 of ‘memcpy’ di
      ^
 In file included from ./include/catmfs.h:8:0,
                  from catmfs.c:5:
-./include/system.h:61:23: note: expected ‘unsigned char *’ but argument is of type ‘char *’
+./include/system.h:62:23: note: expected ‘unsigned char *’ but argument is of type ‘char *’
  extern unsigned char *memcpy(unsigned char *dest, const unsigned char *src, int count);
                        ^
 catmfs.c:57:5: warning: pointer targets in passing argument 2 of ‘memcpy’ differ in signedness [-Wpointer-sign]
@@ -65,7 +65,7 @@ catmfs.c:57:5: warning: pointer targets in passing argument 2 of ‘memcpy’ di
      ^
 In file included from ./include/catmfs.h:8:0,
                  from catmfs.c:5:
-./include/system.h:61:23: note: expected ‘const unsigned char *’ but argument is of type ‘char *’
+./include/system.h:62:23: note: expected ‘const unsigned char *’ but argument is of type ‘char *’
  extern unsigned char *memcpy(unsigned char *dest, const unsigned char *src, int count);
                        ^
 catmfs.c:60:16: warning: assignment from incompatible pointer type [enabled by default]
@@ -84,20 +84,10 @@ catmfs.c:49:12: note: expected ‘struct catmfs_obj_t *’ but argument is of ty
 In file included from ./include/catmfs.h:8:0,
                  from catmfs.c:5:
 catmfs.c: At top level:
-./include/system.h:71:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
+./include/system.h:72:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
  extern inline const char *itoa(int i, char result[]);
                            ^
-./include/system.h:71:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
-In file included from ./include/heap.h:11:0,
-                 from ./include/kmalloc.h:9,
-                 from ./include/catmfs.h:9,
-                 from catmfs.c:5:
-./include/page.h:44:26: warning: ‘current_dir’ defined but not used [-Wunused-variable]
- static page_directory_t *current_dir;
-                          ^
-./include/page.h:45:26: warning: ‘kernel_dir’ defined but not used [-Wunused-variable]
- static page_directory_t *kernel_dir;
-                          ^
+./include/system.h:72:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
 In file included from fs_node.c:5:0:
 ./include/fs_node.h:18:40: warning: ‘struct fs_node’ declared inside parameter list [enabled by default]
  typedef uint32_t (*read_type_t)(struct fs_node *, uint32_t, uint32_t, uint8_t *);
@@ -128,10 +118,10 @@ fs_node.c:14:5: note: expected ‘struct fs_node *’ but argument is of type �
 In file included from ./include/fs_node.h:8:0,
                  from fs_node.c:5:
 fs_node.c: At top level:
-./include/system.h:71:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
+./include/system.h:72:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
  extern inline const char *itoa(int i, char result[]);
                            ^
-./include/system.h:71:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
+./include/system.h:72:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
 gdt.c: In function ‘gdt_flush’:
 gdt.c:27:13: warning: assignment makes integer from pointer without a cast [enabled by default]
      gp.base = gdt_;
@@ -142,15 +132,15 @@ gdt.c:29:12: warning: type defaults to ‘int’ in declaration of ‘_gdt_flush
 In file included from include/gdt.h:8:0,
                  from gdt.c:5:
 gdt.c: At top level:
-include/system.h:71:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
+include/system.h:72:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
  extern inline const char *itoa(int i, char result[]);
                            ^
-include/system.h:71:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
+include/system.h:72:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
 In file included from ./include/heap_array_list.h:23:0,
                  from heap_array_list.c:5:
 heap_array_list.c: In function ‘create_heap_array_list’:
 ./include/kmalloc.h:20:21: warning: initialization makes pointer from integer without a cast [enabled by default]
- #define kmalloc(sz) kmalloc_internal(sz,false,NULL)
+ #define kmalloc(sz) kmalloc_internal(sz,false,NULL,true)
                      ^
 heap_array_list.c:8:32: note: in expansion of macro ‘kmalloc’
      heap_array_list_t *alist = kmalloc(sizeof(heap_array_list_t));
@@ -164,7 +154,7 @@ heap_array_list.c:22:13: warning: passing argument 1 of ‘dmemcpy’ from incom
              ^
 In file included from ./include/heap_array_list.h:8:0,
                  from heap_array_list.c:5:
-./include/system.h:63:23: note: expected ‘unsigned char *’ but argument is of type ‘struct header_info_t *’
+./include/system.h:64:23: note: expected ‘unsigned char *’ but argument is of type ‘struct header_info_t *’
  extern unsigned char *dmemcpy(unsigned char *dest, const unsigned char *src, int count);
                        ^
 heap_array_list.c:22:13: warning: passing argument 2 of ‘dmemcpy’ from incompatible pointer type [enabled by default]
@@ -172,7 +162,7 @@ heap_array_list.c:22:13: warning: passing argument 2 of ‘dmemcpy’ from incom
              ^
 In file included from ./include/heap_array_list.h:8:0,
                  from heap_array_list.c:5:
-./include/system.h:63:23: note: expected ‘const unsigned char *’ but argument is of type ‘struct header_info_t *’
+./include/system.h:64:23: note: expected ‘const unsigned char *’ but argument is of type ‘struct header_info_t *’
  extern unsigned char *dmemcpy(unsigned char *dest, const unsigned char *src, int count);
                        ^
 heap_array_list.c:23:13: warning: passing argument 1 of ‘memset’ from incompatible pointer type [enabled by default]
@@ -180,7 +170,7 @@ heap_array_list.c:23:13: warning: passing argument 1 of ‘memset’ from incomp
              ^
 In file included from ./include/heap_array_list.h:8:0,
                  from heap_array_list.c:5:
-./include/system.h:65:23: note: expected ‘unsigned char *’ but argument is of type ‘struct header_info_t *’
+./include/system.h:66:23: note: expected ‘unsigned char *’ but argument is of type ‘struct header_info_t *’
  extern unsigned char *memset(unsigned char *dest, unsigned char val, int count);
                        ^
 heap_array_list.c:24:13: warning: passing argument 1 of ‘memcpy’ from incompatible pointer type [enabled by default]
@@ -188,7 +178,7 @@ heap_array_list.c:24:13: warning: passing argument 1 of ‘memcpy’ from incomp
              ^
 In file included from ./include/heap_array_list.h:8:0,
                  from heap_array_list.c:5:
-./include/system.h:61:23: note: expected ‘unsigned char *’ but argument is of type ‘struct header_info_t *’
+./include/system.h:62:23: note: expected ‘unsigned char *’ but argument is of type ‘struct header_info_t *’
  extern unsigned char *memcpy(unsigned char *dest, const unsigned char *src, int count);
                        ^
 heap_array_list.c:24:13: warning: passing argument 2 of ‘memcpy’ from incompatible pointer type [enabled by default]
@@ -196,7 +186,7 @@ heap_array_list.c:24:13: warning: passing argument 2 of ‘memcpy’ from incomp
              ^
 In file included from ./include/heap_array_list.h:8:0,
                  from heap_array_list.c:5:
-./include/system.h:61:23: note: expected ‘const unsigned char *’ but argument is of type ‘struct header_info_t *’
+./include/system.h:62:23: note: expected ‘const unsigned char *’ but argument is of type ‘struct header_info_t *’
  extern unsigned char *memcpy(unsigned char *dest, const unsigned char *src, int count);
                        ^
 heap_array_list.c: In function ‘remove_item’:
@@ -205,7 +195,7 @@ heap_array_list.c:42:9: warning: passing argument 1 of ‘memset’ from incompa
          ^
 In file included from ./include/heap_array_list.h:8:0,
                  from heap_array_list.c:5:
-./include/system.h:65:23: note: expected ‘unsigned char *’ but argument is of type ‘struct header_info_t *’
+./include/system.h:66:23: note: expected ‘unsigned char *’ but argument is of type ‘struct header_info_t *’
  extern unsigned char *memset(unsigned char *dest, unsigned char val, int count);
                        ^
 heap_array_list.c:44:9: warning: passing argument 1 of ‘memcpy’ from incompatible pointer type [enabled by default]
@@ -213,7 +203,7 @@ heap_array_list.c:44:9: warning: passing argument 1 of ‘memcpy’ from incompa
          ^
 In file included from ./include/heap_array_list.h:8:0,
                  from heap_array_list.c:5:
-./include/system.h:61:23: note: expected ‘unsigned char *’ but argument is of type ‘struct header_info_t *’
+./include/system.h:62:23: note: expected ‘unsigned char *’ but argument is of type ‘struct header_info_t *’
  extern unsigned char *memcpy(unsigned char *dest, const unsigned char *src, int count);
                        ^
 heap_array_list.c:44:9: warning: passing argument 2 of ‘memcpy’ from incompatible pointer type [enabled by default]
@@ -221,24 +211,14 @@ heap_array_list.c:44:9: warning: passing argument 2 of ‘memcpy’ from incompa
          ^
 In file included from ./include/heap_array_list.h:8:0,
                  from heap_array_list.c:5:
-./include/system.h:61:23: note: expected ‘const unsigned char *’ but argument is of type ‘struct header_info_t *’
+./include/system.h:62:23: note: expected ‘const unsigned char *’ but argument is of type ‘struct header_info_t *’
  extern unsigned char *memcpy(unsigned char *dest, const unsigned char *src, int count);
                        ^
 heap_array_list.c: At top level:
-./include/system.h:71:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
+./include/system.h:72:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
  extern inline const char *itoa(int i, char result[]);
                            ^
-./include/system.h:71:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
-In file included from ./include/heap.h:11:0,
-                 from ./include/kmalloc.h:9,
-                 from ./include/heap_array_list.h:23,
-                 from heap_array_list.c:5:
-./include/page.h:44:26: warning: ‘current_dir’ defined but not used [-Wunused-variable]
- static page_directory_t *current_dir;
-                          ^
-./include/page.h:45:26: warning: ‘kernel_dir’ defined but not used [-Wunused-variable]
- static page_directory_t *kernel_dir;
-                          ^
+./include/system.h:72:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
 heap.c: In function ‘hfree’:
 heap.c:135:17: warning: passing argument 1 of ‘puthex’ makes integer from pointer without a cast [enabled by default]
                  dumphex("combine next header:", next_header);
@@ -252,18 +232,10 @@ In file included from ./include/system.h:4:0,
 In file included from ./include/heap.h:8:0,
                  from heap.c:5:
 heap.c: At top level:
-./include/system.h:71:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
+./include/system.h:72:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
  extern inline const char *itoa(int i, char result[]);
                            ^
-./include/system.h:71:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
-In file included from ./include/heap.h:11:0,
-                 from heap.c:5:
-./include/page.h:44:26: warning: ‘current_dir’ defined but not used [-Wunused-variable]
- static page_directory_t *current_dir;
-                          ^
-./include/page.h:45:26: warning: ‘kernel_dir’ defined but not used [-Wunused-variable]
- static page_directory_t *kernel_dir;
-                          ^
+./include/system.h:72:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
 ide.c: In function ‘ide_read_buffer’:
 ide.c:74:9: warning: passing argument 2 of ‘insl’ makes pointer from integer without a cast [enabled by default]
          insl(channels[channel].base + reg - 0x00, buffer, quads);
@@ -316,10 +288,10 @@ ide.c:409:23: warning: variable ‘err’ set but not used [-Wunused-but-set-var
 In file included from ./include/ide.h:8:0,
                  from ide.c:5:
 ide.c: At top level:
-./include/system.h:71:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
+./include/system.h:72:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
  extern inline const char *itoa(int i, char result[]);
                            ^
-./include/system.h:71:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
+./include/system.h:72:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
 ide.c:12:22: warning: ‘atapi_packet’ defined but not used [-Wunused-variable]
  unsigned static char atapi_packet[12] = {0xA8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
                       ^
@@ -336,7 +308,7 @@ idt.c:31:35: warning: passing argument 1 of ‘memset’ from incompatible point
                                    ^
 In file included from include/idt.h:8:0,
                  from idt.c:5:
-include/system.h:65:23: note: expected ‘unsigned char *’ but argument is of type ‘struct idt_entry (*)[256]’
+include/system.h:66:23: note: expected ‘unsigned char *’ but argument is of type ‘struct idt_entry (*)[256]’
  extern unsigned char *memset(unsigned char *dest, unsigned char val, int count);
                        ^
 idt.c:36:5: warning: implicit declaration of function ‘_idt_load’ [-Wimplicit-function-declaration]
@@ -345,34 +317,27 @@ idt.c:36:5: warning: implicit declaration of function ‘_idt_load’ [-Wimplici
 In file included from include/idt.h:8:0,
                  from idt.c:5:
 idt.c: At top level:
-include/system.h:71:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
+include/system.h:72:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
  extern inline const char *itoa(int i, char result[]);
                            ^
-include/system.h:71:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
+include/system.h:72:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
 In file included from include/irqs.h:8:0,
                  from irqs.c:5:
-include/system.h:71:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
+include/system.h:72:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
  extern inline const char *itoa(int i, char result[]);
                            ^
-include/system.h:71:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
+include/system.h:72:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
 isrs.c: In function ‘fault_handler’:
-isrs.c:22:9: warning: unused variable ‘a’ [-Wunused-variable]
+isrs.c:17:9: warning: unused variable ‘a’ [-Wunused-variable]
      int a = 0;
          ^
 In file included from ./include/page.h:8:0,
                  from isrs.c:5:
 isrs.c: At top level:
-./include/system.h:71:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
+./include/system.h:72:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
  extern inline const char *itoa(int i, char result[]);
                            ^
-./include/system.h:71:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
-In file included from isrs.c:5:0:
-./include/page.h:44:26: warning: ‘current_dir’ defined but not used [-Wunused-variable]
- static page_directory_t *current_dir;
-                          ^
-./include/page.h:45:26: warning: ‘kernel_dir’ defined but not used [-Wunused-variable]
- static page_directory_t *kernel_dir;
-                          ^
+./include/system.h:72:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
 keyboard.c: In function ‘keyboard_install’:
 keyboard.c:59:5: warning: implicit declaration of function ‘irq_install_handler’ [-Wimplicit-function-declaration]
      irq_install_handler(1, keyboard_handler);
@@ -380,51 +345,49 @@ keyboard.c:59:5: warning: implicit declaration of function ‘irq_install_handle
 In file included from include/keyboard.h:8:0,
                  from keyboard.c:5:
 keyboard.c: At top level:
-include/system.h:71:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
+include/system.h:72:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
  extern inline const char *itoa(int i, char result[]);
                            ^
-include/system.h:71:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
+include/system.h:72:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
 In file included from keyboard.c:5:0:
 include/keyboard.h:10:22: warning: ‘kbdus’ defined but not used [-Wunused-variable]
  static unsigned char kbdus[128] =
                       ^
 In file included from kmalloc.c:5:0:
 kmalloc.c: In function ‘kmalloc_internal’:
-kmalloc.c:19:32: warning: comparison between pointer and integer [enabled by default]
+kmalloc.c:21:32: warning: comparison between pointer and integer [enabled by default]
      ASSERT(heap_placement_addr >= &end);
                                 ^
-./include/system.h:14:10: note: in definition of macro ‘ASSERT’
+./include/system.h:13:10: note: in definition of macro ‘ASSERT’
      if(!(x)){\
           ^
-kmalloc.c:24:42: warning: suggest parentheses around ‘+’ in operand of ‘&’ [-Wparentheses]
-             *phys = page->frame * 0x1000 + (uint32_t) ret & 0xFFF;
-                                          ^
-kmalloc.c:26:9: warning: return makes integer from pointer without a cast [enabled by default]
+kmalloc.c:30:13: warning: passing argument 1 of ‘get_physical_address’ makes integer from pointer without a cast [enabled by default]
+             *phys=get_physical_address(ret);
+             ^
+In file included from kmalloc.c:6:0:
+./include/page.h:88:10: note: expected ‘uint32_t’ but argument is of type ‘void *’
+ uint32_t get_physical_address(uint32_t va);
+          ^
+kmalloc.c:32:9: warning: return makes integer from pointer without a cast [enabled by default]
          return ret;
          ^
 kmalloc.c: In function ‘kfree’:
-kmalloc.c:52:5: warning: passing argument 2 of ‘hfree’ makes integer from pointer without a cast [enabled by default]
+kmalloc.c:50:5: warning: passing argument 2 of ‘hfree’ makes integer from pointer without a cast [enabled by default]
      hfree(kernel_heap, ptr);
      ^
 In file included from include/kmalloc.h:9:0,
-                 from kmalloc.c:7:
+                 from kmalloc.c:8:
 include/heap.h:40:6: note: expected ‘uint32_t’ but argument is of type ‘void *’
  void hfree(heap_t *heap, uint32_t addr);
       ^
 In file included from kmalloc.c:5:0:
 kmalloc.c: At top level:
-./include/system.h:71:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
+./include/system.h:72:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
  extern inline const char *itoa(int i, char result[]);
                            ^
-./include/system.h:71:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
-In file included from include/heap.h:11:0,
-                 from include/kmalloc.h:9,
-                 from kmalloc.c:7:
-include/page.h:44:26: warning: ‘current_dir’ defined but not used [-Wunused-variable]
- static page_directory_t *current_dir;
-                          ^
+./include/system.h:72:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
 In file included from ./include/catmfs.h:10:0,
-                 from main.c:16:
+                 from main.c:17:
 ./include/fs_node.h:18:40: warning: ‘struct fs_node’ declared inside parameter list [enabled by default]
  typedef uint32_t (*read_type_t)(struct fs_node *, uint32_t, uint32_t, uint8_t *);
                                         ^
@@ -442,20 +405,20 @@ In file included from ./include/catmfs.h:10:0,
  typedef struct dirent *(*readdir_type_t)(struct fs_node *, uint32_t);
                                                  ^
 main.c: In function ‘itoa’:
-main.c:70:13: warning: pointer targets in passing argument 1 of ‘memcpy’ differ in signedness [-Wpointer-sign]
+main.c:80:13: warning: pointer targets in passing argument 1 of ‘memcpy’ differ in signedness [-Wpointer-sign]
              memcpy(result, &result[x], x + 1);
              ^
-main.c:19:16: note: expected ‘unsigned char *’ but argument is of type ‘char *’
+main.c:21:16: note: expected ‘unsigned char *’ but argument is of type ‘char *’
  unsigned char *memcpy(unsigned char *dest, const unsigned char *src, int count) {
                 ^
-main.c:70:13: warning: pointer targets in passing argument 2 of ‘memcpy’ differ in signedness [-Wpointer-sign]
+main.c:80:13: warning: pointer targets in passing argument 2 of ‘memcpy’ differ in signedness [-Wpointer-sign]
              memcpy(result, &result[x], x + 1);
              ^
-main.c:19:16: note: expected ‘const unsigned char *’ but argument is of type ‘char *’
+main.c:21:16: note: expected ‘const unsigned char *’ but argument is of type ‘char *’
  unsigned char *memcpy(unsigned char *dest, const unsigned char *src, int count) {
                 ^
 main.c: In function ‘heap_test’:
-main.c:108:5: warning: passing argument 1 of ‘puthex’ makes integer from pointer without a cast [enabled by default]
+main.c:118:5: warning: passing argument 1 of ‘puthex’ makes integer from pointer without a cast [enabled by default]
      dumphex("alloced mem addr:", mem);
      ^
 In file included from ./include/system.h:4:0,
@@ -464,7 +427,7 @@ In file included from ./include/system.h:4:0,
 ./include/screen.h:54:6: note: expected ‘uint32_t’ but argument is of type ‘void *’
  void puthex(uint32_t n);
       ^
-main.c:110:5: warning: passing argument 1 of ‘puthex’ makes integer from pointer without a cast [enabled by default]
+main.c:120:5: warning: passing argument 1 of ‘puthex’ makes integer from pointer without a cast [enabled by default]
      dumphex("alloced mem addr:", mem2);
      ^
 In file included from ./include/system.h:4:0,
@@ -473,7 +436,7 @@ In file included from ./include/system.h:4:0,
 ./include/screen.h:54:6: note: expected ‘uint32_t’ but argument is of type ‘void *’
  void puthex(uint32_t n);
       ^
-main.c:112:5: warning: passing argument 1 of ‘puthex’ makes integer from pointer without a cast [enabled by default]
+main.c:122:5: warning: passing argument 1 of ‘puthex’ makes integer from pointer without a cast [enabled by default]
      dumphex("alloced mem addr:", mem3);
      ^
 In file included from ./include/system.h:4:0,
@@ -482,7 +445,7 @@ In file included from ./include/system.h:4:0,
 ./include/screen.h:54:6: note: expected ‘uint32_t’ but argument is of type ‘void *’
  void puthex(uint32_t n);
       ^
-main.c:117:5: warning: passing argument 2 of ‘hfree’ makes integer from pointer without a cast [enabled by default]
+main.c:127:5: warning: passing argument 2 of ‘hfree’ makes integer from pointer without a cast [enabled by default]
      hfree(heap, mem2);
      ^
 In file included from ./include/kmalloc.h:9:0,
@@ -490,7 +453,7 @@ In file included from ./include/kmalloc.h:9:0,
 ./include/heap.h:40:6: note: expected ‘uint32_t’ but argument is of type ‘void *’
  void hfree(heap_t *heap, uint32_t addr);
       ^
-main.c:120:5: warning: passing argument 2 of ‘hfree’ makes integer from pointer without a cast [enabled by default]
+main.c:130:5: warning: passing argument 2 of ‘hfree’ makes integer from pointer without a cast [enabled by default]
      hfree(heap, mem3);
      ^
 In file included from ./include/kmalloc.h:9:0,
@@ -498,7 +461,7 @@ In file included from ./include/kmalloc.h:9:0,
 ./include/heap.h:40:6: note: expected ‘uint32_t’ but argument is of type ‘void *’
  void hfree(heap_t *heap, uint32_t addr);
       ^
-main.c:124:5: warning: passing argument 1 of ‘puthex’ makes integer from pointer without a cast [enabled by default]
+main.c:134:5: warning: passing argument 1 of ‘puthex’ makes integer from pointer without a cast [enabled by default]
      dumphex("alloced mem addr:", mem4);
      ^
 In file included from ./include/system.h:4:0,
@@ -507,7 +470,7 @@ In file included from ./include/system.h:4:0,
 ./include/screen.h:54:6: note: expected ‘uint32_t’ but argument is of type ‘void *’
  void puthex(uint32_t n);
       ^
-main.c:128:5: warning: passing argument 1 of ‘puthex’ makes integer from pointer without a cast [enabled by default]
+main.c:138:5: warning: passing argument 1 of ‘puthex’ makes integer from pointer without a cast [enabled by default]
      dumphex("alloced mem addr:", mem5);
      ^
 In file included from ./include/system.h:4:0,
@@ -516,7 +479,7 @@ In file included from ./include/system.h:4:0,
 ./include/screen.h:54:6: note: expected ‘uint32_t’ but argument is of type ‘void *’
  void puthex(uint32_t n);
       ^
-main.c:131:5: warning: passing argument 2 of ‘hfree’ makes integer from pointer without a cast [enabled by default]
+main.c:141:5: warning: passing argument 2 of ‘hfree’ makes integer from pointer without a cast [enabled by default]
      hfree(heap, mem4);
      ^
 In file included from ./include/kmalloc.h:9:0,
@@ -524,7 +487,7 @@ In file included from ./include/kmalloc.h:9:0,
 ./include/heap.h:40:6: note: expected ‘uint32_t’ but argument is of type ‘void *’
  void hfree(heap_t *heap, uint32_t addr);
       ^
-main.c:134:5: warning: passing argument 2 of ‘hfree’ makes integer from pointer without a cast [enabled by default]
+main.c:144:5: warning: passing argument 2 of ‘hfree’ makes integer from pointer without a cast [enabled by default]
      hfree(heap, mem5);
      ^
 In file included from ./include/kmalloc.h:9:0,
@@ -532,7 +495,7 @@ In file included from ./include/kmalloc.h:9:0,
 ./include/heap.h:40:6: note: expected ‘uint32_t’ but argument is of type ‘void *’
  void hfree(heap_t *heap, uint32_t addr);
       ^
-main.c:137:5: warning: passing argument 2 of ‘hfree’ makes integer from pointer without a cast [enabled by default]
+main.c:147:5: warning: passing argument 2 of ‘hfree’ makes integer from pointer without a cast [enabled by default]
      hfree(heap, mem);
      ^
 In file included from ./include/kmalloc.h:9:0,
@@ -541,36 +504,36 @@ In file included from ./include/kmalloc.h:9:0,
  void hfree(heap_t *heap, uint32_t addr);
       ^
 main.c: In function ‘catmfs_test’:
-main.c:171:5: warning: passing argument 1 of ‘catmfs_init’ makes integer from pointer without a cast [enabled by default]
+main.c:181:5: warning: passing argument 1 of ‘catmfs_init’ makes integer from pointer without a cast [enabled by default]
      catmfs_t *fs = catmfs_init(addr);
      ^
-In file included from main.c:16:0:
+In file included from main.c:17:0:
 ./include/catmfs.h:14:11: note: expected ‘uint32_t’ but argument is of type ‘uint32_t *’
  catmfs_t *catmfs_init(uint32_t mem_addr);
            ^
-main.c:174:5: warning: passing argument 2 of ‘catmfs_findbyname’ discards ‘const’ qualifier from pointer target type [enabled by default]
+main.c:184:5: warning: passing argument 2 of ‘catmfs_findbyname’ discards ‘const’ qualifier from pointer target type [enabled by default]
      if (catmfs_findbyname(fs, STR("neko.1"), &node)) {
      ^
-In file included from main.c:16:0:
+In file included from main.c:17:0:
 ./include/catmfs.h:29:9: note: expected ‘char *’ but argument is of type ‘const char *’
  uint8_t catmfs_findbyname(catmfs_t *fs, char *fn, fs_node_t **fs_node_out);
          ^
-main.c:177:9: warning: pointer targets in passing argument 1 of ‘memset’ differ in signedness [-Wpointer-sign]
+main.c:187:9: warning: pointer targets in passing argument 1 of ‘memset’ differ in signedness [-Wpointer-sign]
          memset(data, 0xCC, sizeof(char) * 250);
          ^
-main.c:32:16: note: expected ‘unsigned char *’ but argument is of type ‘char *’
+main.c:34:16: note: expected ‘unsigned char *’ but argument is of type ‘char *’
  unsigned char *memset(unsigned char *dest, unsigned char val, int count) {
                 ^
-main.c:178:9: warning: pointer targets in passing argument 4 of ‘read_fs’ differ in signedness [-Wpointer-sign]
+main.c:188:9: warning: pointer targets in passing argument 4 of ‘read_fs’ differ in signedness [-Wpointer-sign]
          uint32_t count = read_fs(node, 0, 200, data);
          ^
 In file included from ./include/catmfs.h:10:0,
-                 from main.c:16:
+                 from main.c:17:
 ./include/fs_node.h:48:10: note: expected ‘unsigned char *’ but argument is of type ‘char *’
  uint32_t read_fs(fs_node_t *node, uint32_t offset, uint32_t size, uint8_t *buff);
           ^
 main.c: In function ‘ring3’:
-main.c:195:5: warning: passing argument 1 of ‘puthex’ makes integer from pointer without a cast [enabled by default]
+main.c:205:5: warning: passing argument 1 of ‘puthex’ makes integer from pointer without a cast [enabled by default]
      dumphex("ring3:", ring3);
      ^
 In file included from ./include/system.h:4:0,
@@ -579,25 +542,72 @@ In file included from ./include/system.h:4:0,
 ./include/screen.h:54:6: note: expected ‘uint32_t’ but argument is of type ‘void (*)()’
  void puthex(uint32_t n);
       ^
+main.c: In function ‘get_phy_test’:
+main.c:235:19: warning: initialization makes pointer from integer without a cast [enabled by default]
+     uint32_t *a = kmalloc_internal(10, false, &phy, true);
+                   ^
+main.c:236:5: warning: passing argument 1 of ‘get_physical_address’ makes integer from pointer without a cast [enabled by default]
+     uint32_t geted_phy = get_physical_address(a);
+     ^
+In file included from ./include/heap.h:11:0,
+                 from ./include/kmalloc.h:9,
+                 from main.c:3:
+./include/page.h:88:10: note: expected ‘uint32_t’ but argument is of type ‘uint32_t *’
+ uint32_t get_physical_address(uint32_t va);
+          ^
+main.c:237:5: warning: large integer implicitly truncated to unsigned type [-Woverflow]
+     *a = 0xFAFAFAFAF;
+     ^
+main.c: In function ‘usermode_test’:
+main.c:255:5: warning: passing argument 1 of ‘get_physical_address’ makes integer from pointer without a cast [enabled by default]
+     uint32_t  addr=get_physical_address(pd);
+     ^
+In file included from ./include/heap.h:11:0,
+                 from ./include/kmalloc.h:9,
+                 from main.c:3:
+./include/page.h:88:10: note: expected ‘uint32_t’ but argument is of type ‘struct page_directory_t *’
+ uint32_t get_physical_address(uint32_t va);
+          ^
+main.c:257:5: warning: passing argument 1 of ‘switch_page_directory’ makes pointer from integer without a cast [enabled by default]
+     switch_page_directory(addr);
+     ^
+In file included from ./include/heap.h:11:0,
+                 from ./include/kmalloc.h:9,
+                 from main.c:3:
+./include/page.h:76:6: note: expected ‘struct page_directory_t *’ but argument is of type ‘uint32_t’
+ void switch_page_directory(page_directory_t *dir);
+      ^
+main.c:260:5: warning: passing argument 3 of ‘get_page’ makes pointer from integer without a cast [enabled by default]
+     page_t* eipp= get_page(eip,false,addr);
+     ^
+In file included from ./include/heap.h:11:0,
+                 from ./include/kmalloc.h:9,
+                 from main.c:3:
+./include/page.h:78:9: note: expected ‘struct page_directory_t *’ but argument is of type ‘uint32_t’
+ page_t *get_page(uint32_t addr, int make, page_directory_t *dir);
+         ^
+main.c:249:14: warning: unused variable ‘phy’ [-Wunused-variable]
+     uint32_t phy;
+              ^
 main.c: At top level:
-main.c:234:5: warning: first argument of ‘main’ should be ‘int’ [-Wmain]
+main.c:279:5: warning: first argument of ‘main’ should be ‘int’ [-Wmain]
  int main(multiboot_info_t *mul_arg, uint32_t init_esp_arg) {
      ^
-main.c:234:5: warning: second argument of ‘main’ should be ‘char **’ [-Wmain]
+main.c:279:5: warning: second argument of ‘main’ should be ‘char **’ [-Wmain]
 main.c: In function ‘main’:
-main.c:241:5: warning: passing argument 1 of ‘memcpy’ from incompatible pointer type [enabled by default]
+main.c:286:5: warning: passing argument 1 of ‘memcpy’ from incompatible pointer type [enabled by default]
      memcpy(&mul, mul_arg, sizeof(multiboot_info_t));
      ^
-main.c:19:16: note: expected ‘unsigned char *’ but argument is of type ‘struct multiboot_info_t *’
+main.c:21:16: note: expected ‘unsigned char *’ but argument is of type ‘struct multiboot_info_t *’
  unsigned char *memcpy(unsigned char *dest, const unsigned char *src, int count) {
                 ^
-main.c:241:5: warning: passing argument 2 of ‘memcpy’ from incompatible pointer type [enabled by default]
+main.c:286:5: warning: passing argument 2 of ‘memcpy’ from incompatible pointer type [enabled by default]
      memcpy(&mul, mul_arg, sizeof(multiboot_info_t));
      ^
-main.c:19:16: note: expected ‘const unsigned char *’ but argument is of type ‘struct multiboot_info_t *’
+main.c:21:16: note: expected ‘const unsigned char *’ but argument is of type ‘struct multiboot_info_t *’
  unsigned char *memcpy(unsigned char *dest, const unsigned char *src, int count) {
                 ^
-main.c:254:5: warning: passing argument 1 of ‘puthex’ makes integer from pointer without a cast [enabled by default]
+main.c:299:5: warning: passing argument 1 of ‘puthex’ makes integer from pointer without a cast [enabled by default]
      dumphex("amem:", amem);
      ^
 In file included from ./include/system.h:4:0,
@@ -611,12 +621,6 @@ main.c: At top level:
 ./include/irqs.h:43:14: warning: ‘irq_routines’ defined but not used [-Wunused-variable]
  static void *irq_routines[16] = {
               ^
-In file included from ./include/heap.h:11:0,
-                 from ./include/kmalloc.h:9,
-                 from main.c:3:
-./include/page.h:44:26: warning: ‘current_dir’ defined but not used [-Wunused-variable]
- static page_directory_t *current_dir;
-                          ^
 In file included from main.c:5:0:
 ./include/ide.h:14:20: warning: ‘outl’ declared ‘static’ but never defined [-Wunused-function]
  static inline void outl(uint32_t value, uint16_t port);
@@ -624,66 +628,72 @@ In file included from main.c:5:0:
 ./include/ide.h:16:24: warning: ‘inl’ declared ‘static’ but never defined [-Wunused-function]
  static inline uint32_t inl(uint16_t port);
                         ^
-In file included from main.c:12:0:
+In file included from main.c:13:0:
 include/keyboard.h:10:22: warning: ‘kbdus’ defined but not used [-Wunused-variable]
  static unsigned char kbdus[128] =
                       ^
 main.c: In function ‘memcpy’:
-main.c:23:1: warning: control reaches end of non-void function [-Wreturn-type]
+main.c:25:1: warning: control reaches end of non-void function [-Wreturn-type]
  }
  ^
 main.c: In function ‘dmemcpy’:
-main.c:30:1: warning: control reaches end of non-void function [-Wreturn-type]
+main.c:32:1: warning: control reaches end of non-void function [-Wreturn-type]
  }
  ^
+main.c: In function ‘get_eip’:
+main.c:231:1: warning: control reaches end of non-void function [-Wreturn-type]
+ }
+ ^
+main.c: Assembler messages:
+main.c:228: Warning: indirect jmp without `*'
 page.c: In function ‘alloc_frame’:
-page.c:53:17: warning: passing argument 1 of ‘memset’ from incompatible pointer type [enabled by default]
+page.c:56:17: warning: passing argument 1 of ‘memset’ from incompatible pointer type [enabled by default]
                  memset(page, 0, sizeof(page_t));
                  ^
 In file included from ./include/heap.h:8:0,
                  from ./include/kmalloc.h:9,
                  from page.c:5:
-./include/system.h:65:23: note: expected ‘unsigned char *’ but argument is of type ‘struct page_t *’
+./include/system.h:66:23: note: expected ‘unsigned char *’ but argument is of type ‘struct page_t *’
  extern unsigned char *memset(unsigned char *dest, unsigned char val, int count);
                        ^
 page.c: In function ‘paging_install’:
-page.c:89:5: warning: passing argument 1 of ‘memset’ from incompatible pointer type [enabled by default]
+page.c:94:5: warning: passing argument 1 of ‘memset’ from incompatible pointer type [enabled by default]
      memset(frame_status, 0, sizeof(uint32_t) * frame_max_count);
      ^
 In file included from ./include/heap.h:8:0,
                  from ./include/kmalloc.h:9,
                  from page.c:5:
-./include/system.h:65:23: note: expected ‘unsigned char *’ but argument is of type ‘uint32_t *’
+./include/system.h:66:23: note: expected ‘unsigned char *’ but argument is of type ‘uint32_t *’
  extern unsigned char *memset(unsigned char *dest, unsigned char val, int count);
                        ^
-page.c:91:5: warning: passing argument 1 of ‘memset’ from incompatible pointer type [enabled by default]
+page.c:96:5: warning: passing argument 1 of ‘memset’ from incompatible pointer type [enabled by default]
      memset(kernel_dir, 0, sizeof(page_directory_t));
      ^
 In file included from ./include/heap.h:8:0,
                  from ./include/kmalloc.h:9,
                  from page.c:5:
-./include/system.h:65:23: note: expected ‘unsigned char *’ but argument is of type ‘struct page_directory_t *’
+./include/system.h:66:23: note: expected ‘unsigned char *’ but argument is of type ‘struct page_directory_t *’
  extern unsigned char *memset(unsigned char *dest, unsigned char val, int count);
                        ^
-page.c:92:5: warning: passing argument 1 of ‘memset’ from incompatible pointer type [enabled by default]
+page.c:97:5: warning: passing argument 1 of ‘memset’ from incompatible pointer type [enabled by default]
      memset(kernel_dir->table_physical_addr, 0, sizeof(uint32_t) * 1024);
      ^
 In file included from ./include/heap.h:8:0,
                  from ./include/kmalloc.h:9,
                  from page.c:5:
-./include/system.h:65:23: note: expected ‘unsigned char *’ but argument is of type ‘uint32_t *’
+./include/system.h:66:23: note: expected ‘unsigned char *’ but argument is of type ‘uint32_t *’
  extern unsigned char *memset(unsigned char *dest, unsigned char val, int count);
                        ^
-page.c:93:5: warning: passing argument 1 of ‘memset’ from incompatible pointer type [enabled by default]
+page.c:98:5: warning: passing argument 1 of ‘memset’ from incompatible pointer type [enabled by default]
      memset(kernel_dir->tables, 0, sizeof(page_table_t *) * 1024);
      ^
 In file included from ./include/heap.h:8:0,
                  from ./include/kmalloc.h:9,
                  from page.c:5:
-./include/system.h:65:23: note: expected ‘unsigned char *’ but argument is of type ‘struct page_table_t **’
+./include/system.h:66:23: note: expected ‘unsigned char *’ but argument is of type ‘struct page_table_t **’
  extern unsigned char *memset(unsigned char *dest, unsigned char val, int count);
                        ^
-page.c:97:5: warning: passing argument 1 of ‘puthex’ makes integer from pointer without a cast [enabled by default]
+page.c:101:5: warning: passing argument 1 of ‘puthex’ makes integer from pointer without a cast [enabled by default]
      dumphex("heap placement start:", &end);
      ^
 In file included from ./include/system.h:4:0,
@@ -693,68 +703,92 @@ In file included from ./include/system.h:4:0,
 ./include/screen.h:54:6: note: expected ‘uint32_t’ but argument is of type ‘uint32_t *’
  void puthex(uint32_t n);
       ^
-page.c:99:9: warning: unused variable ‘i’ [-Wunused-variable]
+page.c:103:9: warning: unused variable ‘i’ [-Wunused-variable]
      int i = 0;
          ^
 page.c: In function ‘get_page’:
-page.c:139:9: warning: passing argument 1 of ‘memset’ from incompatible pointer type [enabled by default]
-         memset(dir->tables[table_idx], 0, 0x1000);
+page.c:151:9: warning: passing argument 1 of ‘memset’ from incompatible pointer type [enabled by default]
+         memset(dir->tables[table_idx], 0, sizeof(page_table_t));
          ^
 In file included from ./include/heap.h:8:0,
                  from ./include/kmalloc.h:9,
                  from page.c:5:
-./include/system.h:65:23: note: expected ‘unsigned char *’ but argument is of type ‘struct page_table_t *’
+./include/system.h:66:23: note: expected ‘unsigned char *’ but argument is of type ‘struct page_table_t *’
  extern unsigned char *memset(unsigned char *dest, unsigned char val, int count);
                        ^
 page.c: In function ‘page_fault_handler’:
-page.c:156:9: warning: unused variable ‘id’ [-Wunused-variable]
+page.c:181:9: warning: unused variable ‘id’ [-Wunused-variable]
      int id = r->err_code & 0x10;          // Caused by an instruction fetch?
          ^
 page.c: In function ‘clone_page_table’:
-page.c:190:5: warning: passing argument 1 of ‘memset’ from incompatible pointer type [enabled by default]
+page.c:216:5: warning: passing argument 1 of ‘memset’ from incompatible pointer type [enabled by default]
      memset(target, 0, sizeof(page_table_t));
      ^
 In file included from ./include/heap.h:8:0,
                  from ./include/kmalloc.h:9,
                  from page.c:5:
-./include/system.h:65:23: note: expected ‘unsigned char *’ but argument is of type ‘struct page_table_t *’
+./include/system.h:66:23: note: expected ‘unsigned char *’ but argument is of type ‘struct page_table_t *’
  extern unsigned char *memset(unsigned char *dest, unsigned char val, int count);
                        ^
 page.c: In function ‘clone_page_directory’:
-page.c:207:5: warning: passing argument 1 of ‘memset’ from incompatible pointer type [enabled by default]
+page.c:234:5: warning: passing argument 1 of ‘memset’ from incompatible pointer type [enabled by default]
      memset(target, 0, sizeof(page_directory_t));
      ^
 In file included from ./include/heap.h:8:0,
                  from ./include/kmalloc.h:9,
                  from page.c:5:
-./include/system.h:65:23: note: expected ‘unsigned char *’ but argument is of type ‘struct page_directory_t *’
+./include/system.h:66:23: note: expected ‘unsigned char *’ but argument is of type ‘struct page_directory_t *’
  extern unsigned char *memset(unsigned char *dest, unsigned char val, int count);
                        ^
 page.c: At top level:
-./include/system.h:71:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
+./include/system.h:72:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
  extern inline const char *itoa(int i, char result[]);
                            ^
-./include/system.h:71:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
+./include/system.h:72:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
 In file included from page.c:7:0:
 ./include/irqs.h:43:14: warning: ‘irq_routines’ defined but not used [-Wunused-variable]
  static void *irq_routines[16] = {
               ^
 page.c: In function ‘clone_page_table’:
-page.c:202:1: warning: control reaches end of non-void function [-Wreturn-type]
+page.c:228:1: warning: control reaches end of non-void function [-Wreturn-type]
  }
  ^
+proc.c: In function ‘create_user_stack’:
+proc.c:9:5: warning: implicit declaration of function ‘strformat’ [-Wimplicit-function-declaration]
+     putf_const("creating user stack:%x %x\n", start_addr, size);
+     ^
+proc.c:30:19: warning: initialization makes pointer from integer without a cast [enabled by default]
+     uint32_t *p = new_stack_pointer;
+                   ^
+proc.c:31:5: warning: passing argument 1 of ‘memcpy’ makes pointer from integer without a cast [enabled by default]
+     memcpy(new_stack_pointer, old_stack_pointer, init_esp - old_stack_pointer);
+     ^
 In file included from ./include/page.h:8:0,
                  from ./include/proc.h:9,
                  from proc.c:5:
-./include/system.h:71:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
+./include/system.h:62:23: note: expected ‘unsigned char *’ but argument is of type ‘uint32_t’
+ extern unsigned char *memcpy(unsigned char *dest, const unsigned char *src, int count);
+                       ^
+proc.c:31:5: warning: passing argument 2 of ‘memcpy’ makes pointer from integer without a cast [enabled by default]
+     memcpy(new_stack_pointer, old_stack_pointer, init_esp - old_stack_pointer);
+     ^
+In file included from ./include/page.h:8:0,
+                 from ./include/proc.h:9,
+                 from proc.c:5:
+./include/system.h:62:23: note: expected ‘const unsigned char *’ but argument is of type ‘uint32_t’
+ extern unsigned char *memcpy(unsigned char *dest, const unsigned char *src, int count);
+                       ^
+proc.c:30:15: warning: unused variable ‘p’ [-Wunused-variable]
+     uint32_t *p = new_stack_pointer;
+               ^
+In file included from ./include/page.h:8:0,
+                 from ./include/proc.h:9,
+                 from proc.c:5:
+proc.c: At top level:
+./include/system.h:72:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
  extern inline const char *itoa(int i, char result[]);
                            ^
-./include/system.h:71:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
-In file included from ./include/proc.h:9:0,
-                 from proc.c:5:
-./include/page.h:45:26: warning: ‘kernel_dir’ defined but not used [-Wunused-variable]
- static page_directory_t *kernel_dir;
-                          ^
+./include/system.h:72:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
 screen.c: In function ‘putc’:
 screen.c:56:13: warning: implicit declaration of function ‘scroll’ [-Wimplicit-function-declaration]
              scroll();
@@ -766,7 +800,7 @@ screen.c:96:5: warning: passing argument 1 of ‘memset’ makes pointer from in
 In file included from ./include/heap.h:8:0,
                  from ./include/kmalloc.h:9,
                  from screen.c:4:
-./include/system.h:65:23: note: expected ‘unsigned char *’ but argument is of type ‘int’
+./include/system.h:66:23: note: expected ‘unsigned char *’ but argument is of type ‘int’
  extern unsigned char *memset(unsigned char *dest, unsigned char val, int count);
                        ^
 screen.c: At top level:
@@ -783,29 +817,20 @@ screen.c:170:9: warning: passing argument 1 of ‘memset’ makes pointer from i
 In file included from ./include/heap.h:8:0,
                  from ./include/kmalloc.h:9,
                  from screen.c:4:
-./include/system.h:65:23: note: expected ‘unsigned char *’ but argument is of type ‘int’
+./include/system.h:66:23: note: expected ‘unsigned char *’ but argument is of type ‘int’
  extern unsigned char *memset(unsigned char *dest, unsigned char val, int count);
                        ^
 screen.c: At top level:
-./include/system.h:71:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
+./include/system.h:72:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
  extern inline const char *itoa(int i, char result[]);
                            ^
-./include/system.h:71:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
-In file included from ./include/heap.h:11:0,
-                 from ./include/kmalloc.h:9,
-                 from screen.c:4:
-./include/page.h:44:26: warning: ‘current_dir’ defined but not used [-Wunused-variable]
- static page_directory_t *current_dir;
-                          ^
-./include/page.h:45:26: warning: ‘kernel_dir’ defined but not used [-Wunused-variable]
- static page_directory_t *kernel_dir;
-                          ^
+./include/system.h:72:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
 In file included from include/str.h:9:0,
                  from str.c:5:
-include/system.h:71:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
+include/system.h:72:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
  extern inline const char *itoa(int i, char result[]);
                            ^
-include/system.h:71:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
+include/system.h:72:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
 str.c: In function ‘itohexs’:
 str.c:138:1: warning: control reaches end of non-void function [-Wreturn-type]
  }
@@ -826,16 +851,16 @@ In file included from ./include/isrs.h:8:0,
                  from syscall.h:8,
                  from syscall.c:5:
 syscall.c: At top level:
-./include/system.h:71:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
+./include/system.h:72:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
  extern inline const char *itoa(int i, char result[]);
                            ^
-./include/system.h:71:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
+./include/system.h:72:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
 In file included from include/timer.h:8:0,
                  from timer.c:5:
-include/system.h:71:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
+include/system.h:72:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
  extern inline const char *itoa(int i, char result[]);
                            ^
-include/system.h:71:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
+include/system.h:72:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
 In file included from timer.c:6:0:
 include/irqs.h:43:14: warning: ‘irq_routines’ defined but not used [-Wunused-variable]
  static void *irq_routines[16] = {
@@ -850,19 +875,19 @@ tss.c:18:5: warning: passing argument 1 of ‘memset’ from incompatible pointe
 In file included from ./include/gdt.h:8:0,
                  from ./include/tss.h:9,
                  from tss.c:5:
-./include/system.h:65:23: note: expected ‘unsigned char *’ but argument is of type ‘struct tss_entry_t *’
+./include/system.h:66:23: note: expected ‘unsigned char *’ but argument is of type ‘struct tss_entry_t *’
  extern unsigned char *memset(unsigned char *dest, unsigned char val, int count);
                        ^
 tss.c: At top level:
-./include/system.h:71:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
+./include/system.h:72:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
  extern inline const char *itoa(int i, char result[]);
                            ^
-./include/system.h:71:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
+./include/system.h:72:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
 In file included from ./include/heap_array_list.h:23:0,
                  from heap_array_list.c:5:
 heap_array_list.c: In function ‘create_heap_array_list’:
 ./include/kmalloc.h:20:21: warning: initialization makes pointer from integer without a cast [enabled by default]
- #define kmalloc(sz) kmalloc_internal(sz,false,NULL)
+ #define kmalloc(sz) kmalloc_internal(sz,false,NULL,true)
                      ^
 heap_array_list.c:8:32: note: in expansion of macro ‘kmalloc’
      heap_array_list_t *alist = kmalloc(sizeof(heap_array_list_t));
@@ -876,7 +901,7 @@ heap_array_list.c:22:13: warning: passing argument 1 of ‘dmemcpy’ from incom
              ^
 In file included from ./include/heap_array_list.h:8:0,
                  from heap_array_list.c:5:
-./include/system.h:63:23: note: expected ‘unsigned char *’ but argument is of type ‘struct header_info_t *’
+./include/system.h:64:23: note: expected ‘unsigned char *’ but argument is of type ‘struct header_info_t *’
  extern unsigned char *dmemcpy(unsigned char *dest, const unsigned char *src, int count);
                        ^
 heap_array_list.c:22:13: warning: passing argument 2 of ‘dmemcpy’ from incompatible pointer type [enabled by default]
@@ -884,7 +909,7 @@ heap_array_list.c:22:13: warning: passing argument 2 of ‘dmemcpy’ from incom
              ^
 In file included from ./include/heap_array_list.h:8:0,
                  from heap_array_list.c:5:
-./include/system.h:63:23: note: expected ‘const unsigned char *’ but argument is of type ‘struct header_info_t *’
+./include/system.h:64:23: note: expected ‘const unsigned char *’ but argument is of type ‘struct header_info_t *’
  extern unsigned char *dmemcpy(unsigned char *dest, const unsigned char *src, int count);
                        ^
 heap_array_list.c:23:13: warning: passing argument 1 of ‘memset’ from incompatible pointer type [enabled by default]
@@ -892,7 +917,7 @@ heap_array_list.c:23:13: warning: passing argument 1 of ‘memset’ from incomp
              ^
 In file included from ./include/heap_array_list.h:8:0,
                  from heap_array_list.c:5:
-./include/system.h:65:23: note: expected ‘unsigned char *’ but argument is of type ‘struct header_info_t *’
+./include/system.h:66:23: note: expected ‘unsigned char *’ but argument is of type ‘struct header_info_t *’
  extern unsigned char *memset(unsigned char *dest, unsigned char val, int count);
                        ^
 heap_array_list.c:24:13: warning: passing argument 1 of ‘memcpy’ from incompatible pointer type [enabled by default]
@@ -900,7 +925,7 @@ heap_array_list.c:24:13: warning: passing argument 1 of ‘memcpy’ from incomp
              ^
 In file included from ./include/heap_array_list.h:8:0,
                  from heap_array_list.c:5:
-./include/system.h:61:23: note: expected ‘unsigned char *’ but argument is of type ‘struct header_info_t *’
+./include/system.h:62:23: note: expected ‘unsigned char *’ but argument is of type ‘struct header_info_t *’
  extern unsigned char *memcpy(unsigned char *dest, const unsigned char *src, int count);
                        ^
 heap_array_list.c:24:13: warning: passing argument 2 of ‘memcpy’ from incompatible pointer type [enabled by default]
@@ -908,7 +933,7 @@ heap_array_list.c:24:13: warning: passing argument 2 of ‘memcpy’ from incomp
              ^
 In file included from ./include/heap_array_list.h:8:0,
                  from heap_array_list.c:5:
-./include/system.h:61:23: note: expected ‘const unsigned char *’ but argument is of type ‘struct header_info_t *’
+./include/system.h:62:23: note: expected ‘const unsigned char *’ but argument is of type ‘struct header_info_t *’
  extern unsigned char *memcpy(unsigned char *dest, const unsigned char *src, int count);
                        ^
 heap_array_list.c: In function ‘remove_item’:
@@ -917,7 +942,7 @@ heap_array_list.c:42:9: warning: passing argument 1 of ‘memset’ from incompa
          ^
 In file included from ./include/heap_array_list.h:8:0,
                  from heap_array_list.c:5:
-./include/system.h:65:23: note: expected ‘unsigned char *’ but argument is of type ‘struct header_info_t *’
+./include/system.h:66:23: note: expected ‘unsigned char *’ but argument is of type ‘struct header_info_t *’
  extern unsigned char *memset(unsigned char *dest, unsigned char val, int count);
                        ^
 heap_array_list.c:44:9: warning: passing argument 1 of ‘memcpy’ from incompatible pointer type [enabled by default]
@@ -925,7 +950,7 @@ heap_array_list.c:44:9: warning: passing argument 1 of ‘memcpy’ from incompa
          ^
 In file included from ./include/heap_array_list.h:8:0,
                  from heap_array_list.c:5:
-./include/system.h:61:23: note: expected ‘unsigned char *’ but argument is of type ‘struct header_info_t *’
+./include/system.h:62:23: note: expected ‘unsigned char *’ but argument is of type ‘struct header_info_t *’
  extern unsigned char *memcpy(unsigned char *dest, const unsigned char *src, int count);
                        ^
 heap_array_list.c:44:9: warning: passing argument 2 of ‘memcpy’ from incompatible pointer type [enabled by default]
@@ -933,24 +958,14 @@ heap_array_list.c:44:9: warning: passing argument 2 of ‘memcpy’ from incompa
          ^
 In file included from ./include/heap_array_list.h:8:0,
                  from heap_array_list.c:5:
-./include/system.h:61:23: note: expected ‘const unsigned char *’ but argument is of type ‘struct header_info_t *’
+./include/system.h:62:23: note: expected ‘const unsigned char *’ but argument is of type ‘struct header_info_t *’
  extern unsigned char *memcpy(unsigned char *dest, const unsigned char *src, int count);
                        ^
 heap_array_list.c: At top level:
-./include/system.h:71:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
+./include/system.h:72:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
  extern inline const char *itoa(int i, char result[]);
                            ^
-./include/system.h:71:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
-In file included from ./include/heap.h:11:0,
-                 from ./include/kmalloc.h:9,
-                 from ./include/heap_array_list.h:23,
-                 from heap_array_list.c:5:
-./include/page.h:44:26: warning: ‘current_dir’ defined but not used [-Wunused-variable]
- static page_directory_t *current_dir;
-                          ^
-./include/page.h:45:26: warning: ‘kernel_dir’ defined but not used [-Wunused-variable]
- static page_directory_t *kernel_dir;
-                          ^
+./include/system.h:72:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
 heap.c: In function ‘hfree’:
 heap.c:135:17: warning: passing argument 1 of ‘puthex’ makes integer from pointer without a cast [enabled by default]
                  dumphex("combine next header:", next_header);
@@ -964,18 +979,10 @@ In file included from ./include/system.h:4:0,
 In file included from ./include/heap.h:8:0,
                  from heap.c:5:
 heap.c: At top level:
-./include/system.h:71:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
+./include/system.h:72:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
  extern inline const char *itoa(int i, char result[]);
                            ^
-./include/system.h:71:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
-In file included from ./include/heap.h:11:0,
-                 from heap.c:5:
-./include/page.h:44:26: warning: ‘current_dir’ defined but not used [-Wunused-variable]
- static page_directory_t *current_dir;
-                          ^
-./include/page.h:45:26: warning: ‘kernel_dir’ defined but not used [-Wunused-variable]
- static page_directory_t *kernel_dir;
-                          ^
+./include/system.h:72:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
 ide.c: In function ‘ide_read_buffer’:
 ide.c:74:9: warning: passing argument 2 of ‘insl’ makes pointer from integer without a cast [enabled by default]
          insl(channels[channel].base + reg - 0x00, buffer, quads);
@@ -1028,10 +1035,10 @@ ide.c:409:23: warning: variable ‘err’ set but not used [-Wunused-but-set-var
 In file included from ./include/ide.h:8:0,
                  from ide.c:5:
 ide.c: At top level:
-./include/system.h:71:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
+./include/system.h:72:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
  extern inline const char *itoa(int i, char result[]);
                            ^
-./include/system.h:71:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
+./include/system.h:72:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
 ide.c:12:22: warning: ‘atapi_packet’ defined but not used [-Wunused-variable]
  unsigned static char atapi_packet[12] = {0xA8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
                       ^
@@ -1073,7 +1080,7 @@ catmfs.c:39:9: warning: passing argument 2 of ‘memcpy’ makes pointer from in
          ^
 In file included from ./include/catmfs.h:8:0,
                  from catmfs.c:5:
-./include/system.h:61:23: note: expected ‘const unsigned char *’ but argument is of type ‘uint32_t’
+./include/system.h:62:23: note: expected ‘const unsigned char *’ but argument is of type ‘uint32_t’
  extern unsigned char *memcpy(unsigned char *dest, const unsigned char *src, int count);
                        ^
 catmfs.c:41:9: warning: passing argument 2 of ‘memcpy’ makes pointer from integer without a cast [enabled by default]
@@ -1081,7 +1088,7 @@ catmfs.c:41:9: warning: passing argument 2 of ‘memcpy’ makes pointer from in
          ^
 In file included from ./include/catmfs.h:8:0,
                  from catmfs.c:5:
-./include/system.h:61:23: note: expected ‘const unsigned char *’ but argument is of type ‘uint32_t’
+./include/system.h:62:23: note: expected ‘const unsigned char *’ but argument is of type ‘uint32_t’
  extern unsigned char *memcpy(unsigned char *dest, const unsigned char *src, int count);
                        ^
 catmfs.c: In function ‘catmfs_create_fs_node’:
@@ -1090,7 +1097,7 @@ catmfs.c:56:5: warning: passing argument 1 of ‘memset’ from incompatible poi
      ^
 In file included from ./include/catmfs.h:8:0,
                  from catmfs.c:5:
-./include/system.h:65:23: note: expected ‘unsigned char *’ but argument is of type ‘struct fs_node_t *’
+./include/system.h:66:23: note: expected ‘unsigned char *’ but argument is of type ‘struct fs_node_t *’
  extern unsigned char *memset(unsigned char *dest, unsigned char val, int count);
                        ^
 catmfs.c:57:5: warning: pointer targets in passing argument 1 of ‘memcpy’ differ in signedness [-Wpointer-sign]
@@ -1098,7 +1105,7 @@ catmfs.c:57:5: warning: pointer targets in passing argument 1 of ‘memcpy’ di
      ^
 In file included from ./include/catmfs.h:8:0,
                  from catmfs.c:5:
-./include/system.h:61:23: note: expected ‘unsigned char *’ but argument is of type ‘char *’
+./include/system.h:62:23: note: expected ‘unsigned char *’ but argument is of type ‘char *’
  extern unsigned char *memcpy(unsigned char *dest, const unsigned char *src, int count);
                        ^
 catmfs.c:57:5: warning: pointer targets in passing argument 2 of ‘memcpy’ differ in signedness [-Wpointer-sign]
@@ -1106,7 +1113,7 @@ catmfs.c:57:5: warning: pointer targets in passing argument 2 of ‘memcpy’ di
      ^
 In file included from ./include/catmfs.h:8:0,
                  from catmfs.c:5:
-./include/system.h:61:23: note: expected ‘const unsigned char *’ but argument is of type ‘char *’
+./include/system.h:62:23: note: expected ‘const unsigned char *’ but argument is of type ‘char *’
  extern unsigned char *memcpy(unsigned char *dest, const unsigned char *src, int count);
                        ^
 catmfs.c:60:16: warning: assignment from incompatible pointer type [enabled by default]
@@ -1125,86 +1132,43 @@ catmfs.c:49:12: note: expected ‘struct catmfs_obj_t *’ but argument is of ty
 In file included from ./include/catmfs.h:8:0,
                  from catmfs.c:5:
 catmfs.c: At top level:
-./include/system.h:71:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
+./include/system.h:72:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
  extern inline const char *itoa(int i, char result[]);
                            ^
-./include/system.h:71:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
-In file included from ./include/heap.h:11:0,
-                 from ./include/kmalloc.h:9,
-                 from ./include/catmfs.h:9,
-                 from catmfs.c:5:
-./include/page.h:44:26: warning: ‘current_dir’ defined but not used [-Wunused-variable]
- static page_directory_t *current_dir;
-                          ^
-./include/page.h:45:26: warning: ‘kernel_dir’ defined but not used [-Wunused-variable]
- static page_directory_t *kernel_dir;
-                          ^
+./include/system.h:72:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
+proc.c: In function ‘create_user_stack’:
+proc.c:9:5: warning: implicit declaration of function ‘strformat’ [-Wimplicit-function-declaration]
+     putf_const("creating user stack:%x %x\n", start_addr, size);
+     ^
+proc.c:30:19: warning: initialization makes pointer from integer without a cast [enabled by default]
+     uint32_t *p = new_stack_pointer;
+                   ^
+proc.c:31:5: warning: passing argument 1 of ‘memcpy’ makes pointer from integer without a cast [enabled by default]
+     memcpy(new_stack_pointer, old_stack_pointer, init_esp - old_stack_pointer);
+     ^
 In file included from ./include/page.h:8:0,
                  from ./include/proc.h:9,
                  from proc.c:5:
-./include/system.h:71:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
+./include/system.h:62:23: note: expected ‘unsigned char *’ but argument is of type ‘uint32_t’
+ extern unsigned char *memcpy(unsigned char *dest, const unsigned char *src, int count);
+                       ^
+proc.c:31:5: warning: passing argument 2 of ‘memcpy’ makes pointer from integer without a cast [enabled by default]
+     memcpy(new_stack_pointer, old_stack_pointer, init_esp - old_stack_pointer);
+     ^
+In file included from ./include/page.h:8:0,
+                 from ./include/proc.h:9,
+                 from proc.c:5:
+./include/system.h:62:23: note: expected ‘const unsigned char *’ but argument is of type ‘uint32_t’
+ extern unsigned char *memcpy(unsigned char *dest, const unsigned char *src, int count);
+                       ^
+proc.c:30:15: warning: unused variable ‘p’ [-Wunused-variable]
+     uint32_t *p = new_stack_pointer;
+               ^
+In file included from ./include/page.h:8:0,
+                 from ./include/proc.h:9,
+                 from proc.c:5:
+proc.c: At top level:
+./include/system.h:72:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
  extern inline const char *itoa(int i, char result[]);
                            ^
-./include/system.h:71:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]
-In file included from ./include/proc.h:9:0,
-                 from proc.c:5:
-./include/page.h:45:26: warning: ‘kernel_dir’ defined but not used [-Wunused-variable]
- static page_directory_t *kernel_dir;
-                          ^
-CPU Reset (CPU 0)
-EAX=00000000 EBX=00000000 ECX=00000000 EDX=00000000
-ESI=00000000 EDI=00000000 EBP=00000000 ESP=00000000
-EIP=00000000 EFL=00000000 [-------] CPL=0 II=0 A20=0 SMM=0 HLT=0
-ES =0000 00000000 00000000 00000000
-CS =0000 00000000 00000000 00000000
-SS =0000 00000000 00000000 00000000
-DS =0000 00000000 00000000 00000000
-FS =0000 00000000 00000000 00000000
-GS =0000 00000000 00000000 00000000
-LDT=0000 00000000 00000000 00000000
-TR =0000 00000000 00000000 00000000
-GDT=     00000000 00000000
-IDT=     00000000 00000000
-CR0=00000000 CR2=00000000 CR3=00000000 CR4=00000000
-DR0=00000000 DR1=00000000 DR2=00000000 DR3=00000000 
-DR6=00000000 DR7=00000000
-CCS=00000000 CCD=00000000 CCO=DYNAMIC 
-EFER=0000000000000000
-FCW=0000 FSW=0000 [ST=0] FTW=ff MXCSR=00000000
-FPR0=0000000000000000 0000 FPR1=0000000000000000 0000
-FPR2=0000000000000000 0000 FPR3=0000000000000000 0000
-FPR4=0000000000000000 0000 FPR5=0000000000000000 0000
-FPR6=0000000000000000 0000 FPR7=0000000000000000 0000
-XMM00=00000000000000000000000000000000 XMM01=00000000000000000000000000000000
-XMM02=00000000000000000000000000000000 XMM03=00000000000000000000000000000000
-XMM04=00000000000000000000000000000000 XMM05=00000000000000000000000000000000
-XMM06=00000000000000000000000000000000 XMM07=00000000000000000000000000000000
-CPU Reset (CPU 0)
-EAX=00000000 EBX=00000000 ECX=00000000 EDX=00000663
-ESI=00000000 EDI=00000000 EBP=00000000 ESP=00000000
-EIP=0000fff0 EFL=00000002 [-------] CPL=0 II=0 A20=1 SMM=0 HLT=0
-ES =0000 00000000 0000ffff 00009300
-CS =f000 ffff0000 0000ffff 00009b00
-SS =0000 00000000 0000ffff 00009300
-DS =0000 00000000 0000ffff 00009300
-FS =0000 00000000 0000ffff 00009300
-GS =0000 00000000 0000ffff 00009300
-LDT=0000 00000000 0000ffff 00008200
-TR =0000 00000000 0000ffff 00008b00
-GDT=     00000000 0000ffff
-IDT=     00000000 0000ffff
-CR0=60000010 CR2=00000000 CR3=00000000 CR4=00000000
-DR0=00000000 DR1=00000000 DR2=00000000 DR3=00000000 
-DR6=ffff0ff0 DR7=00000400
-CCS=00000000 CCD=00000000 CCO=DYNAMIC 
-EFER=0000000000000000
-FCW=037f FSW=0000 [ST=0] FTW=00 MXCSR=00001f80
-FPR0=0000000000000000 0000 FPR1=0000000000000000 0000
-FPR2=0000000000000000 0000 FPR3=0000000000000000 0000
-FPR4=0000000000000000 0000 FPR5=0000000000000000 0000
-FPR6=0000000000000000 0000 FPR7=0000000000000000 0000
-XMM00=00000000000000000000000000000000 XMM01=00000000000000000000000000000000
-XMM02=00000000000000000000000000000000 XMM03=00000000000000000000000000000000
-XMM04=00000000000000000000000000000000 XMM05=00000000000000000000000000000000
-XMM06=00000000000000000000000000000000 XMM07=00000000000000000000000000000000
-Triple fault
+./include/system.h:72:27: warning: inline function ‘itoa’ declared but never defined [enabled by default]

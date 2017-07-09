@@ -23,30 +23,16 @@ all:
 	sudo cp ../initrd /home/dcat/osdev/bgrub/
 	sudo umount /dev/mapper/loop0p1 || echo ""
 	sudo mount /dev/mapper/loop0p1 /home/dcat/osdev/bgrub/
-	#sudo umount /dev/loop1
-	#sudo mount /dev/loop1 /home/dcat/osdev/bgrub/
+	#sudo umount /dev/loop0
+	#sudo mount /dev/loop0 /home/dcat/osdev/bgrub/
 	rm -rf *.o # kernel.bin
 bochs:
-	bochs -f ../bochsrc.txt
+	bochs -q -f ../bochsrc.txt
+debug:
+	bochs -q -f ../bochsrc_debug.txt
 qemu:
 	qemu-system-i386 -hda ../bgrub.img -hdb ../initrd -m 256 -k en-us -sdl  -s -d guest_errors,cpu_reset,pcall,cpu_reset -no-reboot
 run:
 	qemu-system-i386 -hda ../bgrub.img -fdb ../initrd -m 512 -k en-us -sdl  -s
 clean:
 	rm -rf *.o kernel.bin
-old_build:
-	#gcc $(C_FLAGS) -o pp.o *.c
-	#gcc $(C_FLAGS) -o main.o main.c
-	#gcc $(C_FLAGS) -o screen.o screen.c
-	#gcc $(C_FLAGS) -o str.o str.c
-	#gcc $(C_FLAGS) -o gdt.o gdt.c
-	#gcc $(C_FLAGS) -o idt.o idt.c
-	#gcc $(C_FLAGS) -o isrs.o isrs.c
-	#gcc $(C_FLAGS) -o irqs.o irqs.c
-	#gcc $(C_FLAGS) -o timer.o timer.c
-	#gcc $(C_FLAGS) -o keyboard.o keyboard.c
-	#gcc $(C_FLAGS) -o page.o page.c
-	#ld $(LD_FLAGS) -o kernel.bin start.o main.o screen.o str.o gdt.o idt.o isrs.o irqs.o timer.o keyboard.o page.o
-	
-debug:
-	qemu-system-i386 -hda ../bgrub.img -m 8 -k en-us -sdl -s -S
