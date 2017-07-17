@@ -4,7 +4,7 @@
 
 #include "proc.h"
 
-void create_user_stack(uint32_t start_addr, uint32_t size) {
+void copy_current_stack(uint32_t start_addr, uint32_t size, uint32_t *new_ebp, uint32_t *new_esp) {
     ASSERT(current_dir != NULL);
     putf_const("creating user stack:%x %x\n", start_addr, size);
     for (int x = size; x >= 0; x -= 0x1000) {
@@ -14,8 +14,6 @@ void create_user_stack(uint32_t start_addr, uint32_t size) {
         alloc_frame(page, false, true);
         ASSERT(page->frame != NULL);
     }
-    //putln_const("stack frame allocated;")
-    //k_delay(5);
     flush_TLB();
     uint32_t old_stack_pointer;
     uint32_t old_base_pointer;
@@ -27,8 +25,6 @@ void create_user_stack(uint32_t start_addr, uint32_t size) {
     putf_const("copy %x to %x size:%x\n", old_stack_pointer, new_stack_pointer, init_esp - old_stack_pointer);
     uint32_t *p = new_stack_pointer;
     memcpy(new_stack_pointer, old_stack_pointer, init_esp - old_stack_pointer);
-    // Backtrace through the original stack, copying new values into
-    // the new stack.
     for (int i = (uint32_t) start_addr; i > (uint32_t) start_addr - size; i -= 4) {
         uint32_t tmp = *(uint32_t *) i;
         // If the value of tmp is inside the range of the old stack, assume it is a base pointer
@@ -40,6 +36,8 @@ void create_user_stack(uint32_t start_addr, uint32_t size) {
             *tmp2 = tmp;
         }
     }
-    putf_const("now change stack.\n")
-    change_stack(new_base_pointer, new_stack_pointer);
+    if (new_ebp)
+        *new_ebp = new_base_pointer;
+    if (new_esp)
+        *new_esp = new_stack_pointer;
 }

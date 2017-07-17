@@ -10,8 +10,13 @@
 #include "intdef.h"
 #include "syscall.h"
 
-#define MEMORY(x) ((uint8_t*)(x))
 
+void dump_regs(regs_t *r) {
+    putf_const("[EAX:%x][EBX:%x][ECX:%x]", r->eax, r->ebx, r->ecx);
+    putf_const("[EDX:%x][EBP:%x][ESP:%x]\n", r->edx, r->ebp, r->useresp);
+    putf_const("[CS:%x][DX:%x][ES:%x]", r->cs, r->ds, r->es, r->fs, r->gs);
+    putf_const("[FS:%x][GX:%x][EIP:%x]", r->fs, r->gs, r->eip);
+}
 
 void fault_handler(struct regs *r) {
     int a = 0;
@@ -52,7 +57,7 @@ void fault_handler(struct regs *r) {
             break;
     }
     if (r->int_no <= 18) {
-        putln("Loop.");
+        dump_regs(r);
         for (;;);
     }
 }
@@ -77,6 +82,7 @@ void isrs_install() {
     idt_set_gate(16, (unsigned) _isr16, 0x08, 0x8E);
     idt_set_gate(17, (unsigned) _isr17, 0x08, 0x8E);
     idt_set_gate(18, (unsigned) _isr18, 0x08, 0x8E);
-
+    extern void _isr_syscall();
+    idt_set_gate(0x60, (unsigned) _isr_syscall, 0x08, 0xEE);
 
 }

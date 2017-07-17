@@ -2,8 +2,10 @@
 // Created by dcat on 3/16/17.
 //
 
+#include <heap_array_list.h>
 #include "heap_array_list.h"
 #include "kmalloc.h"
+
 heap_array_list_t *create_heap_array_list(uint32_t max_size) {
     heap_array_list_t *alist = kmalloc(sizeof(heap_array_list_t));
     alist->headers = kmalloc(sizeof(header_info_t) * max_size);
@@ -51,6 +53,9 @@ header_info_t *find_suit_hole(heap_array_list_t *al, uint32_t size, bool page_al
     ASSERT(al);
     for (int x = 0; x < al->size; x++) {
         if (size < al->headers[x].size && !al->headers[x].used) {
+            if (page_align && ((0x1000 - al->headers[x].addr & 0xFFF) + size >= al->headers[x].size)) {
+                continue;
+            }
             *index = x;
             return &al->headers[x];
         }

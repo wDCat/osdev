@@ -196,8 +196,8 @@ void catmfs_test(uint32_t *addr) {
 }
 
 void user_app() {
-    __asm__ __volatile__("mov $0x12,%eax");
-    //__asm__ __volatile__("int $0x60;");
+    __asm__ __volatile__("mov $0x1,%eax");
+    __asm__ __volatile__("int $0x60;");
     for (;;);
 }
 
@@ -211,17 +211,17 @@ void ring3() {
             "mov %ax,%fs;"
             "mov %ax,%gs;"
             "mov %esp,%eax;"
-            "pushl $0x23;"
-            "pushl %eax;"
+            "push $0x23;"
+            "push %eax;"
             "pushf;"
             "pop %eax;"
             "or $0x200,%eax;"
             "pushl %eax;"
-            "pushl $0x1B;"
+            "push $0x1B;"
             "push $1f;"
             "iret;"
             "1:");
-    //user_app();
+    user_app();
     for (;;);
 }
 
@@ -249,49 +249,28 @@ void kernel_vep_heap_test() {
     //putf_const("[KVH]Test done//\n");
     //for(;;);
 }
+
 void usermode_test() {
-    uint32_t tettt;
-    kmalloc_internal(0x1001, true, &tettt, kernel_heap);
-    kmalloc_internal(0x1001, true, &tettt, kernel_heap);
-    kmalloc_internal(0x1001, true, &tettt, kernel_heap);
-    kmalloc_internal(0x1001, true, &tettt, kernel_heap);
-    kmalloc_internal(0x1001, true, &tettt, kernel_heap);
-    for (;;);
     kernel_vep_heap_test();
     cli();
-
-    //get_phy_test();
+    uint32_t ebp, esp;
     putf_const("cloning the stack..\n")
-    create_user_stack(0xE1000000, 0x1000);
+    copy_current_stack(0xE1000000, 0x1000, &ebp, &esp);
+    set_kernel_stack(ebp);
+    change_stack(ebp, esp);
     putf_const("cloning the page directory..\n")
-    uint32_t phy;
     page_directory_t *pd = clone_page_directory(current_dir);
-    putf_const("[%x -> %x][%x]switch to cloned page diretory...\n", current_dir->physical_addr,
+    putf_const("[%x -> %x][%x]switch to cloned page directory...\n", current_dir->physical_addr,
                pd->physical_addr,
                pd->table_physical_addr);
-    ASSERT(get_page(0x82e3, false, pd) != NULL);
-    uint32_t addr = get_physical_address(pd);
-    dumphex("phy:", addr);
-    disable_paging();
-    switch_page_directory(addr);
-    /*
-    uint32_t eip;
-    eip=get_eip();
-    page_t* eipp= get_page(eip,false,addr);
-    putf_const("[EIPPAGE]PC:%x frame:%x ",eip,eipp->frame);
-    putf_const("present:%x\n",eipp->present);
-    eipp= get_page(eip,false,kernel_dir);
-    putf_const("[EIPPAGE]PC:%x frame:%x ",eip,eipp->frame);
-    putf_const("present:%x",eipp->present);*/
-    enable_paging();
-    //disable_paging();
-    //switch_page_directory(pd);
+    switch_page_directory(pd);
+    putf_const("pd switched.");
     extern void enter_usermode();
     putf_const("enter_usermode:%x\n", enter_usermode);
     __asm__ __volatile__("mov $0x24,%eax;"
             "int $0x60;");
     putf_const("syscall done.\n");
-    k_delay(5);
+    //k_delay(5);
     //enter_usermode();
     ring3();
     for (;;);

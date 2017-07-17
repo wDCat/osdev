@@ -23,7 +23,8 @@ uint32_t kmalloc_internal(uint32_t sz, bool align, uint32_t *phys, heap_t *heap)
     ASSERT(heap_placement_addr >= &end);
     if (heap) {
         void *ret = halloc(heap, sz, align);
-
+        if (!ret) PANIC("[kmalloc]Out of heap.");
+        putf_const("[%x][%x]", ret, sz);
         if (phys != 0) {
             //FIXME  错误的phys返回值  使用 get_physical_address  代替
             /*
@@ -31,8 +32,9 @@ uint32_t kmalloc_internal(uint32_t sz, bool align, uint32_t *phys, heap_t *heap)
             ASSERT(page->frame);
             *phys = page->frame * 0x1000 + (uint32_t) ret & 0xFFF;*/
             *phys = get_physical_address(ret);
+            putf_const("[%x]", *phys);
         }
-        putf_const("[%x][%x][%x]-", ret, sz, *phys);
+        putf_const("-");
         return ret;
     } else {
         if (align && (heap_placement_addr & 0xFFFFF000)) {

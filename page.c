@@ -226,7 +226,7 @@ page_t *get_page(uint32_t addr, int make, page_directory_t *dir) {
     } else if (make) {
         uint32_t phyaddr;
         dir->tables[table_idx] = (page_table_t *) kmalloc_internal(sizeof(page_table_t), true, &phyaddr,
-                                                                   kernel_vep_heap);
+                                                                   kernel_heap);
         memset(dir->tables[table_idx], 0, sizeof(page_table_t));
         dir->table_physical_addr[table_idx] = phyaddr | 0x7;
         return &(dir->tables[table_idx]->pages[frame_no % 1024]);
@@ -309,9 +309,7 @@ page_table_t *clone_page_table(page_table_t *src, uint32_t *phy_out) {
 page_directory_t *clone_page_directory(page_directory_t *src) {
     uint32_t phy_addr;
     page_directory_t *target = (page_directory_t *) kmalloc_internal(sizeof(page_directory_t), true, &phy_addr,
-                                                                     kernel_vep_heap);
-    putf_const("[PT]PADDR:%x %x\n", target, get_physical_address(target));
-    putf_const("[PT]PADDR_2:%x\n", get_physical_address(target + 0x1001));
+                                                                     kernel_heap);
     memset(target, 0, sizeof(page_directory_t));
     //calc offset 1024*pointer = 1K
     uint32_t offset = (uint32_t) target->table_physical_addr - (uint32_t) target;

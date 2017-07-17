@@ -54,10 +54,13 @@ void *halloc(heap_t *heap, uint32_t size, bool page_align) {
         PANIC("Out of heap.")
     }
     ASSERT(!hinfo->used);
+    if (page_align) {
+        //putf_const("[fix][%x][%x]", size, hinfo->addr & 0xFFF);
+        size += 0x1000 - hinfo->addr & 0xFFF;
+    }
+    //putf_const("hole[%x][%x][%x]", hinfo->addr, hinfo->size, hinfo->used);
     hole_header_t *header = (hole_header_t *) hinfo->addr;
     hole_footer_t *footer = (hole_footer_t *) (hinfo->addr + HOLE_HEADER_SIZE + header->size);
-    //dumphex("headeraddr:", header);
-    //dumphex("footeraddr:", footer);
     ASSERT(header->magic == HOLE_HEADER_MAGIC);
     ASSERT(footer->magic == HOLE_FOOTER_MAGIC);
     ASSERT(footer->header == header);
@@ -87,6 +90,11 @@ void *halloc(heap_t *heap, uint32_t size, bool page_align) {
     insert_item_ordered(heap->al, &h1info);
     insert_item_ordered(heap->al, &h2info);
     header->used = true;
+    //TODO correct header and footer position when page_align
+    if (page_align) {
+
+        return (void *) ((((uint32_t) (header + HOLE_HEADER_SIZE)) & 0xFFFFF000) + 0x1000);
+    }
     //memset(hinfo->addr + HOLE_HEADER_SIZE, 0, size);
     return (void *) ((uint32_t) header + HOLE_HEADER_SIZE);
 }
@@ -111,6 +119,7 @@ hole_header_t *combine_two_hole(heap_t *heap, hole_header_t *h1, hole_header_t *
 }
 
 void hfree(heap_t *heap, uint32_t addr) {
+    PANIC("//TODO")
     ASSERT(heap);
     hole_header_t *header = (hole_header_t *) (addr - HOLE_HEADER_SIZE);
     hole_footer_t *footer = (hole_footer_t *) (addr + header->size);
