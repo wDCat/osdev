@@ -13,7 +13,7 @@ all:
 	gcc $(C_FLAGS) -o $$name.o $$name;\
 	done
 	gcc $(C_FLAGS) -o heap_array_list.c.o heap_array_list.c
-	gcc $(C_FLAGS) -o heap.c.o heap.c
+	gcc $(C_FLAGS) -o contious_heap.c.o contious_heap.c
 	gcc $(C_FLAGS) -o ide.c.o ide.c
 	gcc $(C_FLAGS) -o catmfs.c.o catmfs.c
 	gcc $(C_FLAGS) -o proc.c.o proc.c
@@ -31,8 +31,8 @@ bochs:
 debug:
 	bochs -q -f ../bochsrc_debug.txt
 qemu:
-	qemu-system-i386 -hda ../bgrub.img -hdb ../initrd -m 256 -k en-us -sdl  -s -d guest_errors,cpu_reset,pcall,cpu_reset -no-reboot
+	qemu-system-i386 -hda ../bgrub.img -hdb ../initrd -m 16 -k en-us -sdl  -s -d guest_errors,cpu_reset,pcall,cpu_reset -no-reboot
 run:
-	qemu-system-i386 -hda ../bgrub.img -fdb ../initrd -m 512 -k en-us -sdl  -s
+	qemu-system-i386 -hda ../bgrub.img -fdb ../initrd -m 16 -k en-us -sdl  -s
 clean:
 	rm -rf *.o kernel.bin

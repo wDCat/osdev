@@ -12,7 +12,7 @@
 #include "include/timer.h"
 #include "include/keyboard.h"
 #include "page.h"
-#include "heap.h"
+#include "contious_heap.h"
 #include "multiboot.h"
 #include "catmfs.h"
 #include "syscall.h"
@@ -242,12 +242,27 @@ void get_phy_test() {
     PANIC("Get phy test done.");
 }
 
+void kernel_vep_heap_test() {
+    //putf_const("[KVH]Test begin//\n");
+    uint32_t *a = kmalloc_internal(0x20, false, NULL, kernel_vep_heap);
+    putf_const("[KVH]a vm:%x phy:%x\n", a, get_physical_address(a));
+    //putf_const("[KVH]Test done//\n");
+    //for(;;);
+}
 void usermode_test() {
+    uint32_t tettt;
+    kmalloc_internal(0x1001, true, &tettt, kernel_heap);
+    kmalloc_internal(0x1001, true, &tettt, kernel_heap);
+    kmalloc_internal(0x1001, true, &tettt, kernel_heap);
+    kmalloc_internal(0x1001, true, &tettt, kernel_heap);
+    kmalloc_internal(0x1001, true, &tettt, kernel_heap);
+    for (;;);
+    kernel_vep_heap_test();
     cli();
 
     //get_phy_test();
     putf_const("cloning the stack..\n")
-    //create_user_stack(0xE1000000, 0x6000);
+    create_user_stack(0xE1000000, 0x1000);
     putf_const("cloning the page directory..\n")
     uint32_t phy;
     page_directory_t *pd = clone_page_directory(current_dir);

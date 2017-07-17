@@ -3,7 +3,7 @@
 //
 
 #include "heap_array_list.h"
-
+#include "kmalloc.h"
 heap_array_list_t *create_heap_array_list(uint32_t max_size) {
     heap_array_list_t *alist = kmalloc(sizeof(heap_array_list_t));
     alist->headers = kmalloc(sizeof(header_info_t) * max_size);

@@ -20,7 +20,6 @@ typedef struct {
     uint32_t max_size;
 } heap_array_list_t;
 
-#include "kmalloc.h"
 
 extern void dump_al(heap_array_list_t *al);
 

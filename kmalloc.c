@@ -4,10 +4,12 @@
 
 #include <system.h>
 #include <page.h>
+#include <str.h>
 #include "include/intdef.h"
 #include "include/kmalloc.h"
 
-heap_t *kernel_heap;
+heap_t *kernel_heap = 0;
+heap_t *kernel_vep_heap = 0;//物理与逻辑地址相等
 uint32_t heap_placement_addr;
 extern heap_t *kernel_heap;
 
@@ -16,11 +18,12 @@ void kmalloc_install() {
     //putint(heap_placement_addr);
 }
 
-uint32_t kmalloc_internal(uint32_t sz, bool align, uint32_t *phys, bool with_paging/*for alloc_frame*/) {
+uint32_t kmalloc_internal(uint32_t sz, bool align, uint32_t *phys, heap_t *heap) {
     ASSERT(heap_placement_addr != NULL);
     ASSERT(heap_placement_addr >= &end);
-    if (kernel_heap && with_paging) {
-        void *ret = halloc(kernel_heap, sz, align);
+    if (heap) {
+        void *ret = halloc(heap, sz, align);
+
         if (phys != 0) {
             //FIXME  错误的phys返回值  使用 get_physical_address  代替
             /*
@@ -29,6 +32,7 @@ uint32_t kmalloc_internal(uint32_t sz, bool align, uint32_t *phys, bool with_pag
             *phys = page->frame * 0x1000 + (uint32_t) ret & 0xFFF;*/
             *phys = get_physical_address(ret);
         }
+        putf_const("[%x][%x][%x]-", ret, sz, *phys);
         return ret;
     } else {
         if (align && (heap_placement_addr & 0xFFFFF000)) {

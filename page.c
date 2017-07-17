@@ -5,10 +5,12 @@
 #include <kmalloc.h>
 #include <idt.h>
 #include <irqs.h>
-#include <heap.h>
+#include <contious_heap.h>
 #include <page.h>
 #include <str.h>
 #include "include/page.h"
+
+extern heap_t *create_heap(uint32_t start_addr, uint32_t end_addr, uint32_t max_addr, page_directory_t *dir);
 
 extern heap_t *kernel_heap;
 uint32_t *frame_status = NULL;//保存frame状态的数组
@@ -46,32 +48,91 @@ uint32_t page_to_bit(page_t *p) {
     return r;
 }
 
+int32_t get_free_frame() {
+    for (uint32_t x = 0; x < frame_max_count; x++) {
+        if (frame_status[x] == FRAME_STATUS_FREE) {
+            return x;
+        }
+    }
+    return -1;
+}
+
+int32_t get_continuous_free_frame(uint32_t count) {
+    for (uint32_t x = 1; x < frame_max_count; x++) {
+        bool found = true;
+        for (uint32_t y = x; y <= x + count; y++) {
+            if (frame_status[y] != FRAME_STATUS_FREE) {
+                found = false;
+                break;
+            }
+        }
+        if (found)return x;
+    }
+    return -1;
+}
+
+uint32_t alloc_continuous_frame(uint32_t count, page_directory_t *dir) {
+    int32_t x = get_continuous_free_frame(count);
+    putf_const("[!%x]", x);
+    if (x < 0) {
+        PANIC("No continuous free frame.")
+    }
+    for (uint32_t y = 0; y < count; y++) {
+        page_t *page = get_page((x + y) * 0x1000, true, dir);
+        ASSERT(page);
+        ASSERT(page->frame == NULL);
+        page->present = true;
+        page->frame = (uint32_t) x + y;
+        page->user = false;
+        page->rw = true;
+        //For kfree
+        set_frame_status((uint32_t) ((x + y) * 0x1000), FRAME_STATUS_USED);
+    }
+    return (uint32_t) x;
+}
+
+void move_frame(uint32_t pm_src, uint32_t pm_target) {
+    putf_const("Move frame[%x->%x]", pm_src, pm_target);
+    disable_paging();
+    ASSERT(pm_src - pm_target > 0x1000 && pm_target - pm_src > 0x10000);
+    memcpy(pm_src, pm_target, 0x1000);
+    memset(pm_src, 0, 0x1000);
+    enable_paging();
+}
+
 /**为一个页分配一个frame*/
-void alloc_frame(page_t *page, bool is_kernel, bool is_rw) {
+void alloc_frame_internal(page_t *page, bool is_kernel, bool is_rw, bool vm_equals_pm, uint32_t physical_addr) {
     ASSERT(page);
     ASSERT(frame_status != NULL);
     if (!page->frame) {
-        for (uint32_t x = 0; x < frame_max_count; x++) {
-            if (frame_status[x] == FRAME_STATUS_FREE) {
-                memset(page, 0, sizeof(page_t));
-                page->present = true;
-                page->frame = x;
-                page->user = is_kernel ? 0 : 1;
-                page->rw = is_rw;
-                //dumphex("page addr", page);
-                //uint32_t r = page_to_bit(page);
-                //(*(uint32_t *) page) = r;
-                //dumphex("page data:", (*(uint32_t *) page));
-                set_frame_status(x * 0x1000, FRAME_STATUS_USED);
-                return;
-                break;
-            } else if (x == frame_max_count) {
-                //No more frame
-                PANIC("No more frame.")
+        if (vm_equals_pm) {
+            if (get_frame_status(physical_addr) != FRAME_STATUS_FREE) {
+                //Move Frame
+                int32_t x = get_free_frame();
+                if (x < 0) PANIC("No more free frame.");
+                move_frame(physical_addr, (uint32_t) (x * 0x1000));
             }
+            page->present = true;
+            page->frame = (uint32_t) physical_addr / 0x1000;
+            page->user = is_kernel ? 0 : 1;
+            page->rw = is_rw;
+            set_frame_status(physical_addr, FRAME_STATUS_USED);
+        } else {
+            int32_t x = get_free_frame();
+            if (x < 0) PANIC("No more free frame.");
+            //memset(page, 0, sizeof(page_t));
+            page->present = true;
+            page->frame = (uint32_t) x;
+            page->user = is_kernel ? 0 : 1;
+            page->rw = is_rw;
+            set_frame_status((uint32_t) (x * 0x1000), FRAME_STATUS_USED);
         }
-        PANIC("Unknown Error")
     }
+}
+
+
+inline void alloc_frame(page_t *page, bool is_kernel, bool is_rw) {
+    alloc_frame_internal(page, is_kernel, is_rw, false, NULL);
 }
 
 void free_frame(page_t *page) {
@@ -80,7 +141,7 @@ void free_frame(page_t *page) {
     if (!page->frame) {
         puterr_const("Try to free a null frame");
     } else {
-        ASSERT(get_frame_status(page->frame * 0x1000) == FRAME_STATUS_USED);
+        ASSERT(get_frame_status(page->frame * 0x1000) != FRAME_STATUS_FREE);
         set_frame_status(page->frame * 0x1000, FRAME_STATUS_FREE);
         page->frame = NULL;
     }
@@ -100,8 +161,8 @@ void paging_install() {
     putln_const("");
     dumphex("heap placement start:", &end);
     dumphex("heap placement now:", heap_placement_addr);
-    int i = 0;
     uint32_t kernel_area = heap_placement_addr;
+    putf_const("pag %x -> %x\n", KHEAP_START, KHEAP_START + KHEAP_SIZE + 0x1000);
     if (kernel_area < SCREEN_MEMORY_BASE + (SCREEN_MAX_X * SCREEN_MAX_Y) / 2) {
         kernel_area = SCREEN_MEMORY_BASE + (SCREEN_MAX_X * SCREEN_MAX_Y) / 2;
     }
@@ -109,20 +170,40 @@ void paging_install() {
         get_page(i, true, kernel_dir);
     }
     //多分配10个页
+    putf_const("pag %x -> %x\n", 0, kernel_area + 0x30000);
     for (uint32_t i = 0; i < kernel_area + 0x30000; i += 0x1000) {
         alloc_frame(get_page(i, true, kernel_dir), false, false);
     }
+
+
+    int32_t x = get_continuous_free_frame((KCONTHEAP_SIZE + 0x1000) / 0x1000);
+    if (x < 0) {
+        PANIC("no continuous frame//");
+    }
+    for (uint32_t i = 0; i < KCONTHEAP_SIZE + 0x1000; i += 0x1000) {
+        uint32_t addr = x * 0x1000 + i;
+        page_t *page = get_page(addr, true, kernel_dir);
+        page->present = true;
+        page->frame = addr / 0x1000;
+        page->user = true;
+        page->rw = false;
+        set_frame_status(addr, FRAME_STATUS_USED);
+        memset(addr, 0x00, 0x1000);
+    }
+    kernel_vep_heap = create_heap(x * 0x1000, x * 0x1000 + KCONTHEAP_SIZE + 0x1000,
+                                  x * 0x1000 + KCONTHEAP_SIZE + 0x1000,
+                                  kernel_dir);
     for (uint32_t i = KHEAP_START; i < KHEAP_START + KHEAP_SIZE + 0x1000; i += 0x1000) {
         alloc_frame(get_page(i, true, kernel_dir), false, false);
     }
-    /*
-    */
-    dumphex("heap_placement_addr:", heap_placement_addr);
+
     switch_page_directory(kernel_dir);
     enable_paging();
+    flush_TLB();
+    putf_const("kernel vep heap created.\n");
+    dumphex("heap_placement_addr:", heap_placement_addr);
     //FIXME 这条语句之后会导致alloc_frame 失效
     kernel_heap = create_heap(KHEAP_START, KHEAP_START + KHEAP_SIZE, KHEAP_START + KHEAP_SIZE * 2, kernel_dir);
-
 }
 
 void switch_page_directory(page_directory_t *dir) {
@@ -140,14 +221,12 @@ void switch_page_directory(page_directory_t *dir) {
 page_t *get_page(uint32_t addr, int make, page_directory_t *dir) {
     uint32_t frame_no = addr / 0x1000;//4K
     uint32_t table_idx = frame_no / 1024;//一个page table里有1024个page table entry
-    //putf_const("[GETP]%x %x\n", frame_no, table_idx);
-    ASSERT(table_idx < 1024);
     if (dir->tables[table_idx]) {
         return &(dir->tables[table_idx]->pages[frame_no % 1024]);
     } else if (make) {
         uint32_t phyaddr;
-        //dumpint("sizeof(page_table_t)", sizeof(page_table_t));
-        dir->tables[table_idx] = (page_table_t *) kmalloc_internal(sizeof(page_table_t), true, &phyaddr, false);
+        dir->tables[table_idx] = (page_table_t *) kmalloc_internal(sizeof(page_table_t), true, &phyaddr,
+                                                                   kernel_vep_heap);
         memset(dir->tables[table_idx], 0, sizeof(page_table_t));
         dir->table_physical_addr[table_idx] = phyaddr | 0x7;
         return &(dir->tables[table_idx]->pages[frame_no % 1024]);
@@ -229,8 +308,10 @@ page_table_t *clone_page_table(page_table_t *src, uint32_t *phy_out) {
 
 page_directory_t *clone_page_directory(page_directory_t *src) {
     uint32_t phy_addr;
-    page_directory_t *target = (page_directory_t *) kmalloc_internal(sizeof(page_directory_t), true, &phy_addr, false);
-
+    page_directory_t *target = (page_directory_t *) kmalloc_internal(sizeof(page_directory_t), true, &phy_addr,
+                                                                     kernel_vep_heap);
+    putf_const("[PT]PADDR:%x %x\n", target, get_physical_address(target));
+    putf_const("[PT]PADDR_2:%x\n", get_physical_address(target + 0x1001));
     memset(target, 0, sizeof(page_directory_t));
     //calc offset 1024*pointer = 1K
     uint32_t offset = (uint32_t) target->table_physical_addr - (uint32_t) target;

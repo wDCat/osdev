@@ -87,6 +87,10 @@ page_directory_t *clone_page_directory(page_directory_t *src);
 
 uint32_t get_physical_address(uint32_t va);
 
+int32_t get_continuous_free_frame(uint32_t count);
+
+uint32_t alloc_continuous_frame(uint32_t count, page_directory_t *dir);
+
 void flush_TLB();
 
 #endif //W2_PAGE_H

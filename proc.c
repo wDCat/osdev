@@ -9,11 +9,9 @@ void create_user_stack(uint32_t start_addr, uint32_t size) {
     putf_const("creating user stack:%x %x\n", start_addr, size);
     for (int x = size; x >= 0; x -= 0x1000) {
         page_t *page = get_page(start_addr - x, true, current_dir);//栈是高地址到低地址增长的
-        //putf_const("[%x]page addr:%x dir:%x\n", start_addr - x, page, current_dir)
-        alloc_frame(
-                page,
-                false,
-                true);
+        ASSERT(page);
+        putf_const("[%x]page addr:%x dir:%x\n", start_addr - x, page, current_dir)
+        alloc_frame(page, false, true);
         ASSERT(page->frame != NULL);
     }
     //putln_const("stack frame allocated;")
@@ -42,5 +40,6 @@ void create_user_stack(uint32_t start_addr, uint32_t size) {
             *tmp2 = tmp;
         }
     }
+    putf_const("now change stack.\n")
     change_stack(new_base_pointer, new_stack_pointer);
 }

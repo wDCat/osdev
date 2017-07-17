@@ -2,10 +2,12 @@
 // Created by dcat on 3/15/17.
 //
 
-#include <heap.h>
+#include <contious_heap.h>
 #include <heap_array_list.h>
 #include <page.h>
-#include "heap.h"
+#include <str.h>
+#include "contious_heap.h"
+#include "kmalloc.h"
 
 extern heap_t *kernel_heap;
 
@@ -19,6 +21,9 @@ inline void insert_default_header(heap_t *heap) {
     hole_header_t *header = (hole_header_t *) heap->start_addr;
     hole_footer_t *footer = (hole_footer_t *) (heap->end_addr - HOLE_FOOTER_SIZE);
     header->magic = HOLE_HEADER_MAGIC;
+    if (header->magic != HOLE_HEADER_MAGIC) {
+        PANIC("Memory not writable.")
+    }
     header->used = false;
     header->size = info.size;
     //dumphex("create footer addr:", footer);
@@ -28,6 +33,8 @@ inline void insert_default_header(heap_t *heap) {
 }
 
 heap_t *create_heap(uint32_t start_addr, uint32_t end_addr, uint32_t max_addr, page_directory_t *dir) {
+    putf_const("create heap:%x -> %x\n", start_addr, end_addr);
+    ASSERT(end_addr > start_addr);
     //putln_const("creating heaping...");
     //putln_const("page alloced.");
     heap_t *ret = (heap_t *) kmalloc(sizeof(heap_t));
@@ -107,9 +114,6 @@ void hfree(heap_t *heap, uint32_t addr) {
     ASSERT(heap);
     hole_header_t *header = (hole_header_t *) (addr - HOLE_HEADER_SIZE);
     hole_footer_t *footer = (hole_footer_t *) (addr + header->size);
-    //dumphex("free_size:", header->size);
-    //dumphex("free_headeraddr:", header);
-    //dumphex("free_footeraddr:", footer);
     ASSERT(header->magic == HOLE_HEADER_MAGIC);
     ASSERT(footer->magic == HOLE_FOOTER_MAGIC);
     header->used = false;
