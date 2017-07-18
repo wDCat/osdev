@@ -82,7 +82,4 @@ void isrs_install() {
     idt_set_gate(16, (unsigned) _isr16, 0x08, 0x8E);
     idt_set_gate(17, (unsigned) _isr17, 0x08, 0x8E);
     idt_set_gate(18, (unsigned) _isr18, 0x08, 0x8E);
-    extern void _isr_syscall();
-    idt_set_gate(0x60, (unsigned) _isr_syscall, 0x08, 0xEE);
-
 }

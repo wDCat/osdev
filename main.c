@@ -195,9 +195,11 @@ void catmfs_test(uint32_t *addr) {
     }
 }
 
+#include "include/syscall.h"
+
 void user_app() {
-    __asm__ __volatile__("mov $0x1,%eax");
-    __asm__ __volatile__("int $0x60;");
+    syscall_helloworld();
+    syscall_screen_print(STR("[]Hello DCat~"));
     for (;;);
 }
 
