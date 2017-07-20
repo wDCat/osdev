@@ -3,6 +3,7 @@
 //
 
 #include "include/syscall.h"
+#include "include/timer.h"
 
 long errno;
 
@@ -19,11 +20,13 @@ long screen_print(const char *str) {
     return 0;
 }
 
-uint32_t syscalls_table[2] = {
+const uint32_t syscalls_count = 3;
+uint32_t syscalls_table[3] = {
         &helloworld,
-        &screen_print
+        &screen_print,
+        &delay
 };
-const uint32_t syscalls_count = 2;
+
 
 void syscall_install() {
     extern void _isr_syscall();
@@ -34,7 +37,9 @@ _impl_syscall0(helloworld, 0);
 
 _impl_syscall1(screen_print, 1, const char*);
 
-typedef uint32_t (*syscall_fun)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t);
+_impl_syscall1(delay, 2, uint32_t);
+
+typedef uint32_t (*syscall_fun_t)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t);
 
 int syscall_handler(regs_t *r) {
     //putf_const("[SYSCALL][No:%x]\n", r->eax);
@@ -42,7 +47,7 @@ int syscall_handler(regs_t *r) {
         r->eax = -1;
         return 0;
     }
-    syscall_fun fun = syscalls_table[r->eax];
+    syscall_fun_t fun = syscalls_table[r->eax];
     //A better implement?
     uint32_t ret = fun(r->ebx, r->ecx, r->edx, r->esi, r->edi);
     r->eax = ret;

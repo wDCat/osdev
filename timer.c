@@ -2,27 +2,36 @@
 // Created by dcat on 3/12/17.
 //
 
+#include <str.h>
 #include "include/timer.h"
 #include "include/irqs.h"
 
-static unsigned long timer_count = 1;
+uint32_t timer_count = 1;
+
+void get_time_count(uint32_t *data) {
+    cli();
+    *data = timer_count;
+    sti();
+}
 
 void timer_handler(struct regs *r) {
     timer_count++;
     //if (timer_count >= 0xFFFFFFFF)timer_count = 0;
     if (timer_count % 18 == 0) {
-        //putln("timer routine.");
+        //putln_const("timer routine.");
     }
 }
 
-//FIXME not work.
 void delay(unsigned long sec) {
-    int target_timer_count = timer_count + sec;
+    uint32_t tm;
+    get_time_count(&tm);
+    uint32_t target_timer_count = tm + sec * 18;
+    //putf_const("[C]target:%x cur:%x\n", target_timer_count, tm);
     unsigned long last_timer = 0;
-    while (timer_count < target_timer_count) {
-        if (timer_count % 18 == 0 && last_timer != timer_count) {
-            putln("timer routine.");
-            last_timer = timer_count;
+    while (tm < target_timer_count) {
+        get_time_count(&tm);
+        if (timer_count % 18 == 0 && last_timer != tm) {
+            last_timer = tm;
         }
     }
 }

@@ -1,4 +1,4 @@
-C_FLAGS= -fno-stack-protector -m32 -std=c99 -Wall -O -fstrength-reduce -fomit-frame-pointer -finline-functions -nostdinc -fno-builtin -I./include -c
+C_FLAGS= -fno-stack-protector -m32 -std=c99 -Wall -O0 -O -fstrength-reduce -fomit-frame-pointer -finline-functions -nostdinc -fno-builtin -I./include -c
 LD_FLAGS=  -n -m elf_i386 -A elf32-i386 -nostdlib -T linker.ld
 cfiles :=$(wildcard *.c)
 pre:

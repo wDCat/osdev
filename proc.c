@@ -41,3 +41,26 @@ void copy_current_stack(uint32_t start_addr, uint32_t size, uint32_t *new_ebp, u
     if (new_esp)
         *new_esp = new_stack_pointer;
 }
+
+void enter_ring3(uint32_t start_addr) {
+    __asm__ __volatile__(
+    "cli;"
+            "mov $0x23,%ax;"
+            "mov %ax,%ds;"
+            "mov %ax,%es;"
+            "mov %ax,%fs;"
+            "mov %ax,%gs;"
+            "mov %esp,%eax;"
+            "push $0x23;"
+            "push %eax;"
+            "pushf;"
+            "pop %eax;"
+            "or $0x200,%eax;"/*自动开中断*/
+            "pushl %eax;"
+            "push $0x1B;"
+            "push $1f;"
+            "iret;"
+            "1:");
+    ((void (*)()) start_addr)();
+
+}

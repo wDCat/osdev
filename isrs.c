@@ -8,7 +8,7 @@
 #include "include/idt.h"
 #include "include/system.h"
 #include "intdef.h"
-#include "syscall.h"
+#include "include/syscall.h"
 
 
 void dump_regs(regs_t *r) {
@@ -49,8 +49,8 @@ void fault_handler(struct regs *r) {
         }
             break;
         default: {
-            disable_paging();
-            puts_const("FAULT(Unknown):");
+            //disable_paging();
+            puterr_const("FAULT(Unknown):");
             putint(r->int_no);
             putn();
         }

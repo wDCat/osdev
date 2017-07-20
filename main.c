@@ -18,71 +18,6 @@
 #include "syscall.h"
 #include "proc.h"
 
-unsigned char *memcpy(unsigned char *dest, const unsigned char *src, int count) {
-    for (int x = 0; x < count; x++) {
-        dest[x] = src[x];
-    }
-}
-
-unsigned char *dmemcpy(unsigned char *dest, const unsigned char *src, int count) {
-
-    for (int x = count - 1; x >= 0; x--) {
-        dest[x] = src[x];
-    }
-}
-
-unsigned char *memset(unsigned char *dest, unsigned char val, int count) {
-    for (int x = 0; x < count; x++) {
-        dest[x] = val;
-    }
-    return NULL;
-}
-
-unsigned char inportb(unsigned short _port) {
-    unsigned char rv;
-    __asm__ __volatile__ ("inb %1, %0" : "=a" (rv) : "dN" (_port));
-    return rv;
-}
-
-void outportb(uint16_t portid, uint8_t value) {
-    __asm__ __volatile__("outb %%al, %%dx": :"d" (portid), "a" (value));
-}
-
-void outportw(uint16_t portid, uint16_t value) {
-    __asm__ __volatile__("outw %%ax, %%dx": :"d" (portid), "a" (value));
-}
-
-void outportl(uint16_t portid, uint32_t value) {
-    __asm__ __volatile__("outl %%eax, %%dx": :"d" (portid), "a" (value));
-}
-
-void k_delay(uint32_t time) {
-    for (int x = 0; x < time * 1000; x++) {
-        for (int y = 0; y < 100000; y++) {
-            int al = 2, bl = 4;
-            if (al + bl == 1024) {
-                break;
-            }
-            __asm__ __volatile__("nop");
-        }
-    }
-}
-
-inline const char *itoa(int i, char result[]) {
-    int po = i;
-    int x = 9;
-    result[10] = '\0';
-    for (; x >= 0; x--) {
-        int l = po % 10;
-        result[x] = l + 0x30;
-        po /= 10;
-        if (po == 0) {
-            memcpy(result, &result[x], x + 1);
-            break;
-        }
-    }
-    return &result[x];
-}
 
 int putTest(int a) {
     putc("12121"[a]);
@@ -176,9 +111,9 @@ void str_test() {
     putln(b);
 }
 
-void catmfs_test(uint32_t *addr) {
-
+void catmfs_test(uint32_t addr) {
     catmfs_t *fs = catmfs_init(addr);
+    putf_const("init done.%x", fs);
     fs_node_t *node;
     catmfs_dumpfilelist(fs);
     if (catmfs_findbyname(fs, STR("neko.1"), &node)) {
@@ -193,39 +128,34 @@ void catmfs_test(uint32_t *addr) {
     } else {
         PANIC("file not found.")
     }
+    if (catmfs_findbyname(fs, STR("a.out"), &node)) {
+        putf(STR("found:%s\n"), node->name);
+        char data[250];
+        memset(data, 0xCC, sizeof(char) * 250);
+        uint32_t count = read_fs(node, 0, 200, data);
+        data[count] = '\0';
+        putf_const("now exec it.");
+        alloc_frame(get_page(0xB0000000, true, current_dir), false, false);
+        memcpy(0xB0000000, data, 250);
+        enter_ring3(0xB0000000);
+
+    } else {
+        PANIC("file not found.")
+    }
 }
 
-#include "include/syscall.h"
 
 void user_app() {
     syscall_helloworld();
     syscall_screen_print(STR("[]Hello DCat~"));
+    int c = 0;
+    int a = 24 + 12 / c;
+    char result[12];
+    strformat(result, "%x", a);
+    syscall_screen_print(result);
     for (;;);
 }
 
-void ring3() {
-    dumphex("ring3:", ring3);
-    __asm__ __volatile__(
-    "cli;"
-            "mov $0x23,%ax;"
-            "mov %ax,%ds;"
-            "mov %ax,%es;"
-            "mov %ax,%fs;"
-            "mov %ax,%gs;"
-            "mov %esp,%eax;"
-            "push $0x23;"
-            "push %eax;"
-            "pushf;"
-            "pop %eax;"
-            "or $0x200,%eax;"
-            "pushl %eax;"
-            "push $0x1B;"
-            "push $1f;"
-            "iret;"
-            "1:");
-    user_app();
-    for (;;);
-}
 
 uint32_t get_eip() {
     __asm__ __volatile__ (""
@@ -252,29 +182,28 @@ void kernel_vep_heap_test() {
     //for(;;);
 }
 
-void usermode_test() {
-    kernel_vep_heap_test();
+void usermode_test(uint32_t *initrd) {
+    uint32_t addr = (uint32_t) initrd;
+    dumphex("addr", addr);
     cli();
     uint32_t ebp, esp;
+    //FIXME squash the args.<----- Maybe a bug.
     putf_const("cloning the stack..\n")
-    copy_current_stack(0xE1000000, 0x1000, &ebp, &esp);
+    copy_current_stack(0xE2000000, 0x4000, &ebp, &esp);
     set_kernel_stack(ebp);
     change_stack(ebp, esp);
     putf_const("cloning the page directory..\n")
     page_directory_t *pd = clone_page_directory(current_dir);
-    putf_const("[%x -> %x][%x]switch to cloned page directory...\n", current_dir->physical_addr,
-               pd->physical_addr,
+    putf_const("[%x -> %x][%x]switch to cloned page directory...\n", current_dir->physical_addr, pd->physical_addr,
                pd->table_physical_addr);
     switch_page_directory(pd);
     putf_const("pd switched.");
-    extern void enter_usermode();
-    putf_const("enter_usermode:%x\n", enter_usermode);
+    sti();
     __asm__ __volatile__("mov $0x24,%eax;"
             "int $0x60;");
-    putf_const("syscall done.\n");
-    //k_delay(5);
-    //enter_usermode();
-    ring3();
+    putf_const("syscall done.\n\n");
+    //dumphex("addr", addr);
+    catmfs_test(addr);
     for (;;);
 }
 
@@ -313,7 +242,8 @@ int main(multiboot_info_t *mul_arg, uint32_t init_esp_arg) {
         putc(initrd_raw[x]);
     }*/
     //catmfs_test(initrd_start);
-    usermode_test();
+    delay(2);
+    usermode_test(initrd_start);
     puts_const("[+] main done.");
     for (;;);
 }

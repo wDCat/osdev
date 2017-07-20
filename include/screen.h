@@ -59,4 +59,6 @@ void pause();
 
 void on_keyboard_event(int kc);
 
+void enter_ring3(uint32_t start_addr);
+
 #endif //W2_SCREEN_H

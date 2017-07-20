@@ -175,7 +175,7 @@ void paging_install() {
         alloc_frame(get_page(i, true, kernel_dir), false, false);
     }
 
-
+/*
     int32_t x = get_continuous_free_frame((KCONTHEAP_SIZE + 0x1000) / 0x1000);
     if (x < 0) {
         PANIC("no continuous frame//");
@@ -193,8 +193,9 @@ void paging_install() {
     kernel_vep_heap = create_heap(x * 0x1000, x * 0x1000 + KCONTHEAP_SIZE + 0x1000,
                                   x * 0x1000 + KCONTHEAP_SIZE + 0x1000,
                                   kernel_dir);
+*/
     for (uint32_t i = KHEAP_START; i < KHEAP_START + KHEAP_SIZE + 0x1000; i += 0x1000) {
-        alloc_frame(get_page(i, true, kernel_dir), false, false);
+        alloc_frame(get_page(i, true, kernel_dir), true, false);
     }
 
     switch_page_directory(kernel_dir);

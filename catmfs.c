@@ -10,9 +10,17 @@
 catmfs_t *catmfs_init(uint32_t mem_addr) {
     catmfs_t *fs = (catmfs_t *) kmalloc(sizeof(catmfs_t));
     fs->header = (catmfs_raw_header_t *) mem_addr;
+    dumphex("fsheader:", fs->header);
+    dumphex("memaddr:", mem_addr);
+    if (fs->header->magic != CATMFS_MAGIC) {
+        putf_const("[%x][%x][%x]", fs->header, fs->header->magic, CATMFS_MAGIC);
+        for (;;);
+    }
     ASSERT(fs->header->magic == CATMFS_MAGIC);
+    putf_const("ass succ")
     fs->tables = (catmfs_obj_table_t *) (mem_addr + (uint32_t) sizeof(catmfs_raw_header_t));
     fs->table_count = fs->header->obj_table_count;
+
     putf(STR("[CATMFS]size:%x table_count:%x\n"), fs->header->length, fs->header->obj_table_count);
     uint32_t *data_magic_a = (uint32_t *) (mem_addr + sizeof(catmfs_raw_header_t) +
                                            fs->table_count * sizeof(catmfs_obj_table_t));
