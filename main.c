@@ -96,6 +96,7 @@ void install_all() {
     //kmalloc_install();
     paging_install();
     syscall_install();
+    proc_install();
 }
 
 void str_test() {
