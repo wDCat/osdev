@@ -54,7 +54,8 @@ pid_t getpid();
 void proc_install();
 
 void
-copy_current_stack(uint32_t start_addr, uint32_t size, uint32_t *new_ebp, uint32_t *new_esp, page_directory_t *dir);
+copy_current_stack(uint32_t start_addr, uint32_t size, uint32_t *new_ebp, uint32_t *new_esp, uint32_t start_esp,
+                   page_directory_t *dir);
 
 pid_t fork(regs_t *r);
 

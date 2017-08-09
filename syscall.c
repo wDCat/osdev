@@ -43,8 +43,8 @@ uint32_t syscalls_table[] = {
 
 void syscall_install() {
     extern void _isr_syscall();
-    idt_set_gate(0x60, (unsigned) _isr_syscall, 0x08, 0xEE);
-    idt_set_gate(0x61, (unsigned) _isr_syscall, 1 << 3, 0xEF);
+    //idt_set_gate(0x60, (unsigned) _isr_syscall, 0x08, 0xEE);
+    idt_set_gate(0x60, (unsigned) _isr_syscall, 1 << 3, 0xEF);
 }
 
 _impl_syscall0(helloworld, 0);

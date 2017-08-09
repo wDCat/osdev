@@ -4,7 +4,7 @@
 
 #include "include/gdt.h"
 
-gdt_entry_t gdt[6];
+gdt_entry_t gdt[8];
 gdt_ptr_t gp;
 
 /* Setup a descriptor in the Global Descriptor Table */
@@ -41,6 +41,6 @@ void gdt_install() {
     write_tss(TSS_ID, 0x10, 0);
     extern uint32_t _sys_stack;
     set_kernel_stack(_sys_stack);
-    gdt_flush(gdt, 6);
+    gdt_flush(gdt, 8);
     tss_flush();
 }

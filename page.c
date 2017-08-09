@@ -198,10 +198,10 @@ void paging_install() {
                                   kernel_dir);
 */
     for (uint32_t i = KHEAP_START; i < KHEAP_START + KHEAP_SIZE + 0x1000; i += 0x1000) {
-        alloc_frame(get_page(i, true, kernel_dir), true, false);
+        alloc_frame(get_page(i, true, kernel_dir), false, false);
     }
     for (uint32_t i = KPHEAP_START; i < KPHEAP_START + KPHEAP_SIZE + 0x1000; i += 0x1000) {
-        alloc_frame(get_page(i, true, kernel_dir), true, false);
+        alloc_frame(get_page(i, true, kernel_dir), false, false);
     }
 
     switch_page_directory(kernel_dir);
