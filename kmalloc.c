@@ -9,15 +9,24 @@
 #include "include/kmalloc.h"
 
 heap_t *kernel_heap = 0;
-heap_t *kernel_vep_heap = 0;//物理与逻辑地址相等
+paging_heap_t *kernel_pheap = 0;
 uint32_t heap_placement_addr;
-extern heap_t *kernel_heap;
 
 void kmalloc_install() {
     heap_placement_addr = (uint32_t) &end;
     //putint(heap_placement_addr);
 }
 
+uint32_t kmalloc_paging(uint32_t sz, uint32_t *phys) {
+    if (kernel_pheap) {
+        uint32_t r = (uint32_t) pheap_alloc(kernel_pheap, sz);
+        if (phys) {
+            *phys = get_physical_address(r);
+        }
+        return r;
+    } else
+        return kmalloc_internal(sz, true, phys, NULL);
+}
 uint32_t kmalloc_internal(uint32_t sz, bool align, uint32_t *phys, heap_t *heap) {
     ASSERT(heap_placement_addr != NULL);
     ASSERT(heap_placement_addr >= &end);

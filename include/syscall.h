@@ -6,6 +6,7 @@
 #define W2_SYSCALL_H
 
 #include "isrs.h"
+#include "proc.h"
 
 #define _define_syscall0(fn, num) long syscall_##fn()
 #define _define_syscall1(fn, num, P1) long syscall_##fn(P1 p1)
@@ -47,6 +48,12 @@ long syscall_##fn(P1 p1, P2 p2, P3 p3) \
 _define_syscall0(helloworld, 0);
 
 _define_syscall1(screen_print, 1, const char*);
+
+_define_syscall0(fork, 3);
+
+_define_syscall0(getpid, 4);
+
+_define_syscall1(hello_switcher, 5, pid_t);
 
 void syscall_install();
 

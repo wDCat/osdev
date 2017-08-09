@@ -38,7 +38,7 @@ void gdt_install() {
     gdt_set_gate(2, 0, 0xFFFFFFFF, 0x92, 0xCF);// Kernel Data
     gdt_set_gate(3, 0, 0xFFFFFFFF, 0xFA, 0xCF); // User mode code segment
     gdt_set_gate(4, 0, 0xFFFFFFFF, 0xF2, 0xCF); // User mode data segment
-    write_tss(5, 0x10, 0);
+    write_tss(TSS_ID, 0x10, 0);
     extern uint32_t _sys_stack;
     set_kernel_stack(_sys_stack);
     gdt_flush(gdt, 6);

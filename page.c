@@ -169,6 +169,9 @@ void paging_install() {
     for (uint32_t i = KHEAP_START; i < KHEAP_START + KHEAP_SIZE + 0x1000; i += 0x1000) {
         get_page(i, true, kernel_dir);
     }
+    for (uint32_t i = KPHEAP_START; i < KPHEAP_START + KPHEAP_SIZE + 0x1000; i += 0x1000) {
+        get_page(i, true, kernel_dir);
+    }
     //多分配10个页
     putf_const("pag %x -> %x\n", 0, kernel_area + 0x30000);
     for (uint32_t i = 0; i < kernel_area + 0x30000; i += 0x1000) {
@@ -197,14 +200,17 @@ void paging_install() {
     for (uint32_t i = KHEAP_START; i < KHEAP_START + KHEAP_SIZE + 0x1000; i += 0x1000) {
         alloc_frame(get_page(i, true, kernel_dir), true, false);
     }
+    for (uint32_t i = KPHEAP_START; i < KPHEAP_START + KPHEAP_SIZE + 0x1000; i += 0x1000) {
+        alloc_frame(get_page(i, true, kernel_dir), true, false);
+    }
 
     switch_page_directory(kernel_dir);
     enable_paging();
     flush_TLB();
     putf_const("kernel vep heap created.\n");
     dumphex("heap_placement_addr:", heap_placement_addr);
-    //FIXME 这条语句之后会导致alloc_frame 失效
     kernel_heap = create_heap(KHEAP_START, KHEAP_START + KHEAP_SIZE, KHEAP_START + KHEAP_SIZE * 2, kernel_dir);
+    kernel_pheap = pheap_create(KPHEAP_START, KPHEAP_SIZE);
 }
 
 void switch_page_directory(page_directory_t *dir) {
@@ -218,7 +224,6 @@ void switch_page_directory(page_directory_t *dir) {
     __asm__ __volatile__("mov %0, %%cr0"::"r"(cr0));*/
 
 }
-
 page_t *get_page(uint32_t addr, int make, page_directory_t *dir) {
     uint32_t frame_no = addr / 0x1000;//4K
     uint32_t table_idx = frame_no / 1024;//一个page table里有1024个page table entry
@@ -226,8 +231,9 @@ page_t *get_page(uint32_t addr, int make, page_directory_t *dir) {
         return &(dir->tables[table_idx]->pages[frame_no % 1024]);
     } else if (make) {
         uint32_t phyaddr;
-        dir->tables[table_idx] = (page_table_t *) kmalloc_internal(sizeof(page_table_t), true, &phyaddr,
-                                                                   kernel_heap);
+        //Use a empty page instead.
+        //dir->tables[table_idx] = (page_table_t *) kmalloc_internal(sizeof(page_table_t), true, &phyaddr, kernel_heap);
+        dir->tables[table_idx] = (page_table_t *) kmalloc_paging(sizeof(page_table_t), &phyaddr);
         memset(dir->tables[table_idx], 0, sizeof(page_table_t));
         dir->table_physical_addr[table_idx] = phyaddr | 0x7;
         return &(dir->tables[table_idx]->pages[frame_no % 1024]);

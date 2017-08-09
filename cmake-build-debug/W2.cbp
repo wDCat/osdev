@@ -11,91 +11,91 @@
 				<Option working_dir="/home/dcat/osdev/w2/cmake-build-debug"/>
 				<Option type="4"/>
 				<MakeCommands>
-					<Build command="/usr/bin/make -j6 -f &quot;/home/dcat/osdev/w2/cmake-build-debug/Makefile&quot;  VERBOSE=1 all"/>
-					<CompileFile command="/usr/bin/make -j6 -f &quot;/home/dcat/osdev/w2/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
-					<Clean command="/usr/bin/make -j6 -f &quot;/home/dcat/osdev/w2/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
-					<DistClean command="/usr/bin/make -j6 -f &quot;/home/dcat/osdev/w2/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<Build command="/usr/bin/make -j4 -f &quot;/home/dcat/osdev/w2/cmake-build-debug/Makefile&quot;  VERBOSE=1 all"/>
+					<CompileFile command="/usr/bin/make -j4 -f &quot;/home/dcat/osdev/w2/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j4 -f &quot;/home/dcat/osdev/w2/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j4 -f &quot;/home/dcat/osdev/w2/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
 				</MakeCommands>
 			</Target>
 			<Target title="edit_cache">
 				<Option working_dir="/home/dcat/osdev/w2/cmake-build-debug"/>
 				<Option type="4"/>
 				<MakeCommands>
-					<Build command="/usr/bin/make -j6 -f &quot;/home/dcat/osdev/w2/cmake-build-debug/Makefile&quot;  VERBOSE=1 edit_cache"/>
-					<CompileFile command="/usr/bin/make -j6 -f &quot;/home/dcat/osdev/w2/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
-					<Clean command="/usr/bin/make -j6 -f &quot;/home/dcat/osdev/w2/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
-					<DistClean command="/usr/bin/make -j6 -f &quot;/home/dcat/osdev/w2/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<Build command="/usr/bin/make -j4 -f &quot;/home/dcat/osdev/w2/cmake-build-debug/Makefile&quot;  VERBOSE=1 edit_cache"/>
+					<CompileFile command="/usr/bin/make -j4 -f &quot;/home/dcat/osdev/w2/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j4 -f &quot;/home/dcat/osdev/w2/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j4 -f &quot;/home/dcat/osdev/w2/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
 				</MakeCommands>
 			</Target>
 			<Target title="rebuild_cache">
 				<Option working_dir="/home/dcat/osdev/w2/cmake-build-debug"/>
 				<Option type="4"/>
 				<MakeCommands>
-					<Build command="/usr/bin/make -j6 -f &quot;/home/dcat/osdev/w2/cmake-build-debug/Makefile&quot;  VERBOSE=1 rebuild_cache"/>
-					<CompileFile command="/usr/bin/make -j6 -f &quot;/home/dcat/osdev/w2/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
-					<Clean command="/usr/bin/make -j6 -f &quot;/home/dcat/osdev/w2/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
-					<DistClean command="/usr/bin/make -j6 -f &quot;/home/dcat/osdev/w2/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<Build command="/usr/bin/make -j4 -f &quot;/home/dcat/osdev/w2/cmake-build-debug/Makefile&quot;  VERBOSE=1 rebuild_cache"/>
+					<CompileFile command="/usr/bin/make -j4 -f &quot;/home/dcat/osdev/w2/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j4 -f &quot;/home/dcat/osdev/w2/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j4 -f &quot;/home/dcat/osdev/w2/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
 				</MakeCommands>
 			</Target>
 			<Target title="MyExecutable">
 				<Option output="/home/dcat/osdev/w2/cmake-build-debug/MyExecutable" prefix_auto="0" extension_auto="0"/>
-				<Option working_dir=""/>
+				<Option working_dir="/home/dcat/osdev/w2/cmake-build-debug"/>
 				<Option object_output="./"/>
 				<Option type="1"/>
 				<Option compiler="gcc"/>
 				<Compiler>
 					<Add directory="/home/dcat/osdev/w2/include"/>
-					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/4.8/include"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/5/include"/>
 					<Add directory="/usr/local/include"/>
-					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/4.8/include-fixed"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/5/include-fixed"/>
 					<Add directory="/usr/include/x86_64-linux-gnu"/>
 					<Add directory="/usr/include"/>
-					<Add directory="/usr/include/c++/4.8"/>
-					<Add directory="/usr/include/x86_64-linux-gnu/c++/4.8"/>
-					<Add directory="/usr/include/c++/4.8/backward"/>
+					<Add directory="/usr/include/c++/5"/>
+					<Add directory="/usr/include/x86_64-linux-gnu/c++/5"/>
+					<Add directory="/usr/include/c++/5/backward"/>
 				</Compiler>
 				<MakeCommands>
-					<Build command="/usr/bin/make -j6 -f &quot;/home/dcat/osdev/w2/cmake-build-debug/Makefile&quot;  VERBOSE=1 MyExecutable"/>
-					<CompileFile command="/usr/bin/make -j6 -f &quot;/home/dcat/osdev/w2/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
-					<Clean command="/usr/bin/make -j6 -f &quot;/home/dcat/osdev/w2/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
-					<DistClean command="/usr/bin/make -j6 -f &quot;/home/dcat/osdev/w2/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<Build command="/usr/bin/make -j4 -f &quot;/home/dcat/osdev/w2/cmake-build-debug/Makefile&quot;  VERBOSE=1 MyExecutable"/>
+					<CompileFile command="/usr/bin/make -j4 -f &quot;/home/dcat/osdev/w2/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j4 -f &quot;/home/dcat/osdev/w2/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j4 -f &quot;/home/dcat/osdev/w2/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
 				</MakeCommands>
 			</Target>
 			<Target title="MyExecutable/fast">
 				<Option output="/home/dcat/osdev/w2/cmake-build-debug/MyExecutable" prefix_auto="0" extension_auto="0"/>
-				<Option working_dir=""/>
+				<Option working_dir="/home/dcat/osdev/w2/cmake-build-debug"/>
 				<Option object_output="./"/>
 				<Option type="1"/>
 				<Option compiler="gcc"/>
 				<Compiler>
 					<Add directory="/home/dcat/osdev/w2/include"/>
-					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/4.8/include"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/5/include"/>
 					<Add directory="/usr/local/include"/>
-					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/4.8/include-fixed"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/5/include-fixed"/>
 					<Add directory="/usr/include/x86_64-linux-gnu"/>
 					<Add directory="/usr/include"/>
-					<Add directory="/usr/include/c++/4.8"/>
-					<Add directory="/usr/include/x86_64-linux-gnu/c++/4.8"/>
-					<Add directory="/usr/include/c++/4.8/backward"/>
+					<Add directory="/usr/include/c++/5"/>
+					<Add directory="/usr/include/x86_64-linux-gnu/c++/5"/>
+					<Add directory="/usr/include/c++/5/backward"/>
 				</Compiler>
 				<MakeCommands>
-					<Build command="/usr/bin/make -j6 -f &quot;/home/dcat/osdev/w2/cmake-build-debug/Makefile&quot;  VERBOSE=1 MyExecutable/fast"/>
-					<CompileFile command="/usr/bin/make -j6 -f &quot;/home/dcat/osdev/w2/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
-					<Clean command="/usr/bin/make -j6 -f &quot;/home/dcat/osdev/w2/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
-					<DistClean command="/usr/bin/make -j6 -f &quot;/home/dcat/osdev/w2/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<Build command="/usr/bin/make -j4 -f &quot;/home/dcat/osdev/w2/cmake-build-debug/Makefile&quot;  VERBOSE=1 MyExecutable/fast"/>
+					<CompileFile command="/usr/bin/make -j4 -f &quot;/home/dcat/osdev/w2/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j4 -f &quot;/home/dcat/osdev/w2/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j4 -f &quot;/home/dcat/osdev/w2/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
 				</MakeCommands>
 			</Target>
 		</Build>
 		<Unit filename="/home/dcat/osdev/w2/catmfs.c">
 			<Option target="MyExecutable"/>
 		</Unit>
+		<Unit filename="/home/dcat/osdev/w2/contious_heap.c">
+			<Option target="MyExecutable"/>
+		</Unit>
 		<Unit filename="/home/dcat/osdev/w2/fs_node.c">
 			<Option target="MyExecutable"/>
 		</Unit>
 		<Unit filename="/home/dcat/osdev/w2/gdt.c">
-			<Option target="MyExecutable"/>
-		</Unit>
-		<Unit filename="/home/dcat/osdev/w2/heap.c">
 			<Option target="MyExecutable"/>
 		</Unit>
 		<Unit filename="/home/dcat/osdev/w2/heap_array_list.c">
@@ -128,13 +128,25 @@
 		<Unit filename="/home/dcat/osdev/w2/page.c">
 			<Option target="MyExecutable"/>
 		</Unit>
+		<Unit filename="/home/dcat/osdev/w2/proc.c">
+			<Option target="MyExecutable"/>
+		</Unit>
 		<Unit filename="/home/dcat/osdev/w2/screen.c">
 			<Option target="MyExecutable"/>
 		</Unit>
 		<Unit filename="/home/dcat/osdev/w2/str.c">
 			<Option target="MyExecutable"/>
 		</Unit>
+		<Unit filename="/home/dcat/osdev/w2/syscall.c">
+			<Option target="MyExecutable"/>
+		</Unit>
+		<Unit filename="/home/dcat/osdev/w2/system.c">
+			<Option target="MyExecutable"/>
+		</Unit>
 		<Unit filename="/home/dcat/osdev/w2/timer.c">
+			<Option target="MyExecutable"/>
+		</Unit>
+		<Unit filename="/home/dcat/osdev/w2/tss.c">
 			<Option target="MyExecutable"/>
 		</Unit>
 		<Unit filename="/home/dcat/osdev/w2/CMakeLists.txt">

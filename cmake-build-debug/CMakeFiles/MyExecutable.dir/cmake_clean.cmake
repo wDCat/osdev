@@ -1,8 +1,8 @@
 file(REMOVE_RECURSE
   "CMakeFiles/MyExecutable.dir/catmfs.c.o"
+  "CMakeFiles/MyExecutable.dir/contious_heap.c.o"
   "CMakeFiles/MyExecutable.dir/fs_node.c.o"
   "CMakeFiles/MyExecutable.dir/gdt.c.o"
-  "CMakeFiles/MyExecutable.dir/heap.c.o"
   "CMakeFiles/MyExecutable.dir/heap_array_list.c.o"
   "CMakeFiles/MyExecutable.dir/ide.c.o"
   "CMakeFiles/MyExecutable.dir/idt.c.o"
@@ -13,9 +13,13 @@ file(REMOVE_RECURSE
   "CMakeFiles/MyExecutable.dir/linkedlist.c.o"
   "CMakeFiles/MyExecutable.dir/main.c.o"
   "CMakeFiles/MyExecutable.dir/page.c.o"
+  "CMakeFiles/MyExecutable.dir/proc.c.o"
   "CMakeFiles/MyExecutable.dir/screen.c.o"
   "CMakeFiles/MyExecutable.dir/str.c.o"
+  "CMakeFiles/MyExecutable.dir/syscall.c.o"
+  "CMakeFiles/MyExecutable.dir/system.c.o"
   "CMakeFiles/MyExecutable.dir/timer.c.o"
+  "CMakeFiles/MyExecutable.dir/tss.c.o"
   "MyExecutable.pdb"
   "MyExecutable"
 )

@@ -158,12 +158,6 @@ void user_app() {
 }
 
 
-uint32_t get_eip() {
-    __asm__ __volatile__ (""
-            "pop %eax;"
-            "jmp %eax;");
-}
-
 void get_phy_test() {
 
     uint32_t phy;
@@ -177,10 +171,32 @@ void get_phy_test() {
 
 void kernel_vep_heap_test() {
     //putf_const("[KVH]Test begin//\n");
-    uint32_t *a = kmalloc_internal(0x20, false, NULL, kernel_vep_heap);
-    putf_const("[KVH]a vm:%x phy:%x\n", a, get_physical_address(a));
+    //uint32_t *a = kmalloc_internal(0x20, false, NULL, kernel_vep_heap);
+    //putf_const("[KVH]a vm:%x phy:%x\n", a, get_physical_address(a));
     //putf_const("[KVH]Test done//\n");
     //for(;;);
+}
+
+void fork_test() {
+
+    putf_const("nekoya[%x][%x]\n", fork_test, enter_ring3);
+    enter_user_mode();
+    long a;
+    __asm__ __volatile__("mov $0x12,%eax");
+    __asm__ __volatile__("mov $0x24,%eax");
+    __asm__ __volatile__("mov $0x36,%eax");
+    __asm__ __volatile__("mov $0x48,%eax");
+    __asm__ __volatile__("int $0x61" : "=a" (a) : "0" (0));
+    for (;;);
+    //user_app();
+    /*
+    pid_t cpid = (pid_t) syscall_fork();
+    switch (cpid) {
+        case 0: putf_const("child///[%x]\n", syscall_getpid());
+            break;
+        default: putf_const("father vvs///[%x]c:[%x]\n", syscall_getpid(), cpid);
+            //syscall_hello_switcher(cpid);
+    }*/
 }
 
 void usermode_test(uint32_t *initrd) {
@@ -189,26 +205,31 @@ void usermode_test(uint32_t *initrd) {
     cli();
     uint32_t ebp, esp;
     //FIXME squash the args.<----- Maybe a bug.
-    putf_const("cloning the stack..\n")
-    copy_current_stack(0xE2000000, 0x4000, &ebp, &esp);
-    set_kernel_stack(ebp);
-    change_stack(ebp, esp);
     putf_const("cloning the page directory..\n")
     page_directory_t *pd = clone_page_directory(current_dir);
     putf_const("[%x -> %x][%x]switch to cloned page directory...\n", current_dir->physical_addr, pd->physical_addr,
                pd->table_physical_addr);
     switch_page_directory(pd);
     putf_const("pd switched.");
+    putf_const("cloning the stack..\n")
+    copy_current_stack(0xE2000000, 0x4000, &ebp, &esp, current_dir);
+    set_kernel_stack(ebp);
+    putf_const("stack cloned.\n");
+    change_stack(ebp, esp);
     sti();
     __asm__ __volatile__("mov $0x24,%eax;"
             "int $0x60;");
     putf_const("syscall done.\n\n");
     //dumphex("addr", addr);
-    catmfs_test(addr);
+    //catmfs_test(addr);
+    fork_test();
     for (;;);
 }
 
 uint32_t init_esp;
+#ifndef _BUILD_TIME
+#define _BUILD_TIME 00
+#endif
 
 int main(multiboot_info_t *mul_arg, uint32_t init_esp_arg) {
     init_esp = init_esp_arg;
@@ -220,30 +241,26 @@ int main(multiboot_info_t *mul_arg, uint32_t init_esp_arg) {
     memcpy(&mul, mul_arg, sizeof(multiboot_info_t));
     //MUL HEADER LOST AFTER INSTALL!!!
     install_all();
-    putln_const("NEKO");
-    putln_const("[+] main called.");
-    ASSERT(strlen(STR("Hello DCat")) == 10);
-    putln_const("[+] Super Neko");
-    puts_const("[+] Time:");
-    putint(12450);
-    putln_const("+1s");
-    putln_const("[+] Now enable IRQs");
-    __asm__ __volatile__ ("sti");
-    void *amem = (void *) kmalloc(4096);
-    dumphex("amem:", amem);
     if (mul.mods_count <= 0) {
         PANIC("module not found..")
     }
-    dumphex("mod count:", mul.mods_count);
-    dumphex("initrd_start:", initrd_start);
-    dumphex("initrd_end:", initrd_end);
+    putln_const("[+] main called.");
+    ASSERT(strlen(STR("Hello DCat")) == 10);
+    putln_const("[+] Super Neko");
+    putf_const("[+] Built Time: %d \n", _BUILD_TIME);
+    putln_const("[+] Now enable IRQs");
+    sti();
+
+    //dumphex("mod count:", mul.mods_count);
+    //dumphex("initrd_start:", initrd_start);
+    //dumphex("initrd_end:", initrd_end);
     /*
     uint8_t *initrd_raw = (uint8_t *) initrd_start;
     for (int x = 0; x < initrd_end - initrd_start; x++) {
         putc(initrd_raw[x]);
     }*/
     //catmfs_test(initrd_start);
-    delay(2);
+    //delay(2);
     usermode_test(initrd_start);
     puts_const("[+] main done.");
     for (;;);

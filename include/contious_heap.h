@@ -12,7 +12,9 @@
 #define HOLE_FOOTER_MAGIC 0xD3D3D3A3
 
 #define KHEAP_START 0xA0000000
-#define KHEAP_SIZE  0x800000
+#define KHEAP_SIZE  0x10000
+#define KPHEAP_START 0xA3000000
+#define KPHEAP_SIZE  0x10000
 #define KCONTHEAP_SIZE  0x10000
 typedef struct {
     uint32_t magic;

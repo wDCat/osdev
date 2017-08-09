@@ -150,6 +150,33 @@ catmfs.c.s:
 	$(MAKE) -f CMakeFiles/MyExecutable.dir/build.make CMakeFiles/MyExecutable.dir/catmfs.c.s
 .PHONY : catmfs.c.s
 
+contious_heap.o: contious_heap.c.o
+
+.PHONY : contious_heap.o
+
+# target to build an object file
+contious_heap.c.o:
+	$(MAKE) -f CMakeFiles/MyExecutable.dir/build.make CMakeFiles/MyExecutable.dir/contious_heap.c.o
+.PHONY : contious_heap.c.o
+
+contious_heap.i: contious_heap.c.i
+
+.PHONY : contious_heap.i
+
+# target to preprocess a source file
+contious_heap.c.i:
+	$(MAKE) -f CMakeFiles/MyExecutable.dir/build.make CMakeFiles/MyExecutable.dir/contious_heap.c.i
+.PHONY : contious_heap.c.i
+
+contious_heap.s: contious_heap.c.s
+
+.PHONY : contious_heap.s
+
+# target to generate assembly for a file
+contious_heap.c.s:
+	$(MAKE) -f CMakeFiles/MyExecutable.dir/build.make CMakeFiles/MyExecutable.dir/contious_heap.c.s
+.PHONY : contious_heap.c.s
+
 fs_node.o: fs_node.c.o
 
 .PHONY : fs_node.o
@@ -203,33 +230,6 @@ gdt.s: gdt.c.s
 gdt.c.s:
 	$(MAKE) -f CMakeFiles/MyExecutable.dir/build.make CMakeFiles/MyExecutable.dir/gdt.c.s
 .PHONY : gdt.c.s
-
-heap.o: heap.c.o
-
-.PHONY : heap.o
-
-# target to build an object file
-heap.c.o:
-	$(MAKE) -f CMakeFiles/MyExecutable.dir/build.make CMakeFiles/MyExecutable.dir/heap.c.o
-.PHONY : heap.c.o
-
-heap.i: heap.c.i
-
-.PHONY : heap.i
-
-# target to preprocess a source file
-heap.c.i:
-	$(MAKE) -f CMakeFiles/MyExecutable.dir/build.make CMakeFiles/MyExecutable.dir/heap.c.i
-.PHONY : heap.c.i
-
-heap.s: heap.c.s
-
-.PHONY : heap.s
-
-# target to generate assembly for a file
-heap.c.s:
-	$(MAKE) -f CMakeFiles/MyExecutable.dir/build.make CMakeFiles/MyExecutable.dir/heap.c.s
-.PHONY : heap.c.s
 
 heap_array_list.o: heap_array_list.c.o
 
@@ -501,6 +501,33 @@ page.c.s:
 	$(MAKE) -f CMakeFiles/MyExecutable.dir/build.make CMakeFiles/MyExecutable.dir/page.c.s
 .PHONY : page.c.s
 
+proc.o: proc.c.o
+
+.PHONY : proc.o
+
+# target to build an object file
+proc.c.o:
+	$(MAKE) -f CMakeFiles/MyExecutable.dir/build.make CMakeFiles/MyExecutable.dir/proc.c.o
+.PHONY : proc.c.o
+
+proc.i: proc.c.i
+
+.PHONY : proc.i
+
+# target to preprocess a source file
+proc.c.i:
+	$(MAKE) -f CMakeFiles/MyExecutable.dir/build.make CMakeFiles/MyExecutable.dir/proc.c.i
+.PHONY : proc.c.i
+
+proc.s: proc.c.s
+
+.PHONY : proc.s
+
+# target to generate assembly for a file
+proc.c.s:
+	$(MAKE) -f CMakeFiles/MyExecutable.dir/build.make CMakeFiles/MyExecutable.dir/proc.c.s
+.PHONY : proc.c.s
+
 screen.o: screen.c.o
 
 .PHONY : screen.o
@@ -555,6 +582,60 @@ str.c.s:
 	$(MAKE) -f CMakeFiles/MyExecutable.dir/build.make CMakeFiles/MyExecutable.dir/str.c.s
 .PHONY : str.c.s
 
+syscall.o: syscall.c.o
+
+.PHONY : syscall.o
+
+# target to build an object file
+syscall.c.o:
+	$(MAKE) -f CMakeFiles/MyExecutable.dir/build.make CMakeFiles/MyExecutable.dir/syscall.c.o
+.PHONY : syscall.c.o
+
+syscall.i: syscall.c.i
+
+.PHONY : syscall.i
+
+# target to preprocess a source file
+syscall.c.i:
+	$(MAKE) -f CMakeFiles/MyExecutable.dir/build.make CMakeFiles/MyExecutable.dir/syscall.c.i
+.PHONY : syscall.c.i
+
+syscall.s: syscall.c.s
+
+.PHONY : syscall.s
+
+# target to generate assembly for a file
+syscall.c.s:
+	$(MAKE) -f CMakeFiles/MyExecutable.dir/build.make CMakeFiles/MyExecutable.dir/syscall.c.s
+.PHONY : syscall.c.s
+
+system.o: system.c.o
+
+.PHONY : system.o
+
+# target to build an object file
+system.c.o:
+	$(MAKE) -f CMakeFiles/MyExecutable.dir/build.make CMakeFiles/MyExecutable.dir/system.c.o
+.PHONY : system.c.o
+
+system.i: system.c.i
+
+.PHONY : system.i
+
+# target to preprocess a source file
+system.c.i:
+	$(MAKE) -f CMakeFiles/MyExecutable.dir/build.make CMakeFiles/MyExecutable.dir/system.c.i
+.PHONY : system.c.i
+
+system.s: system.c.s
+
+.PHONY : system.s
+
+# target to generate assembly for a file
+system.c.s:
+	$(MAKE) -f CMakeFiles/MyExecutable.dir/build.make CMakeFiles/MyExecutable.dir/system.c.s
+.PHONY : system.c.s
+
 timer.o: timer.c.o
 
 .PHONY : timer.o
@@ -582,6 +663,33 @@ timer.c.s:
 	$(MAKE) -f CMakeFiles/MyExecutable.dir/build.make CMakeFiles/MyExecutable.dir/timer.c.s
 .PHONY : timer.c.s
 
+tss.o: tss.c.o
+
+.PHONY : tss.o
+
+# target to build an object file
+tss.c.o:
+	$(MAKE) -f CMakeFiles/MyExecutable.dir/build.make CMakeFiles/MyExecutable.dir/tss.c.o
+.PHONY : tss.c.o
+
+tss.i: tss.c.i
+
+.PHONY : tss.i
+
+# target to preprocess a source file
+tss.c.i:
+	$(MAKE) -f CMakeFiles/MyExecutable.dir/build.make CMakeFiles/MyExecutable.dir/tss.c.i
+.PHONY : tss.c.i
+
+tss.s: tss.c.s
+
+.PHONY : tss.s
+
+# target to generate assembly for a file
+tss.c.s:
+	$(MAKE) -f CMakeFiles/MyExecutable.dir/build.make CMakeFiles/MyExecutable.dir/tss.c.s
+.PHONY : tss.c.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -594,15 +702,15 @@ help:
 	@echo "... catmfs.o"
 	@echo "... catmfs.i"
 	@echo "... catmfs.s"
+	@echo "... contious_heap.o"
+	@echo "... contious_heap.i"
+	@echo "... contious_heap.s"
 	@echo "... fs_node.o"
 	@echo "... fs_node.i"
 	@echo "... fs_node.s"
 	@echo "... gdt.o"
 	@echo "... gdt.i"
 	@echo "... gdt.s"
-	@echo "... heap.o"
-	@echo "... heap.i"
-	@echo "... heap.s"
 	@echo "... heap_array_list.o"
 	@echo "... heap_array_list.i"
 	@echo "... heap_array_list.s"
@@ -633,15 +741,27 @@ help:
 	@echo "... page.o"
 	@echo "... page.i"
 	@echo "... page.s"
+	@echo "... proc.o"
+	@echo "... proc.i"
+	@echo "... proc.s"
 	@echo "... screen.o"
 	@echo "... screen.i"
 	@echo "... screen.s"
 	@echo "... str.o"
 	@echo "... str.i"
 	@echo "... str.s"
+	@echo "... syscall.o"
+	@echo "... syscall.i"
+	@echo "... syscall.s"
+	@echo "... system.o"
+	@echo "... system.i"
+	@echo "... system.s"
 	@echo "... timer.o"
 	@echo "... timer.i"
 	@echo "... timer.s"
+	@echo "... tss.o"
+	@echo "... tss.i"
+	@echo "... tss.s"
 .PHONY : help
 
 

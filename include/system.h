@@ -4,6 +4,7 @@
 #include "screen.h"
 #include "bochs_debug.h"
 #include "intdef.h"
+
 #define true 1
 #define false 0
 //String cannot be used as a argument directly.
@@ -58,6 +59,7 @@ typedef struct regs {
     unsigned int eip, cs, eflags, useresp, ss;   /* pushed by the processor automatically */
 } regs_t;
 extern uint32_t init_esp;
+
 /* MAIN.C */
 extern unsigned char *memcpy(unsigned char *dest, const unsigned char *src, int count);
 
@@ -72,5 +74,7 @@ extern void outportb(unsigned short _port, unsigned char _data);
 extern inline const char *itoa(int i, char result[]);
 
 extern void k_delay(uint32_t time);
+
+extern uint32_t get_eip();
 
 #endif

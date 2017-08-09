@@ -66,3 +66,9 @@ inline const char *itoa(int i, char result[]) {
     }
     return &result[x];
 }
+
+uint32_t get_eip() {
+    __asm__ __volatile__ (""
+            "pop %eax;"
+            "jmp %eax;");
+}

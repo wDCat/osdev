@@ -7,8 +7,27 @@
 
 #include "intdef.h"
 #include "page.h"
+#include "tss.h"
 
 #define MAX_PROC_COUNT 256
+/*"pop %eax;" \
+   "or $0x200,%eax;" \
+    "pushl %eax;" \*/
+#define enter_user_mode() \
+__asm__ __volatile__ ( \
+    "movl %%esp,%%eax;" \
+    "pushl $0x23;" \
+    "pushl %%eax;" \
+    "pushfl;" \
+    "pushl $0x1b;" \
+    "pushl $1f;" \
+    "iret;" \
+    "1:\tmovl $0x23,%%eax;" \
+    "mov %%ax,%%ds;" \
+    "mov %%ax,%%es;" \
+    "mov %%ax,%%fs;" \
+    "mov %%ax,%%gs;" \
+    :::"ax")
 #define change_stack(ebp, esp){\
 __asm__ __volatile__("mov %0, %%ebp" : : "r" (ebp));\
 __asm__ __volatile__("mov %0, %%esp" : : "r" (esp));\
@@ -26,7 +45,7 @@ typedef struct {
     proc_status_t status;
     pid_t pid;
     uint32_t eip;
-    uint32_t edi, esi, ebp, esp, ebx, edx, ecx, eax;
+    tss_entry_t tss;
     page_directory_t *page_dir;
 } pcb_t;
 
@@ -34,8 +53,13 @@ pid_t getpid();
 
 void proc_install();
 
-void copy_current_stack(uint32_t start_addr, uint32_t size, uint32_t *new_ebp, uint32_t *new_esp);
+void
+copy_current_stack(uint32_t start_addr, uint32_t size, uint32_t *new_ebp, uint32_t *new_esp, page_directory_t *dir);
 
-pid_t fork();
+pid_t fork(regs_t *r);
+
+pcb_t *getpcb(pid_t pid);
+
+void switch_to_task(pcb_t *pcb);
 
 #endif //W2_PROC_H

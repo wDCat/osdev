@@ -8,6 +8,7 @@
 #include "intdef.h"
 #include "gdt.h"
 
+#define TSS_ID 5
 // A struct describing a Task State Segment.
 struct tss_entry_struct {
     uint32_t prev_tss;   // The previous TSS - if we used hardware task switching this would form a linked list.
@@ -37,13 +38,15 @@ struct tss_entry_struct {
     uint32_t ldt;
     uint16_t trap;
     uint16_t iomap_base;
-} __packed;
+} __attribute__((packed));
 
 typedef struct tss_entry_struct tss_entry_t;
 
 void write_tss(uint32_t num, uint16_t ss0, uint32_t esp0);
 
 void set_kernel_stack(uint32_t addr);
+
+void set_active_tss(tss_entry_t *tss);
 
 void tss_flush();
 

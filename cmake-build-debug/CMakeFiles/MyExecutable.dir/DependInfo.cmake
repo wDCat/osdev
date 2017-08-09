@@ -5,9 +5,9 @@ set(CMAKE_DEPENDS_LANGUAGES
 # The set of files for implicit dependencies of each language:
 set(CMAKE_DEPENDS_CHECK_C
   "/home/dcat/osdev/w2/catmfs.c" "/home/dcat/osdev/w2/cmake-build-debug/CMakeFiles/MyExecutable.dir/catmfs.c.o"
+  "/home/dcat/osdev/w2/contious_heap.c" "/home/dcat/osdev/w2/cmake-build-debug/CMakeFiles/MyExecutable.dir/contious_heap.c.o"
   "/home/dcat/osdev/w2/fs_node.c" "/home/dcat/osdev/w2/cmake-build-debug/CMakeFiles/MyExecutable.dir/fs_node.c.o"
   "/home/dcat/osdev/w2/gdt.c" "/home/dcat/osdev/w2/cmake-build-debug/CMakeFiles/MyExecutable.dir/gdt.c.o"
-  "/home/dcat/osdev/w2/heap.c" "/home/dcat/osdev/w2/cmake-build-debug/CMakeFiles/MyExecutable.dir/heap.c.o"
   "/home/dcat/osdev/w2/heap_array_list.c" "/home/dcat/osdev/w2/cmake-build-debug/CMakeFiles/MyExecutable.dir/heap_array_list.c.o"
   "/home/dcat/osdev/w2/ide.c" "/home/dcat/osdev/w2/cmake-build-debug/CMakeFiles/MyExecutable.dir/ide.c.o"
   "/home/dcat/osdev/w2/idt.c" "/home/dcat/osdev/w2/cmake-build-debug/CMakeFiles/MyExecutable.dir/idt.c.o"
@@ -18,9 +18,13 @@ set(CMAKE_DEPENDS_CHECK_C
   "/home/dcat/osdev/w2/linkedlist.c" "/home/dcat/osdev/w2/cmake-build-debug/CMakeFiles/MyExecutable.dir/linkedlist.c.o"
   "/home/dcat/osdev/w2/main.c" "/home/dcat/osdev/w2/cmake-build-debug/CMakeFiles/MyExecutable.dir/main.c.o"
   "/home/dcat/osdev/w2/page.c" "/home/dcat/osdev/w2/cmake-build-debug/CMakeFiles/MyExecutable.dir/page.c.o"
+  "/home/dcat/osdev/w2/proc.c" "/home/dcat/osdev/w2/cmake-build-debug/CMakeFiles/MyExecutable.dir/proc.c.o"
   "/home/dcat/osdev/w2/screen.c" "/home/dcat/osdev/w2/cmake-build-debug/CMakeFiles/MyExecutable.dir/screen.c.o"
   "/home/dcat/osdev/w2/str.c" "/home/dcat/osdev/w2/cmake-build-debug/CMakeFiles/MyExecutable.dir/str.c.o"
+  "/home/dcat/osdev/w2/syscall.c" "/home/dcat/osdev/w2/cmake-build-debug/CMakeFiles/MyExecutable.dir/syscall.c.o"
+  "/home/dcat/osdev/w2/system.c" "/home/dcat/osdev/w2/cmake-build-debug/CMakeFiles/MyExecutable.dir/system.c.o"
   "/home/dcat/osdev/w2/timer.c" "/home/dcat/osdev/w2/cmake-build-debug/CMakeFiles/MyExecutable.dir/timer.c.o"
+  "/home/dcat/osdev/w2/tss.c" "/home/dcat/osdev/w2/cmake-build-debug/CMakeFiles/MyExecutable.dir/tss.c.o"
   )
 set(CMAKE_C_COMPILER_ID "GNU")
 
