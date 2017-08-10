@@ -45,4 +45,5 @@ void gdt_flush(gdt_entry_t *gdt, uint32_t size);
 
 void gdt_install();
 
+
 #endif //W2_GDT_H

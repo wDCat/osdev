@@ -26,8 +26,11 @@ long fork_s(uint32_t ebx, uint32_t ecx, uint32_t edx, uint32_t esi, uint32_t edi
     return fork(r);
 }
 
-long hello_switcher(pid_t pid) {
-    switch_to_task(getpcb(pid));
+long hello_switcher(pid_t pid, uint32_t ecx, uint32_t edx, uint32_t esi, uint32_t edi, regs_t *r) {
+    cli();
+    save_proc_state(getpcb(pid), r);
+    sti();
+    switch_to_proc(getpcb(pid));
 }
 
 const uint32_t syscalls_count = 6;

@@ -128,6 +128,9 @@
 		<Unit filename="/home/dcat/osdev/w2/page.c">
 			<Option target="MyExecutable"/>
 		</Unit>
+		<Unit filename="/home/dcat/osdev/w2/paging_heap.c">
+			<Option target="MyExecutable"/>
+		</Unit>
 		<Unit filename="/home/dcat/osdev/w2/proc.c">
 			<Option target="MyExecutable"/>
 		</Unit>

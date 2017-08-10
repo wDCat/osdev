@@ -13,6 +13,7 @@ file(REMOVE_RECURSE
   "CMakeFiles/MyExecutable.dir/linkedlist.c.o"
   "CMakeFiles/MyExecutable.dir/main.c.o"
   "CMakeFiles/MyExecutable.dir/page.c.o"
+  "CMakeFiles/MyExecutable.dir/paging_heap.c.o"
   "CMakeFiles/MyExecutable.dir/proc.c.o"
   "CMakeFiles/MyExecutable.dir/screen.c.o"
   "CMakeFiles/MyExecutable.dir/str.c.o"

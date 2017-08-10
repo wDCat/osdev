@@ -61,6 +61,8 @@ pid_t fork(regs_t *r);
 
 pcb_t *getpcb(pid_t pid);
 
-void switch_to_task(pcb_t *pcb);
+void save_proc_state(pcb_t *pcb, regs_t *r);
+
+void switch_to_proc(pcb_t *pcb);
 
 #endif //W2_PROC_H

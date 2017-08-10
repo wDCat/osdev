@@ -9,6 +9,7 @@
 #include "gdt.h"
 
 #define TSS_ID 5
+#define TSS_USER_PROC_ID 6
 // A struct describing a Task State Segment.
 struct tss_entry_struct {
     uint32_t prev_tss;   // The previous TSS - if we used hardware task switching this would form a linked list.

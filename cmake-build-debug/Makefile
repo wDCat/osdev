@@ -501,6 +501,33 @@ page.c.s:
 	$(MAKE) -f CMakeFiles/MyExecutable.dir/build.make CMakeFiles/MyExecutable.dir/page.c.s
 .PHONY : page.c.s
 
+paging_heap.o: paging_heap.c.o
+
+.PHONY : paging_heap.o
+
+# target to build an object file
+paging_heap.c.o:
+	$(MAKE) -f CMakeFiles/MyExecutable.dir/build.make CMakeFiles/MyExecutable.dir/paging_heap.c.o
+.PHONY : paging_heap.c.o
+
+paging_heap.i: paging_heap.c.i
+
+.PHONY : paging_heap.i
+
+# target to preprocess a source file
+paging_heap.c.i:
+	$(MAKE) -f CMakeFiles/MyExecutable.dir/build.make CMakeFiles/MyExecutable.dir/paging_heap.c.i
+.PHONY : paging_heap.c.i
+
+paging_heap.s: paging_heap.c.s
+
+.PHONY : paging_heap.s
+
+# target to generate assembly for a file
+paging_heap.c.s:
+	$(MAKE) -f CMakeFiles/MyExecutable.dir/build.make CMakeFiles/MyExecutable.dir/paging_heap.c.s
+.PHONY : paging_heap.c.s
+
 proc.o: proc.c.o
 
 .PHONY : proc.o
@@ -741,6 +768,9 @@ help:
 	@echo "... page.o"
 	@echo "... page.i"
 	@echo "... page.s"
+	@echo "... paging_heap.o"
+	@echo "... paging_heap.i"
+	@echo "... paging_heap.s"
 	@echo "... proc.o"
 	@echo "... proc.i"
 	@echo "... proc.s"

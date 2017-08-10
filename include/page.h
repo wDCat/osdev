@@ -48,6 +48,11 @@ extern void _switch_page_dir_internal(uint32_t addr);
 
 #define FRAME_STATUS_USED 1
 #define FRAME_STATUS_FREE 0
+#define KHEAP_START 0xA000000
+#define KHEAP_SIZE  0x30000
+#define KPHEAP_START 0xA300000
+#define KPHEAP_SIZE  0x30000
+#define KCONTHEAP_SIZE  0x10000
 #define disable_paging(){\
 uint32_t cr0;\
 __asm__ __volatile__("mov %%cr0, %0":"=r"(cr0));\
@@ -81,7 +86,7 @@ void page_fault_handler(regs_t *r);
 
 uint32_t page_to_bit(page_t *p);
 
-page_table_t *clone_page_table(page_table_t *src, uint32_t *phy_out);
+//page_table_t *clone_page_table(page_table_t *src, uint32_t *phy_out);
 
 page_directory_t *clone_page_directory(page_directory_t *src);
 

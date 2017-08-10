@@ -178,50 +178,10 @@ void kernel_vep_heap_test() {
 }
 
 
-void fork_test() {
-    uint32_t ebp, esp;
-    __asm__ __volatile__("mov %%esp, %0" : "=r" (esp));
-    __asm__ __volatile__("mov %%ebp, %0" : "=r" (ebp));
-    for (int x = 0x2000; x >= 0; x -= 0x1000) {
-        page_t *page = get_page(0xC0000000 - x, true, current_dir);//栈是高地址到低地址增长的
-        ASSERT(page);
-        //putf_const("[%x]page addr:%x dir:%x\n", start_addr - x, page, dir)
-        alloc_frame(page, false, true);
-    }
-    set_kernel_stack(0xC0000000);
-    enter_user_mode();
-    //change_stack(0xC0000000 - 0x10, 0xC0000000 - 0x20);
-    long a;
-    __asm__ __volatile__("int $0x60" : "=a" (a) : "0" (0));
-    //__asm__ __volatile__("push $0x24");
-    syscall_screen_print("H");
-    syscall_screen_print(",try to fork...\n");
-    //
-    // user_app();
-
-    pid_t cpid = (pid_t) syscall_fork();
-    syscall_screen_print("fork done.");
-    char buff[256];
-    switch (cpid) {
-        case 0:
-            strformat(buff, "child///[%x]", syscall_getpid());
-            syscall_screen_print(buff);
-            //putf_const("child///[%x]\n", syscall_getpid());
-
-            break;
-        default:
-            strformat(buff, "father///[%x]c:[%x]\n", syscall_getpid(), cpid);
-            syscall_screen_print(buff);
-            //putf_const("father vvs///[%x]c:[%x]\n", syscall_getpid(), cpid);
-            //syscall_hello_switcher(cpid);}
-
-    }
-}
-
 void usermode_test(uint32_t *initrd) {
+    cli();
     uint32_t addr = (uint32_t) initrd;;
     dumphex("addr", addr);
-    cli();
     //FIXME squash the args.<----- Maybe a bug.
     putf_const("cloning the page directory..\n")
     page_directory_t *pd = clone_page_directory(current_dir);
@@ -235,17 +195,27 @@ void usermode_test(uint32_t *initrd) {
     copy_current_stack(0xE1000000, 0x4000, &ebp, &esp, init_esp, current_dir);
     putf_const("stack cloned[%x][%x].\n", ebp, esp);
     change_stack(ebp, esp);
-    putf_const("nekoya[%x][%x]\n", fork_test, enter_ring3);
     sti();
     __asm__ __volatile__("mov $0x24,%eax;"
             "int $0x60;");
     putf_const("syscall done.\n\n");
     //dumphex("addr", addr);
     //catmfs_test(addr);
-    fork_test();
     for (;;);
 }
 
+void usermode() {
+    uint32_t ebp, esp;
+    __asm__ __volatile__("mov %%esp, %0" : "=r" (esp));
+    __asm__ __volatile__("mov %%ebp, %0" : "=r" (ebp));
+    set_kernel_stack(esp);
+    putf_const("syscall_fork[%x][%x]", syscall_fork, esp);
+    enter_user_mode();
+    long a;
+    __asm__ __volatile__("int $0x60" : "=a" (a) : "0" (0));
+    __asm__ __volatile__("int $0x60" : "=a" (a) : "0" (3));//It will clear the stack.
+    syscall_screen_print("[-] user exit.");
+}
 uint32_t init_esp;
 #ifndef _BUILD_TIME
 #define _BUILD_TIME 00
@@ -281,7 +251,7 @@ int main(multiboot_info_t *mul_arg, uint32_t init_esp_arg) {
     }*/
     //catmfs_test(initrd_start);
     //delay(2);
-    usermode_test(initrd_start);
+    usermode();
     puts_const("[+] main done.");
     for (;;);
 }

@@ -101,39 +101,21 @@ void move_frame(uint32_t pm_src, uint32_t pm_target) {
 }
 
 /**为一个页分配一个frame*/
-void alloc_frame_internal(page_t *page, bool is_kernel, bool is_rw, bool vm_equals_pm, uint32_t physical_addr) {
+void alloc_frame(page_t *page, bool is_kernel, bool is_rw) {
     ASSERT(page);
     ASSERT(frame_status != NULL);
     if (!page->frame) {
-        if (vm_equals_pm) {
-            if (get_frame_status(physical_addr) != FRAME_STATUS_FREE) {
-                //Move Frame
-                int32_t x = get_free_frame();
-                if (x < 0) PANIC("No more free frame.");
-                move_frame(physical_addr, (uint32_t) (x * 0x1000));
-            }
-            page->present = true;
-            page->frame = (uint32_t) physical_addr / 0x1000;
-            page->user = is_kernel ? 0 : 1;
-            page->rw = is_rw;
-            set_frame_status(physical_addr, FRAME_STATUS_USED);
-        } else {
-            int32_t x = get_free_frame();
-            if (x < 0) PANIC("No more free frame.");
-            //memset(page, 0, sizeof(page_t));
-            page->present = true;
-            page->frame = (uint32_t) x;
-            page->user = is_kernel ? 0 : 1;
-            page->rw = is_rw;
-            set_frame_status((uint32_t) (x * 0x1000), FRAME_STATUS_USED);
-        }
+        int32_t x = get_free_frame();
+        if (x < 0) PANIC("No more free frame.");
+        //memset(page, 0, sizeof(page_t));
+        page->present = true;
+        page->frame = (uint32_t) x;
+        page->user = is_kernel ? 0 : 1;
+        page->rw = is_rw;
+        set_frame_status((uint32_t) (x * 0x1000), FRAME_STATUS_USED);
     }
 }
 
-
-inline void alloc_frame(page_t *page, bool is_kernel, bool is_rw) {
-    alloc_frame_internal(page, is_kernel, is_rw, false, NULL);
-}
 
 void free_frame(page_t *page) {
     ASSERT(page);
@@ -224,6 +206,7 @@ void switch_page_directory(page_directory_t *dir) {
     __asm__ __volatile__("mov %0, %%cr0"::"r"(cr0));*/
 
 }
+
 page_t *get_page(uint32_t addr, int make, page_directory_t *dir) {
     uint32_t frame_no = addr / 0x1000;//4K
     uint32_t table_idx = frame_no / 1024;//一个page table里有1024个page table entry
@@ -278,39 +261,47 @@ void page_fault_handler(regs_t *r) {
     putn();
 }
 
-void copy_frame_physical(uint32_t target, uint32_t src) {
-    __asm__ __volatile__("cli;");
-    //disable paging...
-    uint32_t cr0;
-    __asm__ __volatile__("mov %%cr0, %0":"=r"(cr0));
-    cr0 ^= 0x80000000;
-    __asm__ __volatile__("mov %0, %%cr0"::"r"(cr0));
-    uint32_t *src_p = (uint32_t *) (src * 0x1000);
-    uint32_t *target_p = (uint32_t *) (target * 0x1000);
-    for (int x = 0; x < 1024; x++) {
+void copy_frame_physical(uint32_t src, uint32_t target) {
+    extern void _copy_frame_physical(uint32_t, uint32_t);
+    _copy_frame_physical(src * 0x1000, target * 0x1000);
+    //Maybe it will work someday...:(
+    //disable_paging();
+    /*
+    uint8_t *src_p = (uint8_t *) (src * 0x1000);
+    uint8_t *target_p = (uint8_t *) (target * 0x1000);
+    for (int x = 0; x < 0x1000; x++) {
         target_p[x] = src_p[x];
-    }
-    cr0 |= 0x80000000;
-    __asm__ __volatile__("mov %0, %%cr0"::"r"(cr0));
-    __asm__ __volatile__("sti;");
+    }*/
+    /*
+    __asm__ ("cpy:"
+            "mov (%%ebx),%%eax;"
+            "mov %%eax,(%%edx);"
+            "add $0x4,%%ebx;"
+            "add $0x4,%%edx;"
+            "loop cpy;"::"b"(src * 0x1000), "d"(target * 0x1000), "c"(1024)); */
+    // enable_paging();
 }
 
-page_table_t *clone_page_table(page_table_t *src, uint32_t *phy_out) {
+page_table_t *clone_page_table(page_table_t *src, uint32_t *phy_out, uint32_t num) {
+
     uint32_t phy_addr;
-    page_table_t *target = (page_table_t *) kmalloc_ap(sizeof(page_table_t), &phy_addr);
+    page_table_t *target = (page_table_t *) kmalloc_paging(sizeof(page_table_t), &phy_addr);
     *phy_out = phy_addr;
     memset(target, 0, sizeof(page_table_t));
     for (int x = 0; x < 1024; x++) {
+
         if (src->pages[x].frame) {//Available
-            alloc_frame(&target->pages[x], false, false);
+            alloc_frame(&target->pages[x], false, true);
             if (src->pages[x].present)target->pages[x].present = true;
             if (src->pages[x].rw)target->pages[x].rw = true;
             if (src->pages[x].user)target->pages[x].user = true;
             if (src->pages[x].accessed)target->pages[x].accessed = true;
             if (src->pages[x].dirty)target->pages[x].dirty = true;
-            copy_frame_physical(target->pages[x].frame, src->pages[x].frame);
+            putf_const("copy[%x][%x]", num * 0x1000 * 0x1000 + x * 0x1000, target->pages[x].frame)
+            copy_frame_physical(src->pages[x].frame, target->pages[x].frame);
         }
     }
+    return target;
 }
 
 page_directory_t *clone_page_directory(page_directory_t *src) {
@@ -334,7 +325,7 @@ page_directory_t *clone_page_directory(page_directory_t *src) {
             } else {
                 count[2]++;
                 uint32_t table_phy;
-                page_table_t *table = clone_page_table(src->tables[x], &table_phy);
+                page_table_t *table = clone_page_table(src->tables[x], &table_phy, x);
                 target->tables[x] = table;
                 target->table_physical_addr[x] = table_phy | 0x7;
             }
