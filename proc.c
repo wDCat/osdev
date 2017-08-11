@@ -54,22 +54,8 @@ pid_t find_free_pcb() {
 
 void user_init() {
     syscall_helloworld();
-    syscall_screen_print("Nekoya");
-    pid_t cpid = (pid_t) syscall_fork();
-    char buff[256];
-    switch (cpid) {
-        case 0:
-            strformat(buff, "[child] [%x]\n", syscall_getpid());
-            syscall_screen_print(buff);
-            syscall_hello_switcher(2);
-            syscall_screen_print("[child]I'm back");
-            break;
-        default:
-            strformat(buff, "[father] [%x]child:[%x]\n", syscall_getpid(), cpid);
-            syscall_screen_print(buff);
-            syscall_hello_switcher(cpid);
-            break;
-    }
+    extern void usermode_test();
+    usermode_test();
     for (;;);
 }
 
@@ -85,7 +71,6 @@ void create_user_stack(uint32_t end_addr, uint32_t size, uint32_t *new_ebp, uint
 
 void save_proc_state(pcb_t *pcb, regs_t *r) {
     tss_entry_t *tss = &pcb->tss;
-    putf_const("[|%x|]", r->eax);
     tss->eax = r->eax;
     tss->ebx = r->ebx;
     tss->ecx = r->ecx;

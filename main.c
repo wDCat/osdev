@@ -178,30 +178,25 @@ void kernel_vep_heap_test() {
 }
 
 
-void usermode_test(uint32_t *initrd) {
-    cli();
-    uint32_t addr = (uint32_t) initrd;;
-    dumphex("addr", addr);
-    //FIXME squash the args.<----- Maybe a bug.
-    putf_const("cloning the page directory..\n")
-    page_directory_t *pd = clone_page_directory(current_dir);
-    putf_const("[%x -> %x][%x]switch to cloned page directory...\n", current_dir->physical_addr, pd->physical_addr,
-               pd->table_physical_addr);
-    switch_page_directory(pd);
-    putf_const("pd switched.");
-
-    uint32_t ebp, esp;
-    putf_const("cloning the stack..\n")
-    copy_current_stack(0xE1000000, 0x4000, &ebp, &esp, init_esp, current_dir);
-    putf_const("stack cloned[%x][%x].\n", ebp, esp);
-    change_stack(ebp, esp);
-    sti();
-    __asm__ __volatile__("mov $0x24,%eax;"
-            "int $0x60;");
-    putf_const("syscall done.\n\n");
-    //dumphex("addr", addr);
-    //catmfs_test(addr);
-    for (;;);
+void usermode_test() {
+    syscall_screen_print("Nekoya");
+    pid_t cpid = (pid_t) syscall_fork();
+    char buff[256];
+    switch (cpid) {
+        case 0:
+            strformat(buff, "[child] [%x]\n", syscall_getpid());
+            syscall_screen_print(buff);
+            syscall_hello_switcher(2);
+            syscall_screen_print("[child]I'm back");
+            syscall_hello_switcher(2);
+            break;
+        default:
+            strformat(buff, "[father] [%x]child:[%x]\n", syscall_getpid(), cpid);
+            syscall_screen_print(buff);
+            syscall_hello_switcher(cpid);
+            syscall_screen_print("[father]I'm back..");
+            break;
+    }
 }
 
 void usermode() {
@@ -211,11 +206,12 @@ void usermode() {
     set_kernel_stack(esp);
     putf_const("syscall_fork[%x][%x]", syscall_fork, esp);
     enter_user_mode();
+    //syscall_hello_switcher(1);
     long a;
-    __asm__ __volatile__("int $0x60" : "=a" (a) : "0" (0));
     __asm__ __volatile__("int $0x60" : "=a" (a) : "0" (3));//It will clear the stack.
     syscall_screen_print("[-] user exit.");
 }
+
 uint32_t init_esp;
 #ifndef _BUILD_TIME
 #define _BUILD_TIME 00
