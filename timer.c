@@ -3,6 +3,7 @@
 //
 
 #include <str.h>
+#include <schedule.h>
 #include "include/timer.h"
 #include "include/irqs.h"
 
@@ -15,11 +16,13 @@ void get_time_count(uint32_t *data) {
 }
 
 void timer_handler(struct regs *r) {
+    cli();
     timer_count++;
     //if (timer_count >= 0xFFFFFFFF)timer_count = 0;
-    if (timer_count % 18 == 0) {
-        //putln_const("timer routine.");
+    if (timer_count % 32 == 0) {
+        do_schedule(r);
     }
+    sti();
 }
 
 void delay(unsigned long sec) {

@@ -181,20 +181,28 @@ void kernel_vep_heap_test() {
 void usermode_test() {
     syscall_screen_print("Nekoya");
     pid_t cpid = (pid_t) syscall_fork();
+    syscall_screen_print("fork done.\n");
     char buff[256];
     switch (cpid) {
         case 0:
             strformat(buff, "[child] [%x]\n", syscall_getpid());
             syscall_screen_print(buff);
-            syscall_hello_switcher(2);
-            syscall_screen_print("[child]I'm back");
-            syscall_hello_switcher(2);
+            for (int x = 0;; x++) {
+                strformat(buff, "[child] [count:%x]\n", x);
+                syscall_screen_print(buff);
+                //syscall_hello_switcher(2);
+                syscall_delay(2);
+            }
             break;
         default:
             strformat(buff, "[father] [%x]child:[%x]\n", syscall_getpid(), cpid);
             syscall_screen_print(buff);
-            syscall_hello_switcher(cpid);
-            syscall_screen_print("[father]I'm back..");
+            for (int x = 0;; x++) {
+                strformat(buff, "[father] [count:%x]\n", x);
+                syscall_screen_print(buff);
+                //syscall_hello_switcher(3);
+                syscall_delay(2);
+            }
             break;
     }
 }

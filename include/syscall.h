@@ -49,6 +49,8 @@ _define_syscall0(helloworld, 0);
 
 _define_syscall1(screen_print, 1, const char*);
 
+_define_syscall1(delay, 2, uint32_t);
+
 _define_syscall0(fork, 3);
 
 _define_syscall0(getpid, 4);

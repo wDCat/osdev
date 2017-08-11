@@ -20,6 +20,7 @@ set(CMAKE_DEPENDS_CHECK_C
   "/home/dcat/osdev/w2/page.c" "/home/dcat/osdev/w2/cmake-build-debug/CMakeFiles/MyExecutable.dir/page.c.o"
   "/home/dcat/osdev/w2/paging_heap.c" "/home/dcat/osdev/w2/cmake-build-debug/CMakeFiles/MyExecutable.dir/paging_heap.c.o"
   "/home/dcat/osdev/w2/proc.c" "/home/dcat/osdev/w2/cmake-build-debug/CMakeFiles/MyExecutable.dir/proc.c.o"
+  "/home/dcat/osdev/w2/scheduling.c" "/home/dcat/osdev/w2/cmake-build-debug/CMakeFiles/MyExecutable.dir/scheduling.c.o"
   "/home/dcat/osdev/w2/screen.c" "/home/dcat/osdev/w2/cmake-build-debug/CMakeFiles/MyExecutable.dir/screen.c.o"
   "/home/dcat/osdev/w2/str.c" "/home/dcat/osdev/w2/cmake-build-debug/CMakeFiles/MyExecutable.dir/str.c.o"
   "/home/dcat/osdev/w2/syscall.c" "/home/dcat/osdev/w2/cmake-build-debug/CMakeFiles/MyExecutable.dir/syscall.c.o"

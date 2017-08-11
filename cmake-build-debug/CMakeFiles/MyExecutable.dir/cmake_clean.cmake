@@ -15,6 +15,7 @@ file(REMOVE_RECURSE
   "CMakeFiles/MyExecutable.dir/page.c.o"
   "CMakeFiles/MyExecutable.dir/paging_heap.c.o"
   "CMakeFiles/MyExecutable.dir/proc.c.o"
+  "CMakeFiles/MyExecutable.dir/scheduling.c.o"
   "CMakeFiles/MyExecutable.dir/screen.c.o"
   "CMakeFiles/MyExecutable.dir/str.c.o"
   "CMakeFiles/MyExecutable.dir/syscall.c.o"

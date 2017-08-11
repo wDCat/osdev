@@ -2,6 +2,7 @@
 // Created by dcat on 3/12/17.
 //
 
+#include <proc.h>
 #include "include/keyboard.h"
 
 //FIXME No work too... :(

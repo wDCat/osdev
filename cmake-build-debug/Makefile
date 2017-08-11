@@ -555,6 +555,33 @@ proc.c.s:
 	$(MAKE) -f CMakeFiles/MyExecutable.dir/build.make CMakeFiles/MyExecutable.dir/proc.c.s
 .PHONY : proc.c.s
 
+scheduling.o: scheduling.c.o
+
+.PHONY : scheduling.o
+
+# target to build an object file
+scheduling.c.o:
+	$(MAKE) -f CMakeFiles/MyExecutable.dir/build.make CMakeFiles/MyExecutable.dir/scheduling.c.o
+.PHONY : scheduling.c.o
+
+scheduling.i: scheduling.c.i
+
+.PHONY : scheduling.i
+
+# target to preprocess a source file
+scheduling.c.i:
+	$(MAKE) -f CMakeFiles/MyExecutable.dir/build.make CMakeFiles/MyExecutable.dir/scheduling.c.i
+.PHONY : scheduling.c.i
+
+scheduling.s: scheduling.c.s
+
+.PHONY : scheduling.s
+
+# target to generate assembly for a file
+scheduling.c.s:
+	$(MAKE) -f CMakeFiles/MyExecutable.dir/build.make CMakeFiles/MyExecutable.dir/scheduling.c.s
+.PHONY : scheduling.c.s
+
 screen.o: screen.c.o
 
 .PHONY : screen.o
@@ -774,6 +801,9 @@ help:
 	@echo "... proc.o"
 	@echo "... proc.i"
 	@echo "... proc.s"
+	@echo "... scheduling.o"
+	@echo "... scheduling.i"
+	@echo "... scheduling.s"
 	@echo "... screen.o"
 	@echo "... screen.i"
 	@echo "... screen.s"

@@ -44,10 +44,15 @@ typedef struct {
     bool present;
     proc_status_t status;
     pid_t pid;
-    uint32_t eip;
     tss_entry_t tss;
     page_directory_t *page_dir;
+    uint32_t time_slice;
 } pcb_t;
+typedef struct {
+    uint32_t count;
+    pcb_t *pcbs[1023];
+} proc_queue_t;
+extern proc_queue_t *proc_avali_queue, *proc_ready_queue;
 
 pid_t getpid();
 
@@ -64,5 +69,7 @@ pcb_t *getpcb(pid_t pid);
 void save_proc_state(pcb_t *pcb, regs_t *r);
 
 void switch_to_proc(pcb_t *pcb);
+
+void set_proc_status(pcb_t *pcb, proc_status_t new_status);
 
 #endif //W2_PROC_H

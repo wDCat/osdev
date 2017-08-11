@@ -17,6 +17,8 @@ pid_t current_pid = 0;
 pcb_t processes[MAX_PROC_COUNT];
 uint32_t proc_count = 1;
 
+proc_queue_t *proc_avali_queue, *proc_ready_queue;
+
 pid_t getpid() {
     return current_pid;
 }
@@ -40,6 +42,10 @@ void create_first_proc() {
 
 void proc_install() {
     memset(processes, 0, sizeof(pcb_t) * MAX_PROC_COUNT);
+    proc_avali_queue = (proc_queue_t *) kmalloc_paging(0x1000, NULL);
+    memset(proc_avali_queue, 0, 0x1000);
+    proc_ready_queue = (proc_queue_t *) kmalloc_paging(0x1000, NULL);
+    memset(proc_ready_queue, 0, 0x1000);
     //kernel proc(name:init pid:1)
     create_first_proc();
 }
@@ -53,6 +59,7 @@ pid_t find_free_pcb() {
 }
 
 void user_init() {
+    //proc_ready = true;
     syscall_helloworld();
     extern void usermode_test();
     usermode_test();
@@ -89,15 +96,57 @@ void save_proc_state(pcb_t *pcb, regs_t *r) {
     tss->eflags = r->eflags;
 }
 
+proc_queue_t *find_pqueue_by_status(proc_status_t status) {
+    switch (status) {
+        case STATUS_READY:
+            return proc_ready_queue;
+        default:
+            return 0;
+    }
+}
+
+void set_proc_status(pcb_t *pcb, proc_status_t new_status) {
+    if (pcb->status == new_status || pcb->pid <= 1)return;
+    proc_queue_t *old = find_pqueue_by_status(pcb->status);
+    proc_queue_t *ns = find_pqueue_by_status(new_status);
+
+    if (old) {
+        putf_const("[+]old queue[%x]:", old->count);
+        for (uint32_t x = 0, y = 0; y < 1023 && x < old->count; y++) {
+            if (old->pcbs[y] == 0)continue;
+            x++;
+            putf_const("[%x]", old->pcbs[y]->pid)
+            if (old->pcbs[y]->pid == pcb->pid) {
+                old->pcbs[y] = 0;
+                old->count--;
+                break;
+            }
+        }
+        putln_const("");
+    }
+    if (ns)
+        for (uint32_t y = 0; y < 1023; y++) {
+            if (ns->pcbs[y] == 0) {
+                ns->pcbs[y] = pcb;
+                ns->count++;
+                break;
+            } else if (y == 1022) PANIC("Out of proc queue!");
+        }
+    pcb->status = new_status;
+}
+
 void switch_to_proc(pcb_t *pcb) {
     ASSERT(pcb->present && pcb->pid > 1);
+    if (pcb->pid == current_pid)return;
     cli();
+    set_proc_status(pcb, STATUS_RUN);
     write_tss(TSS_USER_PROC_ID, 0x10, 0);
     uint32_t base = (uint32_t) &pcb->tss;
     uint32_t limit = base + sizeof(tss_entry_t);
     gdt_set_gate(TSS_USER_PROC_ID, base, limit, 0xE9, 0x00);
     _gdt_flush();
-    putf_const("[+] switch to task %x[%x].\n", pcb->pid, pcb->tss.eip);
+    putf_const("[+] switch to task %x[%x]", pcb->pid, pcb->tss.eip);
+    putf_const("[%x].\n", pcb->tss.eflags);
     current_pid = pcb->pid;
     sti();
     k_delay(1);//Debug
@@ -123,7 +172,6 @@ pid_t fork(regs_t *r) {
     cpcb->present = true;
     cpcb->pid = cpid;
     cpcb->page_dir = clone_page_directory(fpcb->page_dir);
-    cpcb->status = STATUS_READY;
     tss_entry_t *tss = &cpcb->tss;
     memcpy(tss, &fpcb->tss, sizeof(tss_entry_t));
     tss->cr3 = cpcb->page_dir->physical_addr;
@@ -148,12 +196,12 @@ pid_t fork(regs_t *r) {
     tss->ds = r->ds;
     tss->fs = r->fs;
     tss->gs = r->gs;
-    tss->eflags = r->eflags;
+    tss->eflags = r->eflags | 0x200;
     tss->ss0 = 0x10;
     tss->esp0 = kmalloc_paging(0x1000, NULL) + 0x1000;
     tss->ldt = 0;
     save_proc_state(fpcb, r);
-    sti();
+    set_proc_status(fpcb, STATUS_READY);
     switch_to_proc(cpcb);
     return cpid;
 }

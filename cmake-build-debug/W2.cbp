@@ -134,6 +134,9 @@
 		<Unit filename="/home/dcat/osdev/w2/proc.c">
 			<Option target="MyExecutable"/>
 		</Unit>
+		<Unit filename="/home/dcat/osdev/w2/scheduling.c">
+			<Option target="MyExecutable"/>
+		</Unit>
 		<Unit filename="/home/dcat/osdev/w2/screen.c">
 			<Option target="MyExecutable"/>
 		</Unit>

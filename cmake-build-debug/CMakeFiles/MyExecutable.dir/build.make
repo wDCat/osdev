@@ -441,9 +441,33 @@ CMakeFiles/MyExecutable.dir/proc.c.o.provides: CMakeFiles/MyExecutable.dir/proc.
 CMakeFiles/MyExecutable.dir/proc.c.o.provides.build: CMakeFiles/MyExecutable.dir/proc.c.o
 
 
+CMakeFiles/MyExecutable.dir/scheduling.c.o: CMakeFiles/MyExecutable.dir/flags.make
+CMakeFiles/MyExecutable.dir/scheduling.c.o: ../scheduling.c
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/dcat/osdev/w2/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_17) "Building C object CMakeFiles/MyExecutable.dir/scheduling.c.o"
+	/usr/bin/cc  $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/MyExecutable.dir/scheduling.c.o   -c /home/dcat/osdev/w2/scheduling.c
+
+CMakeFiles/MyExecutable.dir/scheduling.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/MyExecutable.dir/scheduling.c.i"
+	/usr/bin/cc  $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /home/dcat/osdev/w2/scheduling.c > CMakeFiles/MyExecutable.dir/scheduling.c.i
+
+CMakeFiles/MyExecutable.dir/scheduling.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/MyExecutable.dir/scheduling.c.s"
+	/usr/bin/cc  $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/dcat/osdev/w2/scheduling.c -o CMakeFiles/MyExecutable.dir/scheduling.c.s
+
+CMakeFiles/MyExecutable.dir/scheduling.c.o.requires:
+
+.PHONY : CMakeFiles/MyExecutable.dir/scheduling.c.o.requires
+
+CMakeFiles/MyExecutable.dir/scheduling.c.o.provides: CMakeFiles/MyExecutable.dir/scheduling.c.o.requires
+	$(MAKE) -f CMakeFiles/MyExecutable.dir/build.make CMakeFiles/MyExecutable.dir/scheduling.c.o.provides.build
+.PHONY : CMakeFiles/MyExecutable.dir/scheduling.c.o.provides
+
+CMakeFiles/MyExecutable.dir/scheduling.c.o.provides.build: CMakeFiles/MyExecutable.dir/scheduling.c.o
+
+
 CMakeFiles/MyExecutable.dir/screen.c.o: CMakeFiles/MyExecutable.dir/flags.make
 CMakeFiles/MyExecutable.dir/screen.c.o: ../screen.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/dcat/osdev/w2/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_17) "Building C object CMakeFiles/MyExecutable.dir/screen.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/dcat/osdev/w2/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_18) "Building C object CMakeFiles/MyExecutable.dir/screen.c.o"
 	/usr/bin/cc  $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/MyExecutable.dir/screen.c.o   -c /home/dcat/osdev/w2/screen.c
 
 CMakeFiles/MyExecutable.dir/screen.c.i: cmake_force
@@ -467,7 +491,7 @@ CMakeFiles/MyExecutable.dir/screen.c.o.provides.build: CMakeFiles/MyExecutable.d
 
 CMakeFiles/MyExecutable.dir/str.c.o: CMakeFiles/MyExecutable.dir/flags.make
 CMakeFiles/MyExecutable.dir/str.c.o: ../str.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/dcat/osdev/w2/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_18) "Building C object CMakeFiles/MyExecutable.dir/str.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/dcat/osdev/w2/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_19) "Building C object CMakeFiles/MyExecutable.dir/str.c.o"
 	/usr/bin/cc  $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/MyExecutable.dir/str.c.o   -c /home/dcat/osdev/w2/str.c
 
 CMakeFiles/MyExecutable.dir/str.c.i: cmake_force
@@ -491,7 +515,7 @@ CMakeFiles/MyExecutable.dir/str.c.o.provides.build: CMakeFiles/MyExecutable.dir/
 
 CMakeFiles/MyExecutable.dir/syscall.c.o: CMakeFiles/MyExecutable.dir/flags.make
 CMakeFiles/MyExecutable.dir/syscall.c.o: ../syscall.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/dcat/osdev/w2/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_19) "Building C object CMakeFiles/MyExecutable.dir/syscall.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/dcat/osdev/w2/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_20) "Building C object CMakeFiles/MyExecutable.dir/syscall.c.o"
 	/usr/bin/cc  $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/MyExecutable.dir/syscall.c.o   -c /home/dcat/osdev/w2/syscall.c
 
 CMakeFiles/MyExecutable.dir/syscall.c.i: cmake_force
@@ -515,7 +539,7 @@ CMakeFiles/MyExecutable.dir/syscall.c.o.provides.build: CMakeFiles/MyExecutable.
 
 CMakeFiles/MyExecutable.dir/system.c.o: CMakeFiles/MyExecutable.dir/flags.make
 CMakeFiles/MyExecutable.dir/system.c.o: ../system.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/dcat/osdev/w2/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_20) "Building C object CMakeFiles/MyExecutable.dir/system.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/dcat/osdev/w2/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_21) "Building C object CMakeFiles/MyExecutable.dir/system.c.o"
 	/usr/bin/cc  $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/MyExecutable.dir/system.c.o   -c /home/dcat/osdev/w2/system.c
 
 CMakeFiles/MyExecutable.dir/system.c.i: cmake_force
@@ -539,7 +563,7 @@ CMakeFiles/MyExecutable.dir/system.c.o.provides.build: CMakeFiles/MyExecutable.d
 
 CMakeFiles/MyExecutable.dir/timer.c.o: CMakeFiles/MyExecutable.dir/flags.make
 CMakeFiles/MyExecutable.dir/timer.c.o: ../timer.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/dcat/osdev/w2/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_21) "Building C object CMakeFiles/MyExecutable.dir/timer.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/dcat/osdev/w2/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_22) "Building C object CMakeFiles/MyExecutable.dir/timer.c.o"
 	/usr/bin/cc  $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/MyExecutable.dir/timer.c.o   -c /home/dcat/osdev/w2/timer.c
 
 CMakeFiles/MyExecutable.dir/timer.c.i: cmake_force
@@ -563,7 +587,7 @@ CMakeFiles/MyExecutable.dir/timer.c.o.provides.build: CMakeFiles/MyExecutable.di
 
 CMakeFiles/MyExecutable.dir/tss.c.o: CMakeFiles/MyExecutable.dir/flags.make
 CMakeFiles/MyExecutable.dir/tss.c.o: ../tss.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/dcat/osdev/w2/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_22) "Building C object CMakeFiles/MyExecutable.dir/tss.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/dcat/osdev/w2/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_23) "Building C object CMakeFiles/MyExecutable.dir/tss.c.o"
 	/usr/bin/cc  $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/MyExecutable.dir/tss.c.o   -c /home/dcat/osdev/w2/tss.c
 
 CMakeFiles/MyExecutable.dir/tss.c.i: cmake_force
@@ -603,6 +627,7 @@ MyExecutable_OBJECTS = \
 "CMakeFiles/MyExecutable.dir/page.c.o" \
 "CMakeFiles/MyExecutable.dir/paging_heap.c.o" \
 "CMakeFiles/MyExecutable.dir/proc.c.o" \
+"CMakeFiles/MyExecutable.dir/scheduling.c.o" \
 "CMakeFiles/MyExecutable.dir/screen.c.o" \
 "CMakeFiles/MyExecutable.dir/str.c.o" \
 "CMakeFiles/MyExecutable.dir/syscall.c.o" \
@@ -629,6 +654,7 @@ MyExecutable: CMakeFiles/MyExecutable.dir/main.c.o
 MyExecutable: CMakeFiles/MyExecutable.dir/page.c.o
 MyExecutable: CMakeFiles/MyExecutable.dir/paging_heap.c.o
 MyExecutable: CMakeFiles/MyExecutable.dir/proc.c.o
+MyExecutable: CMakeFiles/MyExecutable.dir/scheduling.c.o
 MyExecutable: CMakeFiles/MyExecutable.dir/screen.c.o
 MyExecutable: CMakeFiles/MyExecutable.dir/str.c.o
 MyExecutable: CMakeFiles/MyExecutable.dir/syscall.c.o
@@ -637,7 +663,7 @@ MyExecutable: CMakeFiles/MyExecutable.dir/timer.c.o
 MyExecutable: CMakeFiles/MyExecutable.dir/tss.c.o
 MyExecutable: CMakeFiles/MyExecutable.dir/build.make
 MyExecutable: CMakeFiles/MyExecutable.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/dcat/osdev/w2/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_23) "Linking C executable MyExecutable"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/dcat/osdev/w2/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_24) "Linking C executable MyExecutable"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/MyExecutable.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.
@@ -661,6 +687,7 @@ CMakeFiles/MyExecutable.dir/requires: CMakeFiles/MyExecutable.dir/main.c.o.requi
 CMakeFiles/MyExecutable.dir/requires: CMakeFiles/MyExecutable.dir/page.c.o.requires
 CMakeFiles/MyExecutable.dir/requires: CMakeFiles/MyExecutable.dir/paging_heap.c.o.requires
 CMakeFiles/MyExecutable.dir/requires: CMakeFiles/MyExecutable.dir/proc.c.o.requires
+CMakeFiles/MyExecutable.dir/requires: CMakeFiles/MyExecutable.dir/scheduling.c.o.requires
 CMakeFiles/MyExecutable.dir/requires: CMakeFiles/MyExecutable.dir/screen.c.o.requires
 CMakeFiles/MyExecutable.dir/requires: CMakeFiles/MyExecutable.dir/str.c.o.requires
 CMakeFiles/MyExecutable.dir/requires: CMakeFiles/MyExecutable.dir/syscall.c.o.requires
