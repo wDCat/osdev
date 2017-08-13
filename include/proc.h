@@ -72,4 +72,6 @@ void switch_to_proc(pcb_t *pcb);
 
 void set_proc_status(pcb_t *pcb, proc_status_t new_status);
 
+void proc_exit(uint32_t ret);
+
 #endif //W2_PROC_H

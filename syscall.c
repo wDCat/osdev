@@ -33,16 +33,16 @@ long hello_switcher(pid_t pid, uint32_t ecx, uint32_t edx, uint32_t esi, uint32_
     switch_to_proc(getpcb(pid));
 }
 
-const uint32_t syscalls_count = 6;
 uint32_t syscalls_table[] = {
         &helloworld,
         &screen_print,
         &delay,
         &fork_s,
         &getpid,
-        &hello_switcher
+        &hello_switcher,
+        &proc_exit
 };
-
+uint32_t syscalls_count = sizeof(syscalls_table) / sizeof(uint32_t);
 
 void syscall_install() {
     extern void _isr_syscall();
@@ -61,6 +61,8 @@ _impl_syscall0(fork, 3);
 _impl_syscall0(getpid, 4);
 
 _impl_syscall1(hello_switcher, 5, pid_t);
+
+_impl_syscall1(exit, 6, uint32_t);
 
 typedef uint32_t (*syscall_fun_t)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, regs_t *r);
 

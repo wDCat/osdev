@@ -10,6 +10,7 @@
 
 #define TSS_ID 5
 #define TSS_USER_PROC_ID 6
+#define LDT_USER_PROC_ID 7
 // A struct describing a Task State Segment.
 struct tss_entry_struct {
     uint32_t prev_tss;   // The previous TSS - if we used hardware task switching this would form a linked list.

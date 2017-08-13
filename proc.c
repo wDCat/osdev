@@ -17,7 +17,9 @@ pid_t current_pid = 0;
 pcb_t processes[MAX_PROC_COUNT];
 uint32_t proc_count = 1;
 
-proc_queue_t *proc_avali_queue, *proc_ready_queue;
+proc_queue_t *proc_avali_queue,
+        *proc_ready_queue,
+        *proc_died_queue;
 
 pid_t getpid() {
     return current_pid;
@@ -46,6 +48,8 @@ void proc_install() {
     memset(proc_avali_queue, 0, 0x1000);
     proc_ready_queue = (proc_queue_t *) kmalloc_paging(0x1000, NULL);
     memset(proc_ready_queue, 0, 0x1000);
+    proc_died_queue = (proc_queue_t *) kmalloc_paging(0x1000, NULL);
+    memset(proc_died_queue, 0, 0x1000);
     //kernel proc(name:init pid:1)
     create_first_proc();
 }
@@ -59,11 +63,20 @@ pid_t find_free_pcb() {
 }
 
 void user_init() {
+    putf_const("Hello DDDDD");
     //proc_ready = true;
     syscall_helloworld();
     extern void usermode_test();
     usermode_test();
+    syscall_screen_print("[-][USERMODE] proc exit.\n");
+    syscall_exit(0);
     for (;;);
+}
+
+void proc_exit(uint32_t ret) {
+
+    set_proc_status(getpcb(getpid()), STATUS_DIED);
+    putf_const("[+] proc %x exited with ret:%x\n", getpid(), ret);
 }
 
 void create_user_stack(uint32_t end_addr, uint32_t size, uint32_t *new_ebp, uint32_t *new_esp, page_directory_t *dir) {
@@ -73,7 +86,7 @@ void create_user_stack(uint32_t end_addr, uint32_t size, uint32_t *new_ebp, uint
     if (new_ebp)
         *new_ebp = end_addr - 0x10;
     if (new_esp)
-        *new_esp = end_addr - 0x20;
+        *new_esp = end_addr - 0x10;
 }
 
 void save_proc_state(pcb_t *pcb, regs_t *r) {
@@ -98,6 +111,8 @@ void save_proc_state(pcb_t *pcb, regs_t *r) {
 
 proc_queue_t *find_pqueue_by_status(proc_status_t status) {
     switch (status) {
+        case STATUS_DIED:
+            return proc_died_queue;
         case STATUS_READY:
             return proc_ready_queue;
         default:
@@ -106,6 +121,7 @@ proc_queue_t *find_pqueue_by_status(proc_status_t status) {
 }
 
 void set_proc_status(pcb_t *pcb, proc_status_t new_status) {
+    cli();
     if (pcb->status == new_status || pcb->pid <= 1)return;
     proc_queue_t *old = find_pqueue_by_status(pcb->status);
     proc_queue_t *ns = find_pqueue_by_status(new_status);
@@ -133,6 +149,7 @@ void set_proc_status(pcb_t *pcb, proc_status_t new_status) {
             } else if (y == 1022) PANIC("Out of proc queue!");
         }
     pcb->status = new_status;
+    sti();
 }
 
 void switch_to_proc(pcb_t *pcb) {
@@ -199,7 +216,7 @@ pid_t fork(regs_t *r) {
     tss->eflags = r->eflags | 0x200;
     tss->ss0 = 0x10;
     tss->esp0 = kmalloc_paging(0x1000, NULL) + 0x1000;
-    tss->ldt = 0;
+    tss->ldt = LDT_USER_PROC_ID;
     save_proc_state(fpcb, r);
     set_proc_status(fpcb, STATUS_READY);
     switch_to_proc(cpcb);

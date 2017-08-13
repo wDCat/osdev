@@ -1,6 +1,6 @@
 C_FLAGS= -fno-stack-protector -m32 -std=c99 -Wall -O0 -O -fstrength-reduce -fomit-frame-pointer -D _BUILD_TIME=`date +%s` -finline-functions -nostdinc -fno-builtin -I./include -c
 LD_FLAGS=  -n -m elf_i386 -A elf32-i386 -nostdlib -T linker.ld
-LOOP_DEVICE_ID=4
+LOOP_DEVICE_ID=5
 cfiles :=$(wildcard *.c)
 pre:
 	sudo umount /home/dcat/osdev/bgrub/ || echo ""

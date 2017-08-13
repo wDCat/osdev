@@ -57,6 +57,7 @@ _define_syscall0(getpid, 4);
 
 _define_syscall1(hello_switcher, 5, pid_t);
 
+_define_syscall1(exit, 6, uint32_t);
 void syscall_install();
 
 int syscall_handler(regs_t *r);

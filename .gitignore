@@ -57,3 +57,4 @@ CTestTestfile.cmake
 .gitignore
 cmake-build-debug/CMakeFiles/CMakeTmp/
 cmake-build-debug/
+kernel.bin

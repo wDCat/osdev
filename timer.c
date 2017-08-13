@@ -19,7 +19,7 @@ void timer_handler(struct regs *r) {
     cli();
     timer_count++;
     //if (timer_count >= 0xFFFFFFFF)timer_count = 0;
-    if (timer_count % 32 == 0) {
+    if (timer_count % 36 == 0) {
         do_schedule(r);
     }
     sti();
@@ -41,6 +41,7 @@ void delay(unsigned long sec) {
 
 void timer_install() {
     irq_install_handler(0, timer_handler);
+    //timer_phase(1);
 }
 
 void timer_phase(int hz) {

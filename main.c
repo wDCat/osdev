@@ -191,7 +191,11 @@ void usermode_test() {
                 strformat(buff, "[child] [count:%x]\n", x);
                 syscall_screen_print(buff);
                 //syscall_hello_switcher(2);
-                syscall_delay(2);
+                if (x == 3) {
+                    int cpid = syscall_fork();
+                    if (cpid != 0)return;
+                }
+                syscall_delay(1);
             }
             break;
         default:
@@ -200,8 +204,19 @@ void usermode_test() {
             for (int x = 0;; x++) {
                 strformat(buff, "[father] [count:%x]\n", x);
                 syscall_screen_print(buff);
+                if (x == 3) {
+                    int cpid = syscall_fork();
+                    if (cpid == 0) {
+                        for (int x = 0; x < 100; x++) {
+                            syscall_screen_print("NEKONEKONE!!!");
+                        }
+                        syscall_exit(1);
+                    } else {
+
+                    }
+                }
                 //syscall_hello_switcher(3);
-                syscall_delay(2);
+                syscall_delay(1);
             }
             break;
     }
@@ -217,7 +232,7 @@ void usermode() {
     //syscall_hello_switcher(1);
     long a;
     __asm__ __volatile__("int $0x60" : "=a" (a) : "0" (3));//It will clear the stack.
-    syscall_screen_print("[-] user exit.");
+    //Never exec..
 }
 
 uint32_t init_esp;

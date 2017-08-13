@@ -33,7 +33,8 @@ void do_schedule(regs_t *r) {
     putln_const("");
 
     if (choosed) {
-        if (choosed->pid != getpid()) {
+        if (choosed->pid != getpid() && cur_pcb->status == STATUS_RUN) {
+            save_proc_state(cur_pcb, r);
             set_proc_status(cur_pcb, STATUS_READY);
         }
         switch_to_proc(choosed);
