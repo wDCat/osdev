@@ -63,7 +63,7 @@ pid_t find_free_pcb() {
 }
 
 void user_init() {
-    putf_const("Hello DDDDD");
+    //putf_const("Hello DDDDD");
     //proc_ready = true;
     syscall_helloworld();
     extern void usermode_test();
@@ -152,15 +152,23 @@ void set_proc_status(pcb_t *pcb, proc_status_t new_status) {
     sti();
 }
 
+inline void set_active_user_tss(tss_entry_t *tss) {
+    write_tss(TSS_USER_PROC_ID, 0x10, 0);
+    uint32_t base = (uint32_t) tss;
+    uint32_t limit = base + sizeof(tss_entry_t);
+    gdt_set_gate(TSS_USER_PROC_ID, base, limit, 0xE9, 0x00);
+}
+
+inline void set_active_user_ldt(ldt_limit_entry_t *ldt_table[]) {
+
+}
+
 void switch_to_proc(pcb_t *pcb) {
     ASSERT(pcb->present && pcb->pid > 1);
     if (pcb->pid == current_pid)return;
     cli();
     set_proc_status(pcb, STATUS_RUN);
-    write_tss(TSS_USER_PROC_ID, 0x10, 0);
-    uint32_t base = (uint32_t) &pcb->tss;
-    uint32_t limit = base + sizeof(tss_entry_t);
-    gdt_set_gate(TSS_USER_PROC_ID, base, limit, 0xE9, 0x00);
+    set_active_user_tss(&pcb->tss);
     _gdt_flush();
     putf_const("[+] switch to task %x[%x]", pcb->pid, pcb->tss.eip);
     putf_const("[%x].\n", pcb->tss.eflags);
@@ -215,7 +223,11 @@ pid_t fork(regs_t *r) {
     tss->gs = r->gs;
     tss->eflags = r->eflags | 0x200;
     tss->ss0 = 0x10;
-    tss->esp0 = kmalloc_paging(0x1000, NULL) + 0x1000;
+    cpcb->reserved_page = (uint32_t) (kmalloc_paging(0x1000, NULL));
+    memset(cpcb->reserved_page, 0, 0x1000);
+    cpcb->ldt_table = (ldt_limit_entry_t *) cpcb->reserved_page;
+    cpcb->ldt_table_size = 0;
+    tss->esp0 = (uint32_t) (cpcb->reserved_page + 0x990);
     tss->ldt = LDT_USER_PROC_ID;
     save_proc_state(fpcb, r);
     set_proc_status(fpcb, STATUS_READY);

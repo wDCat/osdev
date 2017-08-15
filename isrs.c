@@ -13,7 +13,7 @@
 
 void dump_regs(regs_t *r) {
     putf_const("[EAX:%x][EBX:%x][ECX:%x]", r->eax, r->ebx, r->ecx);
-    putf_const("[EDX:%x][EBP:%x][ESP:%x]\n", r->edx, r->ebp, r->esp);
+    putf_const("[EDX:%x][EBP:%x][ESP:%x]\n", r->edx, r->ebp, r->useresp);
     putf_const("[CS:%x][DX:%x][ES:%x]", r->cs, r->ds, r->es, r->fs, r->gs);
     putf_const("[FS:%x][GX:%x][EIP:%x]", r->fs, r->gs, r->eip);
 }
@@ -49,9 +49,9 @@ void fault_handler(struct regs *r) {
         }
             break;
         default: {
+            puterr_const("");
             //disable_paging();
-            puterr_const("FAULT(Unknown):");
-            putint(r->int_no);
+            putf_const("[Abort]Unhandled Exception:%x\n", r->err_code);
             putn();
         }
             break;

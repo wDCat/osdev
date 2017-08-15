@@ -32,6 +32,7 @@ __asm__ __volatile__ ( \
 __asm__ __volatile__("mov %0, %%ebp" : : "r" (ebp));\
 __asm__ __volatile__("mov %0, %%esp" : : "r" (esp));\
 }
+
 typedef enum proc_status {
     STATUS_NEW,
     STATUS_RUN,
@@ -41,12 +42,19 @@ typedef enum proc_status {
 } proc_status_t;
 typedef uint32_t pid_t;
 typedef struct {
+    uint32_t base;
+    uint32_t limit;
+} ldt_limit_entry_t;
+typedef struct {
     bool present;
     proc_status_t status;
     pid_t pid;
     tss_entry_t tss;
     page_directory_t *page_dir;
     uint32_t time_slice;
+    ldt_limit_entry_t *ldt_table[];
+    uint8_t ldt_table_size;
+    uint32_t reserved_page;
 } pcb_t;
 typedef struct {
     uint32_t count;
