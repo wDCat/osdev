@@ -19,7 +19,9 @@ void dump_regs(regs_t *r) {
 }
 
 void fault_handler(struct regs *r) {
+    cli();
     int a = 0;
+    //TODO:move kernel stack before disable paging:(
     switch (r->int_no) {
         case 0: puterr_const("[-] Division by zero fault.");
             break;
@@ -34,13 +36,17 @@ void fault_handler(struct regs *r) {
             break;
         case 6: puterr_const("[-] Invalid Opcode")
             break;
-        case 13: puterr_const("[-] General Protection Fault Exception");
+        case 0xA: puterr_const("");
+            putf_const("[-] Invalid TSS");
+            dumpint("        ErrorCode:", r->err_code);
+            break;
+        case 0xD: puterr_const("[-] General Protection Fault Exception");
             dumpint("        ErrorCode:", r->err_code);
             dumphex("        PC:", r->eip);
             break;
-        case 14: {
-            disable_paging();
-            puterr_const("Page Fault.Paging has been disabled.");
+        case 0xE: {
+            //disable_paging();//
+            puterr_const("[-] Page Fault.Paging has been disabled.");
             page_fault_handler(r);
         }
             break;
@@ -51,7 +57,7 @@ void fault_handler(struct regs *r) {
         default: {
             puterr_const("");
             //disable_paging();
-            putf_const("[Abort]Unhandled Exception:%x\n", r->err_code);
+            putf_const("[Abort]Unhandled Exception:%x\n", r->int_no);
             putn();
         }
             break;

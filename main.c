@@ -131,14 +131,14 @@ void catmfs_test(uint32_t addr) {
     }
     if (catmfs_findbyname(fs, STR("a.out"), &node)) {
         putf(STR("found:%s\n"), node->name);
-        char data[250];
-        memset(data, 0xCC, sizeof(char) * 250);
-        uint32_t count = read_fs(node, 0, 200, data);
+        char data[0x1000];
+        memset(data, 0xCC, sizeof(char) * 0x1000);
+        uint32_t count = read_fs(node, 0, 0x1000, data);
         data[count] = '\0';
         putf_const("now exec it.");
         alloc_frame(get_page(0xB0000000, true, current_dir), false, false);
-        memcpy(0xB0000000, data, 250);
-        enter_ring3(0xB0000000);
+        memcpy(0xB0000000, data, 0x1000);
+        //enter_ring3(0xB0000000);
 
     } else {
         PANIC("file not found.")
@@ -167,14 +167,6 @@ void get_phy_test() {
     putf_const("get:%x right:%x vm:%x\n", geted_phy, phy, a);
     disable_paging();
     PANIC("Get phy test done.");
-}
-
-void kernel_vep_heap_test() {
-    //putf_const("[KVH]Test begin//\n");
-    //uint32_t *a = kmalloc_internal(0x20, false, NULL, kernel_vep_heap);
-    //putf_const("[KVH]a vm:%x phy:%x\n", a, get_physical_address(a));
-    //putf_const("[KVH]Test done//\n");
-    //for(;;);
 }
 
 
@@ -228,10 +220,10 @@ void usermode() {
     __asm__ __volatile__("mov %%ebp, %0" : "=r" (ebp));
     set_kernel_stack(esp);
     putf_const("syscall_fork[%x][%x]", syscall_fork, esp);
-    enter_user_mode();
+    //enter_user_mode();
     //syscall_hello_switcher(1);
     long a;
-    __asm__ __volatile__("int $0x60" : "=a" (a) : "0" (3));//It will clear the stack.
+    __asm__ __volatile__("int $0x60" : "=a" (a) : "0" (3));//It will enter user mode and clear the stack.
     //Never exec..
 }
 
@@ -268,7 +260,7 @@ int main(multiboot_info_t *mul_arg, uint32_t init_esp_arg) {
     for (int x = 0; x < initrd_end - initrd_start; x++) {
         putc(initrd_raw[x]);
     }*/
-    //catmfs_test(initrd_start);
+    catmfs_test(initrd_start);
     //delay(2);
     usermode();
     puts_const("[+] main done.");

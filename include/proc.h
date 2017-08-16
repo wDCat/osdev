@@ -52,8 +52,8 @@ typedef struct {
     tss_entry_t tss;
     page_directory_t *page_dir;
     uint32_t time_slice;
-    ldt_limit_entry_t *ldt_table[];
-    uint8_t ldt_table_size;
+    ldt_limit_entry_t *ldt_table;
+    uint8_t ldt_table_count;
     uint32_t reserved_page;
 } pcb_t;
 typedef struct {

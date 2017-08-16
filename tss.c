@@ -30,11 +30,6 @@ void set_kernel_stack(uint32_t addr) {
     tss_entry.esp0 = addr;
 }
 
-void set_active_tss(tss_entry_t *tss) {
-    uint32_t base = (uint32_t) tss;
-    uint32_t limit = base + sizeof(tss_entry);
-    gdt_set_gate(TSS_ID, base, limit, 0xE9, 0x00);
-}
 
 void tss_flush() {
     extern void _tss_flush();

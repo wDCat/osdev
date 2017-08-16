@@ -157,7 +157,7 @@ void paging_install() {
     //多分配10个页
     putf_const("pag %x -> %x\n", 0, kernel_area + 0x30000);
     for (uint32_t i = 0; i < kernel_area + 0x30000; i += 0x1000) {
-        alloc_frame(get_page(i, true, kernel_dir), false, false);
+        alloc_frame(get_page(i, true, kernel_dir), true, false);
     }
 
 /*
@@ -180,10 +180,10 @@ void paging_install() {
                                   kernel_dir);
 */
     for (uint32_t i = KHEAP_START; i < KHEAP_START + KHEAP_SIZE + 0x1000; i += 0x1000) {
-        alloc_frame(get_page(i, true, kernel_dir), false, false);
+        alloc_frame(get_page(i, true, kernel_dir), true, false);
     }
     for (uint32_t i = KPHEAP_START; i < KPHEAP_START + KPHEAP_SIZE + 0x1000; i += 0x1000) {
-        alloc_frame(get_page(i, true, kernel_dir), false, false);
+        alloc_frame(get_page(i, true, kernel_dir), true, false);
     }
 
     switch_page_directory(kernel_dir);

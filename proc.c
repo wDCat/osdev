@@ -153,14 +153,15 @@ void set_proc_status(pcb_t *pcb, proc_status_t new_status) {
 }
 
 inline void set_active_user_tss(tss_entry_t *tss) {
-    write_tss(TSS_USER_PROC_ID, 0x10, 0);
     uint32_t base = (uint32_t) tss;
     uint32_t limit = base + sizeof(tss_entry_t);
-    gdt_set_gate(TSS_USER_PROC_ID, base, limit, 0xE9, 0x00);
+    gdt_set_gate(TSS_USER_PROC_ID, base, limit, 0x89, 0x00);
 }
 
-inline void set_active_user_ldt(ldt_limit_entry_t *ldt_table[]) {
-
+inline void set_active_user_ldt(ldt_limit_entry_t *ldt_table, uint8_t ldt_table_count) {
+    uint32_t base = (uint32_t) ldt_table;
+    uint32_t limit = base + sizeof(ldt_limit_entry_t) * ldt_table_count;
+    gdt_set_gate(LDT_USER_PROC_ID, base, limit, 0x82, 0x00);
 }
 
 void switch_to_proc(pcb_t *pcb) {
@@ -169,6 +170,7 @@ void switch_to_proc(pcb_t *pcb) {
     cli();
     set_proc_status(pcb, STATUS_RUN);
     set_active_user_tss(&pcb->tss);
+    set_active_user_ldt(pcb->ldt_table, pcb->ldt_table_count);
     _gdt_flush();
     putf_const("[+] switch to task %x[%x]", pcb->pid, pcb->tss.eip);
     putf_const("[%x].\n", pcb->tss.eflags);
@@ -181,6 +183,12 @@ void switch_to_proc(pcb_t *pcb) {
     } lj;
     __asm__ __volatile__("movw %%dx,%1;"
             "ljmp %0;"::"m"(*&lj.a), "m"(*&lj.b), "d"(TSS_USER_PROC_ID << 3));
+}
+
+void create_ldt(pcb_t *pcb) {
+    pcb->ldt_table_count = 1;
+    pcb->ldt_table[0].base = 0x0;
+    pcb->ldt_table[0].limit = 0xFFFFFFF;
 }
 
 pid_t fork(regs_t *r) {
@@ -204,31 +212,40 @@ pid_t fork(regs_t *r) {
     tss->ebx = r->ebx;
     tss->ecx = r->ecx;
     tss->edx = r->edx;
+    tss->esi = r->esi;
+    tss->edi = r->edi;
     if (fpid == 1) {
-        tss->eip = (uint32_t) user_init;
+        tss->eip = 0xB0000000;
         create_user_stack(0xCB000000, 0x4000, &tss->ebp, &tss->esp, cpcb->page_dir);
         putf_const("[+] new user stack:[%x][%x]\n", tss->ebp, tss->esp);
+        tss->cs = 3 << 3 | 3;
+        tss->es =
+        tss->ss =
+        tss->ds =
+        tss->fs =
+        tss->gs = 4 << 3 | 3;
     } else {
         tss->eip = r->eip;
         tss->ebp = r->ebp;
         tss->esp = r->useresp;
+        tss->ss = r->ss;
+        tss->es = r->es;
+        tss->cs = r->cs;
+        tss->ds = r->ds;
+        tss->fs = r->fs;
+        tss->gs = r->gs;
     }
-    tss->esi = r->esi;
-    tss->edi = r->edi;
-    tss->ss = r->ss;
-    tss->es = r->es;
-    tss->cs = r->cs;
-    tss->ds = r->ds;
-    tss->fs = r->fs;
-    tss->gs = r->gs;
+    putf_const("[+] proc cs[%x] es[%x]\n", r->cs, r->es);
+
     tss->eflags = r->eflags | 0x200;
     tss->ss0 = 0x10;
     cpcb->reserved_page = (uint32_t) (kmalloc_paging(0x1000, NULL));
     memset(cpcb->reserved_page, 0, 0x1000);
     cpcb->ldt_table = (ldt_limit_entry_t *) cpcb->reserved_page;
-    cpcb->ldt_table_size = 0;
+    cpcb->ldt_table_count = 0;
+    create_ldt(cpcb);
     tss->esp0 = (uint32_t) (cpcb->reserved_page + 0x990);
-    tss->ldt = LDT_USER_PROC_ID;
+    tss->ldt = 0;
     save_proc_state(fpcb, r);
     set_proc_status(fpcb, STATUS_READY);
     switch_to_proc(cpcb);
