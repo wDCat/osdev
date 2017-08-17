@@ -6,6 +6,9 @@ pre:
 	sudo umount /home/dcat/osdev/bgrub/ || echo ""
 	sudo losetup /dev/loop$(LOOP_DEVICE_ID) ../bgrub.img
 	sudo kpartx -a /dev/loop$(LOOP_DEVICE_ID)
+	sudo losetup /dev/loop1 ../disk.img
+	sudo kpartx -a /dev/loop1
+	sudo mount /dev/mapper/loop1p1 /home/dcat/osdev/disk/
 all:
 	rm -rf *.o
 	nasm -f elf -o start.o asm/start.asm
@@ -14,12 +17,9 @@ all:
 	do \
 	gcc $(C_FLAGS) -o $$name.o $$name;\
 	done
-	gcc $(C_FLAGS) -o heap_array_list.c.o heap_array_list.c
-	gcc $(C_FLAGS) -o contious_heap.c.o contious_heap.c
-	gcc $(C_FLAGS) -o ide.c.o ide.c
-	gcc $(C_FLAGS) -o catmfs.c.o catmfs.c
-	gcc $(C_FLAGS) -o proc.c.o proc.c
-	gcc $(C_FLAGS) -o paging_heap.c.o paging_heap.c
+	gcc $(C_FLAGS) -o catmfs.c.o fs/catmfs/catmfs.c
+	gcc $(C_FLAGS) -o ext2.c.o fs/ext2/ext2.c
+	#Copy files and remount
 	ld $(LD_FLAGS) -o kernel.bin start.o *.asm.o *.c.o
 	sudo mount /dev/mapper/loop$(LOOP_DEVICE_ID)p1 /home/dcat/osdev/bgrub/ || echo ""
 	sudo rm -f /home/dcat/osdev/bgrub/kernel.bin
@@ -41,8 +41,8 @@ bochs:
 debug:
 	bochs -q -f ../bochsrc_debug.txt
 qemu:
-	qemu-system-i386 -hda ../bgrub.img -hdb ../initrd -m 16 -k en-us -sdl  -s -d guest_errors,cpu_reset,pcall,cpu_reset -no-reboot
+	qemu-system-i386 -hda ../bgrub.img -hdb ../disk.img -m 16 -k en-us -sdl  -s -d guest_errors,cpu_reset,pcall,cpu_reset -no-reboot
 run:
-	qemu-system-i386 -hda ../bgrub.img -fdb ../initrd -m 16 -k en-us -sdl  -s
+	qemu-system-i386 -hda ../bgrub.img -fdb ../disk.img -m 16 -k en-us -sdl  -s
 clean:
 	rm -rf *.o kernel.bin

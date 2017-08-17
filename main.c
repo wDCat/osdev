@@ -14,10 +14,10 @@
 #include "page.h"
 #include "contious_heap.h"
 #include "multiboot.h"
-#include "catmfs.h"
+#include "fs/catmfs/catmfs.h"
 #include "syscall.h"
 #include "proc.h"
-
+#include "fs/ext2/include/ext2.h"
 
 int putTest(int a) {
     putc("12121"[a]);
@@ -135,7 +135,7 @@ void catmfs_test(uint32_t addr) {
         memset(data, 0xCC, sizeof(char) * 0x1000);
         uint32_t count = read_fs(node, 0, 0x1000, data);
         data[count] = '\0';
-        putf_const("now exec it.");
+        //putf_const("now exec it.");
         alloc_frame(get_page(0xB0000000, true, current_dir), false, false);
         memcpy(0xB0000000, data, 0x1000);
         //enter_ring3(0xB0000000);
@@ -227,6 +227,31 @@ void usermode() {
     //Never exec..
 }
 
+void ide_test() {
+    cli();
+    ide_initialize(0x1F0, 0x3F6, 0x170, 0x376, 0x000);
+    uint8_t data[1024];
+    //memset(data, 0, sizeof(uint8_t) * 1024);
+    uint8_t err;
+    err = ide_ata_access(ATA_READ, 1, 2, 1, data);
+    if (err != 0) {
+        putf_const("read error.[%x]", err);
+        //ide_print_error(1, err);
+        return;
+    }
+    putf_const("read done.");
+    /*
+    for (int x = 0; x < 200; x++) {
+        puts_const("[");
+        puthex(data[x]);
+        puts_const("]");
+
+    }*/
+    ext2_init();
+
+
+}
+
 uint32_t init_esp;
 #ifndef _BUILD_TIME
 #define _BUILD_TIME 00
@@ -262,7 +287,8 @@ int main(multiboot_info_t *mul_arg, uint32_t init_esp_arg) {
     }*/
     catmfs_test(initrd_start);
     //delay(2);
-    usermode();
+    //usermode();
+    ide_test();
     puts_const("[+] main done.");
     for (;;);
 }

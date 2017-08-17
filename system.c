@@ -21,13 +21,13 @@ unsigned char *memset(unsigned char *dest, unsigned char val, int count) {
     return NULL;
 }
 
-unsigned char inportb(unsigned short _port) {
+inline unsigned char inportb(unsigned short _port) {
     unsigned char rv;
     __asm__ __volatile__ ("inb %1, %0" : "=a" (rv) : "dN" (_port));
     return rv;
 }
 
-void outportb(uint16_t portid, uint8_t value) {
+inline void outportb(uint16_t portid, uint8_t value) {
     __asm__ __volatile__("outb %%al, %%dx": :"d" (portid), "a" (value));
 }
 

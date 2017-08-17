@@ -37,13 +37,12 @@ typedef struct {
 void ide_initialize(unsigned int BAR0, unsigned int BAR1, unsigned int BAR2, unsigned int BAR3,
                     unsigned int BAR4);
 
-unsigned char ide_ata_access(unsigned char direction, unsigned char drive, unsigned int lba,
-                             unsigned char numsects, unsigned short selector, unsigned int edi);
-
 unsigned char ide_print_error(unsigned int drive, unsigned char err);
 
 void ide_write(unsigned char channel, unsigned char reg, unsigned char data);
 
 unsigned char ide_read(unsigned char channel, unsigned char reg);
+
+uint8_t ide_ata_access(uint8_t action, uint8_t drive, uint32_t lba, uint32_t block_count, uint8_t *buff);
 
 #endif //W2_IDE_H
