@@ -247,7 +247,8 @@ void ide_test() {
         puts_const("]");
 
     }*/
-    ext2_init();
+    extern void ext2_test();
+    ext2_test();
 
 
 }

@@ -15,10 +15,12 @@ paging_heap_t *pheap_create(uint32_t start_addr, uint32_t size) {
 
 uint32_t *pheap_alloc(paging_heap_t *heap, uint32_t size) {
     ASSERT(heap);
-    if (size & 0xFFF)
-        size = size & 0xFFFFF000 + 0x1000;
+    if (size & 0xFFF) {
+        size = (size & 0xFFFFF000) + 0x1000;//:<
+    }
     uint32_t *result = heap->current;
     heap->current += size;
+    //putf_const("[+] alloc page:%x\n", result);
     return result;
 }
 

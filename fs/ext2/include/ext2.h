@@ -6,18 +6,23 @@
 #define W2_EXT2_H
 
 #include "superblk.h"
+#include "blk_dev.h"
 
 #define SECTION_SIZE 512
-#define    EXT3_NDIR_BLOCKS        12
-#define    EXT3_IND_BLOCK            EXT3_NDIR_BLOCKS
-#define    EXT3_DIND_BLOCK            (EXT3_IND_BLOCK + 1)
-#define    EXT3_TIND_BLOCK            (EXT3_DIND_BLOCK + 1)
-#define    EXT3_N_BLOCKS            (EXT3_TIND_BLOCK + 1)
-
-typedef int(*fs_section_read)(uint32_t offset, uint32_t len, uint8_t *buff);
-
-typedef int(*fs_section_write)(uint32_t offset, uint32_t len, uint8_t *buff);
-
+#define EXT2_NDIR_BLOCKS 12
+#define EXT2_SIND_BLOCK EXT2_NDIR_BLOCKS //一层
+#define EXT2_DIND_BLOCK (EXT2_SIND_BLOCK + 1) //二层
+#define EXT2_TIND_BLOCK (EXT2_DIND_BLOCK + 1) //三层
+#define EXT2_N_BLOCKS (EXT2_TIND_BLOCK + 1)
+#define EXT2_MAGIC 0xEF53
+#define INODE_TYPE_FIFO 0x1000
+#define INODE_TYPE_CHAR_DEV 0x2000
+#define INODE_TYPE_DIRECTORY 0x4000
+#define INODE_TYPE_BLOCK_DEV 0x6000
+#define INODE_TYPE_FILE 0x8000
+#define INODE_TYPE_SYMLINK 0xA000
+#define INODE_TYPE_SOCKET 0xC000
+#define IS_DIR(x) (((x) & 0xF000) == INODE_TYPE_DIRECTORY)
 typedef struct {
     uint32_t bg_block_bitmap;      /* block 指针指向 block bitmap */
     uint32_t bg_inode_bitmap;      /* block 指针指向 inode bitmap */
@@ -38,10 +43,10 @@ typedef struct {
     uint32_t i_dtime;   /* Deletion Time */
     uint16_t i_gid;     /* Low 16 bits of Group Id */
     uint16_t i_links_count;          /* Links count */
-    uint32_t i_blocks;               /* blocks 计数 */
+    uint32_t i_blocks_count;               /* blocks 计数 */
     uint32_t i_flags;                /* File flags */
     uint32_t l_i_reserved1;          /* 可以忽略 */
-    uint32_t i_block[EXT3_N_BLOCKS]; /* 一组 block 指针 */
+/*0x40*/    uint32_t i_block[EXT2_N_BLOCKS]; /* 一组 block 指针 */
     uint32_t i_generation;           /* 可以忽略 */
     uint32_t i_file_acl;             /* 可以忽略 */
     uint32_t i_dir_acl;              /* 可以忽略 */
@@ -54,13 +59,29 @@ typedef struct {
     uint32_t l_i_reserved2;          /* 可以忽略 */
 } ext2_inode_t;
 typedef struct {
+    uint32_t inode_id;
+    uint16_t size;
+    uint8_t name_length;
+    /*(only if the feature bit for "directory entries have file type byte" is set, else this is the most-significant 8 bits of the Name Length)*/
+    uint8_t type_indicator;
+    uint8_t name[];
+} ext2_dir_t;
+
+typedef struct {
     ext2_super_block_t super_blk;
-    fs_section_read section_read;
-    fs_section_write section_write;
+    blk_dev_t *dev;
     uint32_t block_group_count;
     ext2_group_desc_t *block_group;
-} ext2_t;
 
-void ext2_init();
+} ext2_t;
+typedef struct {
+    ext2_t *fs;
+    ext2_inode_t *inode;
+    uint32_t next_block_id;
+    uint8_t *block;
+    ext2_dir_t *cur_dir;
+} ext2_dir_iterator_t;
+
+void ext2_init(blk_dev_t *dev);
 
 #endif //W2_EXT2_H

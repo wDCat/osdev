@@ -1,4 +1,5 @@
-C_FLAGS= -fno-stack-protector -m32 -std=c99 -Wall -O0 -O -fstrength-reduce -fomit-frame-pointer -D _BUILD_TIME=`date +%s` -finline-functions -nostdinc -fno-builtin -I./include -c
+INCLUDE=-I./include -I./dev/include -I./fs/ext2/include
+C_FLAGS= -fno-stack-protector -m32 -std=c99 -Wall -O0 -O -fstrength-reduce -fomit-frame-pointer -D _BUILD_TIME=`date +%s` -finline-functions -nostdinc -fno-builtin $(INCLUDE) -c
 LD_FLAGS=  -n -m elf_i386 -A elf32-i386 -nostdlib -T linker.ld
 LOOP_DEVICE_ID=5
 cfiles :=$(wildcard *.c)
@@ -17,6 +18,7 @@ all:
 	do \
 	gcc $(C_FLAGS) -o $$name.o $$name;\
 	done
+	gcc $(C_FLAGS) -o blk_dev.c.o dev/blk_dev.c
 	gcc $(C_FLAGS) -o catmfs.c.o fs/catmfs/catmfs.c
 	gcc $(C_FLAGS) -o ext2.c.o fs/ext2/ext2.c
 	#Copy files and remount

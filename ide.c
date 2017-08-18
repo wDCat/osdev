@@ -283,7 +283,9 @@ void ide_initialize(unsigned int BAR0, unsigned int BAR1, unsigned int BAR2, uns
 }
 
 //rewrite a clear version.maybe...
+
 uint8_t ide_ata_access(uint8_t action, uint8_t drive, uint32_t lba, uint32_t block_count, uint8_t *buff) {
+    ASSERT(block_count <= 1);//FIXME:bad data when block_count>1
     uint8_t channel = ide_devices[drive].channel;
     uint16_t slavebit = ide_devices[drive].drive;
     uint16_t bus = channels[channel].base;
