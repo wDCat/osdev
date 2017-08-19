@@ -47,6 +47,7 @@ heap_t *create_heap(uint32_t start_addr, uint32_t end_addr, uint32_t max_addr, p
 }
 
 void *halloc(heap_t *heap, uint32_t size, bool page_align) {
+    if (page_align) PANIC("Use kmalloc_paging instead.");
     ASSERT(heap && size >= 0);
     int hinfo_index;
     header_info_t *hinfo = find_suit_hole(heap->al, size, page_align, &hinfo_index);
@@ -92,7 +93,6 @@ void *halloc(heap_t *heap, uint32_t size, bool page_align) {
     header->used = true;
     //TODO correct header and footer position when page_align
     if (page_align) {
-
         return (void *) ((((uint32_t) (header + HOLE_HEADER_SIZE)) & 0xFFFFF000) + 0x1000);
     }
     //memset(hinfo->addr + HOLE_HEADER_SIZE, 0, size);
@@ -119,7 +119,6 @@ hole_header_t *combine_two_hole(heap_t *heap, hole_header_t *h1, hole_header_t *
 }
 
 void hfree(heap_t *heap, uint32_t addr) {
-    PANIC("//TODO")
     ASSERT(heap);
     hole_header_t *header = (hole_header_t *) (addr - HOLE_HEADER_SIZE);
     hole_footer_t *footer = (hole_footer_t *) (addr + header->size);

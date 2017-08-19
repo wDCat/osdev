@@ -27,6 +27,7 @@ uint32_t kmalloc_paging(uint32_t sz, uint32_t *phys) {
     } else
         return kmalloc_internal(sz, true, phys, NULL);
 }
+
 uint32_t kmalloc_internal(uint32_t sz, bool align, uint32_t *phys, heap_t *heap) {
     ASSERT(heap_placement_addr != NULL);
     ASSERT(heap_placement_addr >= &end);
@@ -62,5 +63,8 @@ uint32_t kmalloc_internal(uint32_t sz, bool align, uint32_t *phys, heap_t *heap)
 
 void kfree(void *ptr) {
     ASSERT(kernel_heap);
-    hfree(kernel_heap, ptr);
+    if (KHEAP_START < (uint32_t) ptr < KHEAP_START + KHEAP_SIZE) {
+        hfree(kernel_heap, ptr);
+    } else
+        TODO;
 }

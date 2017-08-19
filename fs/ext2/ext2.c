@@ -34,13 +34,47 @@ int ata_section_read(uint32_t offset, uint32_t len, uint8_t *buff) {
 }
 
 int ata_section_write(uint32_t offset, uint32_t len, uint8_t *buff) {
-    return 1;
+    if (offset % SECTION_SIZE != 0 || len % SECTION_SIZE != 0) {
+        PANIC("offset and len must be block align!");
+    }
+    uint32_t blk_no = (offset + 0x100000) / SECTION_SIZE;
+    uint32_t blk_count = len / SECTION_SIZE;
+    uint8_t err;
+    for (uint32_t x = 0; x < blk_count; x++) {
+        err = ide_ata_access(ATA_WRITE, 1, blk_no + x, 1, buff + x * SECTION_SIZE);
+        ASSERT(err == 0);
+    }
+    return err;
 }
 
 int ext2_read_block(ext2_t *fs, uint32_t base, uint32_t count, uint8_t *buff) {
     uint32_t offset = base * fs->super_blk.s_block_size;
     uint32_t size = count * fs->super_blk.s_block_size;
+    putf_const("[%x] <==> [%x]\n", offset, buff);
     return fs->dev->read(offset, size, buff);
+}
+
+int ext2_write_block(ext2_t *fs, uint32_t base, uint32_t count, uint8_t *buff) {
+    uint32_t offset = base * fs->super_blk.s_block_size;
+    uint32_t size = count * fs->super_blk.s_block_size;
+    return fs->dev->write(offset, size, buff);
+}
+
+int ext2_get_inode_block(ext2_t *fs, uint32_t inode_id, uint32_t *index_out, uint32_t *block_no_out, uint8_t *buff) {
+    ASSERT(inode_id >= 2);
+    uint32_t bg_no = (inode_id - 1) / fs->super_blk.s_inodes_per_group;
+    uint32_t index = (inode_id - 1) % fs->super_blk.s_inodes_per_group;
+    uint32_t block = (index * sizeof(ext2_inode_t)) / fs->super_blk.s_block_size;
+    uint32_t offset = block / 2 + fs->block_group[bg_no].bg_inode_table;
+    if (fs->block_group[bg_no].bg_inode_table == 0) {
+        TODO;//Alloc a table
+    }
+    ext2_read_block(fs, offset, 1, buff);
+    if (index_out)
+        *index_out = index;
+    if (block_no_out)
+        *block_no_out = bg_no;
+    return 0;
 }
 
 int ext2_find_inote(ext2_t *ext2_fs, uint32_t inode_id, ext2_inode_t *inode_out) {
@@ -98,20 +132,215 @@ int ext2_dir_iterator_next(ext2_dir_iterator_t *iter, ext2_dir_t **dir) {
     return 1;
 }
 
-int ext2_read_file_block(ext2_t *fs, ext2_inode_t *inode, uint32_t block_no, uint8_t *buff) {
-    if (block_no < EXT2_SIND_BLOCK) {
-        putf_const("[%s] read[%x]:%x\n", __func__, block_no, inode->i_block[block_no]);
-        return ext2_read_block(fs, inode->i_block[block_no], 1, buff);
-    } else PANIC("//TODO:")
+int ext2_dir_iterator_exit(ext2_dir_iterator_t *iter) {
+    //kfree(iter->block);
 }
 
+int ext2_read_file_block_doubly(ext2_t *fs, ext2_inode_t *inode, uint32_t block_no, uint8_t *buff) {
+    TODO;
+}
+
+int ext2_update_sblk_and_bg(ext2_t *fs) {
+    putf_const("[+] last mount:%s\n", fs->super_blk.s_last_mounted);
+    strcpy(fs->super_blk.s_last_mounted, "$ROOTFS/");
+    int err = fs->dev->write(EXT2_SUPER_BLK_OFFSET, sizeof(fs->super_blk), &fs->super_blk);
+    if (err)return err;
+    return fs->dev->write(EXT2_BLOCK_GROUP_OFFSET, sizeof(ext2_group_desc_t) * fs->block_group_count, fs->block_group);
+}
+
+int ext2_alloc_inodeid(ext2_t *fs, uint32_t *new_inode_id) {
+    uint8_t *bitmap = (uint8_t *) kmalloc_paging(fs->super_blk.s_block_size, NULL);
+    if (fs->super_blk.s_free_inodes_count <= 0) {
+        puterr_const("[-] out of inode!");
+        return -1;
+    }
+    for (uint32_t x = 0; x < fs->block_group_count; x++) {
+        if (fs->block_group[x].bg_free_inodes_count > 0) {
+            if (ext2_read_block(fs, fs->block_group[x].bg_inode_bitmap, 1, bitmap)) {
+                PANIC("[-] fail to read block.")
+            }
+            for (uint32_t y = 0; y < fs->super_blk.s_inodes_per_group; y++) {
+                if (BIT_GET(bitmap[y / 8], y % 8) == 0) {
+                    putf_const("[+][%x] found empty inode:%x\n", bitmap, y);
+                    BIT_SET(bitmap[y / 8], y % 8);
+                    *new_inode_id = x * fs->super_blk.s_inodes_per_group + y;
+                    fs->block_group[x].bg_free_inodes_count--;
+                    fs->super_blk.s_free_inodes_count--;
+                    ext2_write_block(fs, fs->block_group[x].bg_inode_bitmap, 1, bitmap);
+                    ext2_update_sblk_and_bg(fs);
+                    return 0;
+                    break;
+                }
+            }
+
+        }
+    }
+    PANIC("[-] Out of inode! but fs->super_blk.s_free_inodes_count>0");
+    return 1;
+}
+
+int ext2_alloc_block(ext2_t *fs, uint32_t *new_block_id) {
+    uint8_t *bitmap = (uint8_t *) kmalloc_paging(fs->super_blk.s_block_size, NULL);
+    if (fs->super_blk.s_free_blocks_count <= 0) {
+        puterr_const("[-] out of block!");
+        return -1;
+    }
+    for (uint32_t x = 0; x < fs->block_group_count; x++) {
+        if (fs->block_group[x].bg_free_blocks_count > 0) {
+            if (ext2_read_block(fs, fs->block_group[x].bg_block_bitmap, 1, bitmap)) {
+                PANIC("[-] fail to read block.")
+            }
+            for (uint32_t y = 0; y < fs->super_blk.s_blocks_per_group; y++) {
+                if (BIT_GET(bitmap[y / 8], y % 8) == 0) {
+                    putf_const("[+][%x] found empty block:%x\n", bitmap, y);
+                    BIT_SET(bitmap[y / 8], y % 8);
+                    *new_block_id = fs->super_blk.s_blocks_per_group * x + y;
+                    fs->block_group[x].bg_free_blocks_count--;
+                    fs->super_blk.s_free_blocks_count--;
+                    //Write back
+                    ext2_write_block(fs, fs->block_group[x].bg_block_bitmap, 1, bitmap);
+                    ext2_update_sblk_and_bg(fs);
+                    return 0;
+                    break;
+                }
+            }
+
+        }
+    }
+    PANIC("[-] Out of block! but fs->super_blk.s_free_blocks_count>0");
+    return 1;
+}
+
+int ext2_get_inode_id(ext2_t *fs, ext2_inode_t *father) {
+
+}
+
+int ext2_make_file(ext2_t *fs, uint32_t father_id, char *name) {
+    uint32_t ninode_id;
+    if (ext2_alloc_inodeid(fs, &ninode_id)) PANIC("cannot alloc inodeid");
+    uint8_t *fblk = (uint8_t *) kmalloc_paging(fs->super_blk.s_block_size, NULL);
+    uint8_t *blk = (uint8_t *) kmalloc_paging(fs->super_blk.s_block_size, NULL);
+    uint32_t fblkno, findex;
+    ext2_get_inode_block(fs, father_id, &findex, &fblkno, fblk);
+    ext2_inode_t *father = (ext2_inode_t *) (fblk + findex * sizeof(ext2_inode_t));
+    ASSERT(IS_DIR(father->i_mode));
+    //Check whether file exists.
+    ext2_dir_iterator_t iter;
+    ext2_dir_t *dir;
+    uint8_t name_len = (uint8_t) strlen(name);
+    ext2_dir_iterator_init(fs, father, &iter);
+    while (ext2_dir_iterator_next(&iter, &dir)) {
+        if (dir->name_length == name_len) {
+            int x = 0;
+            for (; x < name_len && dir->name[x] == name[x]; x++);
+            if (x == name_len - 1) {
+                putf_const("[-] %s already exists.\n", name);
+                return 1;
+            }
+        }
+    }
+    ext2_dir_iterator_exit(&iter);
+    //Update inode
+    uint32_t index, blk_no;
+    if (ext2_get_inode_block(fs, ninode_id, &index, &blk_no, blk)) PANIC("cannot get inode block.");
+    ext2_inode_t *inode = (ext2_inode_t *) (blk + sizeof(ext2_inode_t) + index);
+    //ASSERT(inode->i_mode == 0);
+    memset(inode, 0, sizeof(ext2_inode_t));
+    inode->i_mode = INODE_TYPE_FILE;
+    inode->i_ctime = 2333;
+    inode->i_uid = 23232;
+    inode->i_size = 0;
+    ext2_write_block(fs, blk_no, 1, blk);
+    //Update dir table.
+    ASSERT(father->i_blocks_count <= EXT2_NDIR_BLOCKS);
+    //ASSERT(father->i_block[father->i_blocks_count - 1]);
+    ext2_read_block(fs, father->i_block[0], 1, blk);
+    dir = (ext2_dir_t *) blk;
+    uint8_t found = false;
+    int x = 0;
+    for (; x < EXT2_NDIR_BLOCKS && !found;) {
+        putf_const("[APP]%x\n", x);
+        while (true) {
+            if ((uint32_t) dir >= (uint32_t) ((uint32_t) blk + fs->super_blk.s_block_size)) {
+                x++;
+                if (father->i_block[x] == 0) {
+                    TODO;
+                    //Create a new block.
+                    ext2_alloc_block(fs, &father->i_block[x]);
+                    father->i_blocks_count++;//Write back..
+                    ext2_read_block(fs, father->i_block[x], 1, blk);
+                    dir = (ext2_dir_t *) blk;
+                    break;
+                }
+                ext2_read_block(fs, father->i_block[x], 1, blk);
+                dir = (ext2_dir_t *) blk;
+            }
+            if (dir->inode_id == 0) {
+                found = true;
+                break;
+            } else putf_const("[|%x]", dir->inode_id);
+            if (dir->size > 10 + dir->name_length &&
+                ((uint32_t) dir + dir->size) >= ((uint32_t) blk + fs->super_blk.s_block_size)) {
+                //fix length
+
+                putf_const("[**] fix length:[%x] -->[%x]\n", dir->size, dir->name_length + 10);
+                dir->size = (uint16_t) (10 + dir->name_length);
+                k_delay(5);
+            }
+            dir = (ext2_dir_t *) ((uint32_t) dir + dir->size);
+        }
+    }
+    ASSERT(dir);
+    dir->inode_id = ninode_id;
+    dir->name_length = name_len;
+    for (int y = 0; y < name_len; y++)
+        dir->name[y] = name[y];
+    ext2_write_block(fs, father->i_block[x], 1, blk);
+    return 0;
+}
+
+int ext2_read_file_block_singly(ext2_t *fs, ext2_inode_t *inode, uint32_t block_no, uint8_t *buff) {
+    uint32_t max_blocks = fs->super_blk.s_block_size / sizeof(uint32_t);
+    uint32_t *blk = (uint32_t *) kmalloc(fs->super_blk.s_block_size);
+    ext2_read_block(fs, inode->i_singly_block, 1, blk);
+    uint32_t no = block_no - EXT2_SIND_BLOCK;
+    ASSERT(no < max_blocks);
+    putf_const("[%s] %x", __func__, blk[no]);
+    if (blk[no] == 0)
+        return 1;
+    int err = ext2_read_block(fs, blk[no], 1, buff);
+    //kfree(blk);
+    return err;
+}
+
+/**
+ * @return 0:succ */
+int ext2_read_file_block(ext2_t *fs, ext2_inode_t *inode, uint32_t block_no, uint8_t *buff) {
+    uint32_t max_blocks = fs->super_blk.s_block_size / sizeof(uint32_t);
+    putf_const("[+] max_blocks:%x read[%x]", max_blocks, block_no);
+    if (block_no < EXT2_SIND_BLOCK) {
+        putf_const("[%s] direct read[%x]:%x\n", __func__, block_no, inode->i_block[block_no]);
+        return ext2_read_block(fs, inode->i_block[block_no], 1, buff);
+    } else if (block_no < EXT2_SIND_BLOCK + max_blocks) {
+        //singly Linked
+        putf_const("[%s] singly direct read[%x]:%x\n", __func__, block_no, inode->i_block[block_no]);
+        return ext2_read_file_block_singly(fs, inode, block_no, buff);
+    } else
+        TODO;
+}
+
+/**
+ * @return read bytes*/
 int ext2_read_file(ext2_t *fs, ext2_inode_t *inode, uint32_t offset, uint32_t size, uint8_t *buff) {
     uint32_t block_offset = offset / fs->super_blk.s_block_size;
     uint32_t block_count = size / fs->super_blk.s_block_size;
     for (int x = 0; x < block_count; x++) {
         int err = ext2_read_file_block(fs, inode, block_offset + x, buff + x * fs->super_blk.s_block_size);
-
+        if (err) {
+            return -1;
+        }
     }
+    return 0;
 }
 
 void ext2_test() {
@@ -121,7 +350,11 @@ void ext2_test() {
     ext2_init(&dev);
     strcpy(dev.name, "DCAT DISK1");
     ext2_inode_t node;
-    ext2_find_inote(&ext2_fs, 2, &node);
+    uint8_t *buff = kmalloc_paging(1024, NULL);
+    uint32_t offset;
+    ext2_get_inode_block(&ext2_fs, 2, &offset, NULL, buff);
+    memcpy(&node, buff + offset * sizeof(ext2_inode_t), sizeof(ext2_inode_t));
+    //ext2_find_inote(&ext2_fs, 2, &node);
     ASSERT(IS_DIR(node.i_mode));
     ext2_dir_iterator_t iter;
     ext2_dir_iterator_init(&ext2_fs, &node, &iter);
@@ -132,18 +365,21 @@ void ext2_test() {
         name[d->name_length] = '\0';
         ext2_inode_t inode;
         ext2_find_inote(&ext2_fs, d->inode_id, &inode);
-
         putf_const("[+] [%x]fn:%s file_size:%x ", d->inode_id, name, inode.i_size);
         putf_const("uid:%x es:%x next:%x\n", inode.i_uid, d->size, ((uint32_t) iter.cur_dir) + iter.cur_dir->size);
-        if (name[0] == 'T') {
+        if (name[0] == 'b') {
             putf_const("[+] try to read file\n");
             uint8_t *buff = (uint8_t *) kmalloc_paging(0x1000, NULL);
-            ext2_read_file(&ext2_fs, &inode, 0, 1024, buff);
-            buff[20] = '\0';
-            putf_const("read data:%s\n", buff);
+            putf_const("[+]buff addr:%x\n", buff);
+            ext2_read_file(&ext2_fs, &inode, 0x3000, 1024, buff);
+            buff[0xFFF] = '\0';
+            puts(buff);
+            //putf_const("read data:%s\n", buff);
         }
     }
-
+    ext2_dir_iterator_exit(&iter);
+    ext2_make_file(&ext2_fs, 2, "silly");
+    ASSERT(ext2_update_sblk_and_bg(&ext2_fs) == 0);
     putf_const("all done![%x]", sizeof(ext2_inode_t));
     for (;;);
     putf_const("[+]block count [%x]", node.i_blocks_count);
@@ -164,7 +400,7 @@ void ext2_test() {
 void ext2_init(blk_dev_t *dev) {
     memset(&ext2_fs, 0, sizeof(ext2_t));
     ext2_fs.dev = dev;
-    ext2_fs.dev->read(0x400, 0x200, &ext2_fs.super_blk);
+    ext2_fs.dev->read(0x400, sizeof(ext2_super_block_t), &ext2_fs.super_blk);
     ASSERT(ext2_fs.super_blk.s_magic == EXT2_MAGIC);
     ext2_super_block_t *super_blk = &ext2_fs.super_blk;
     super_blk->s_block_size = (uint32_t) (1 << (super_blk->s_block_size + 10));//log2(x)-10

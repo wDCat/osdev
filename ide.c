@@ -312,8 +312,9 @@ uint8_t ide_ata_access(uint8_t action, uint8_t drive, uint32_t lba, uint32_t blo
     //ide_write(channel, ATA_REG_LBA3, lba_reg[3]);
     //ide_write(channel, ATA_REG_LBA4, lba_reg[4]);
     //ide_write(channel, ATA_REG_LBA5, lba_reg[5]);
-    ide_write(channel, ATA_REG_COMMAND, ATA_CMD_READ_PIO);
+
     if (action == ATA_READ) {
+        ide_write(channel, ATA_REG_COMMAND, ATA_CMD_READ_PIO);
         uint8_t *wbuff = buff;
         for (uint8_t x = 0; x < block_count; x++) {
             uint8_t err = ide_polling(channel, 1);
@@ -323,10 +324,21 @@ uint8_t ide_ata_access(uint8_t action, uint8_t drive, uint32_t lba, uint32_t blo
                 return err;
             }
             __asm__ __volatile__ ("rep insw" : : "c"(words), "d"(channels[channel].base), "D"(wbuff)); // Receive Data.
-            wbuff += 512;
+            wbuff += 256;
         }
     } else if (action == ATA_WRITE) {
-        PANIC("stub!");
+        ide_write(channel, ATA_REG_COMMAND, ATA_CMD_WRITE_PIO);
+        uint8_t *wbuff = buff;
+        for (uint8_t x = 0; x < block_count; x++) {
+            uint8_t err = ide_polling(channel, 1);
+            if (err != 0) {
+                putf("[-] ATA ErrNo:%x\n", err);
+                ide_print_error(1, err);
+                return err;
+            }
+            __asm__ __volatile__ ("rep outsw"::"c"(words), "d"(bus), "S"(wbuff));
+            wbuff += 256;
+        }
     }
     return 0;
 }

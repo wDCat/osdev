@@ -23,6 +23,9 @@
 #define INODE_TYPE_SYMLINK 0xA000
 #define INODE_TYPE_SOCKET 0xC000
 #define IS_DIR(x) (((x) & 0xF000) == INODE_TYPE_DIRECTORY)
+#define IS_FILE(x) (((x) & 0xF000) == INODE_TYPE_FILE)
+#define EXT2_SUPER_BLK_OFFSET 1024
+#define EXT2_BLOCK_GROUP_OFFSET 2048
 typedef struct {
     uint32_t bg_block_bitmap;      /* block 指针指向 block bitmap */
     uint32_t bg_inode_bitmap;      /* block 指针指向 inode bitmap */
@@ -46,7 +49,10 @@ typedef struct {
     uint32_t i_blocks_count;               /* blocks 计数 */
     uint32_t i_flags;                /* File flags */
     uint32_t l_i_reserved1;          /* 可以忽略 */
-/*0x40*/    uint32_t i_block[EXT2_N_BLOCKS]; /* 一组 block 指针 */
+/*0x40*/    uint32_t i_block[EXT2_SIND_BLOCK]; /* 一组 block 指针 */
+    uint32_t i_singly_block;
+    uint32_t i_doubly_block;
+    uint32_t i_triply_block;
     uint32_t i_generation;           /* 可以忽略 */
     uint32_t i_file_acl;             /* 可以忽略 */
     uint32_t i_dir_acl;              /* 可以忽略 */
@@ -81,6 +87,9 @@ typedef struct {
     uint8_t *block;
     ext2_dir_t *cur_dir;
 } ext2_dir_iterator_t;
+#define BIT_GET(x, index) (((x)>>(index))&1)
+#define BIT_SET(x, index) ((x)|=1<<(index))
+#define BIT_CLEAR(x, index) ((x)^=1<<(index))
 
 void ext2_init(blk_dev_t *dev);
 
