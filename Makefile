@@ -7,9 +7,17 @@ pre:
 	sudo umount /home/dcat/osdev/bgrub/ || echo ""
 	sudo losetup /dev/loop$(LOOP_DEVICE_ID) ../bgrub.img
 	sudo kpartx -a /dev/loop$(LOOP_DEVICE_ID)
-	sudo losetup /dev/loop2 ../disk.img
-	sudo kpartx -a /dev/loop2
-	sudo mount /dev/mapper/loop2p1 /home/dcat/osdev/disk/
+mount_disk:
+	sudo losetup /dev/loop2 ../disk.img || echo ""
+	sudo kpartx -a /dev/loop2 || echo ""
+	sudo mount /dev/mapper/loop2p1 /home/dcat/osdev/disk/ || echo ""
+umount_disk:
+	sudo umount /dev/mapper/loop2p1 || echo ""
+	sudo kpartx -d /dev/loop2 || echo ""
+	sudo losetup -d /dev/loop2 || echo ""
+fsck_disk:
+	sudo umount /dev/mapper/loop2p1 || echo ""
+	sudo fsck -f /dev/mapper/loop2p1
 all:
 	rm -rf *.o
 	nasm -f elf -o start.o asm/start.asm

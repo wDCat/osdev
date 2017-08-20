@@ -22,6 +22,8 @@
 #define INODE_TYPE_FILE 0x8000
 #define INODE_TYPE_SYMLINK 0xA000
 #define INODE_TYPE_SOCKET 0xC000
+#define INODE_DIR_TYPE_INDICATOR_DIRECTORY 0x2
+#define INODE_DIR_TYPE_INDICATOR_FILE 0x1
 #define IS_DIR(x) (((x) & 0xF000) == INODE_TYPE_DIRECTORY)
 #define IS_FILE(x) (((x) & 0xF000) == INODE_TYPE_FILE)
 #define EXT2_SUPER_BLK_OFFSET 1024
@@ -32,7 +34,7 @@ typedef struct {
     uint32_t bg_inode_table;       /* block 指针指向 inodes table */
     uint16_t bg_free_blocks_count; /* 空闲的 blocks 计数 */
     uint16_t bg_free_inodes_count; /* 空闲的 inodes 计数 */
-    uint16_t bg_used_dirs_count;   /* 目录计数 */
+    uint16_t bg_dirs_count;   /* 目录计数 */
     uint16_t bg_pad;               /* 可以忽略 */
     uint32_t bg_reserved[3];       /* 可以忽略 */
 } ext2_group_desc_t;
@@ -46,7 +48,7 @@ typedef struct {
     uint32_t i_dtime;   /* Deletion Time */
     uint16_t i_gid;     /* Low 16 bits of Group Id */
     uint16_t i_links_count;          /* Links count */
-    uint32_t i_blocks_count;               /* blocks 计数 */
+    uint32_t i_sectors_count;               /* disk sectors 计数 */
     uint32_t i_flags;                /* File flags */
     uint32_t l_i_reserved1;          /* 可以忽略 */
 /*0x40*/    uint32_t i_block[EXT2_SIND_BLOCK]; /* 一组 block 指针 */
@@ -78,7 +80,9 @@ typedef struct {
     blk_dev_t *dev;
     uint32_t block_group_count;
     ext2_group_desc_t *block_group;
-
+    uint32_t sections_per_group;
+    uint32_t block_size;
+    uint32_t fragment_size;
 } ext2_t;
 typedef struct {
     ext2_t *fs;
