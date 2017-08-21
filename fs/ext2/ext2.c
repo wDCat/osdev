@@ -60,7 +60,8 @@ int ext2_write_block(ext2_t *fs, uint32_t base, uint32_t count, uint8_t *buff) {
     return fs->dev->write(offset, size, buff);
 }
 
-int ext2_get_inode_block(ext2_t *fs, uint32_t inode_id, uint32_t *index_out, uint32_t *block_no_out, uint8_t *buff) {
+int ext2_get_inode_block(ext2_t *fs, uint32_t inode_id, uint32_t *index_out, uint32_t *block_no_out,
+                         ext2_inode_t **inode_out, uint8_t *buff) {
     ASSERT(inode_id >= 2);
     uint32_t bg_no = (inode_id - 1) / fs->super_blk.s_inodes_per_group;
     uint32_t index = (inode_id - 1) % fs->super_blk.s_inodes_per_group;
@@ -70,10 +71,14 @@ int ext2_get_inode_block(ext2_t *fs, uint32_t inode_id, uint32_t *index_out, uin
         TODO;//Alloc a table
     }
     ext2_read_block(fs, offset, 1, buff);
+    index = index % (fs->block_size / sizeof(ext2_inode_t));
     if (index_out)
-        *index_out = index % (fs->block_size / sizeof(ext2_inode_t));
+        *index_out = index;
     if (block_no_out)
         *block_no_out = offset;
+    if (inode_out) {
+        *inode_out = (ext2_inode_t *) ((uint32_t) buff + sizeof(ext2_inode_t) * index);
+    }
     return 0;
 }
 
@@ -135,9 +140,6 @@ int ext2_dir_iterator_exit(ext2_dir_iterator_t *iter) {
     //kfree(iter->block);
 }
 
-int ext2_read_file_block_doubly(ext2_t *fs, ext2_inode_t *inode, uint32_t block_no, uint8_t *buff) {
-    TODO;
-}
 
 int ext2_update_sblk_and_bg(ext2_t *fs) {
     //putf_const("[+] last mount:%s\n", fs->super_blk.s_last_mounted);
@@ -213,17 +215,16 @@ int ext2_alloc_block(ext2_t *fs, uint32_t *new_block_id) {
     return 1;
 }
 
-int ext2_get_inode_id(ext2_t *fs, ext2_inode_t *father) {
-    TODO;//or removed
-}
 
-int ext2_make(ext2_t *fs, uint16_t type, uint32_t father_id, char *name) {
+int ext2_make(ext2_t *fs, uint16_t type, uint32_t father_id, char *name, uint32_t *new_id_out) {
     uint32_t ninode_id;
     if (ext2_alloc_inodeid(fs, type, &ninode_id)) PANIC("cannot alloc inodeid");
+    if (new_id_out)
+        *new_id_out = ninode_id;
     uint8_t *fblk = (uint8_t *) kmalloc_paging(fs->block_size, NULL);
     uint8_t *blk = (uint8_t *) kmalloc_paging(fs->block_size, NULL);
     uint32_t fblkno, findex;
-    ext2_get_inode_block(fs, father_id, &findex, &fblkno, fblk);
+    ext2_get_inode_block(fs, father_id, &findex, &fblkno, NULL, fblk);
     ext2_inode_t *father = (ext2_inode_t *) (fblk + findex * sizeof(ext2_inode_t));
     ASSERT(IS_DIR(father->i_mode));
     //Check whether file exists.
@@ -244,7 +245,7 @@ int ext2_make(ext2_t *fs, uint16_t type, uint32_t father_id, char *name) {
     ext2_dir_iterator_exit(&iter);
     //Update inode
     uint32_t index, blk_no;
-    if (ext2_get_inode_block(fs, ninode_id, &index, &blk_no, blk)) PANIC("cannot get inode block.");
+    if (ext2_get_inode_block(fs, ninode_id, &index, &blk_no, NULL, blk)) PANIC("cannot get inode block.");
     ASSERT(index < fs->block_size / sizeof(ext2_inode_t));
     ext2_inode_t *inode = (ext2_inode_t *) ((uint32_t) blk + sizeof(ext2_inode_t) * index);
     //ASSERT(inode->i_mode == 0);
@@ -366,6 +367,10 @@ int ext2_read_file_block_singly(ext2_t *fs, ext2_inode_t *inode, uint32_t block_
     return err;
 }
 
+int ext2_read_file_block_doubly(ext2_t *fs, ext2_inode_t *inode, uint32_t block_no, uint8_t *buff) {
+    TODO;
+}
+
 /**
  * @return 0:succ */
 int ext2_read_file_block(ext2_t *fs, ext2_inode_t *inode, uint32_t block_no, uint8_t *buff) {
@@ -393,25 +398,126 @@ int ext2_read_file(ext2_t *fs, ext2_inode_t *inode, uint32_t offset, uint32_t si
             return -1;
         }
     }
+    return size;//TODO
+}
+
+inline uint32_t ext2_get_block_section(ext2_t *fs, uint32_t blk_no, uint8_t section_no) {
+    if (section_no * SECTION_SIZE > fs->super_blk.s_block_size)
+        return 0;
+    return blk_no * fs->super_blk.s_block_size + section_no * SECTION_SIZE;
+}
+
+int ext2_get_file_blockid(ext2_t *fs, ext2_inode_t *inode, uint32_t block_no, bool create, uint32_t *id_out) {
+    if (block_no < EXT2_SIND_BLOCK)
+        *id_out = inode->i_block[block_no];
+    else if (block_no < EXT2_SIND_BLOCK + fs->addr_per_blocks) {
+        if (inode->i_singly_block == 0) {
+            if (!create)return 1;
+            //Alloc block
+            CHK(ext2_alloc_block(fs, &inode->i_singly_block), "fail to alloc new block");
+            uint32_t *blkids = (uint32_t *) kmalloc_paging(fs->super_blk.s_block_size, NULL);
+            uint32_t *blkids_p = blkids;
+            if (blkids == 0)goto _err;
+            memset((uint8_t *) blkids, 0, fs->super_blk.s_block_size);
+            for (int x = 0; x <= block_no - EXT2_SIND_BLOCK; x++) {
+                CHK(ext2_alloc_block(fs, blkids_p), "fail to alloc new child block:%x", x);
+                blkids_p++;
+            }
+            CHK(ext2_write_block(fs, inode->i_singly_block, 1, (uint8_t *) blkids), "I/O");
+            kfree(blkids);
+            *id_out = blkids_p[block_no - EXT2_SIND_BLOCK];
+            return 0;
+        }
+
+    } else
+        TODO;
+    _err:
+    return -1;
+}
+
+int
+ext2_write_file_block(ext2_t *fs, ext2_inode_t *inode, uint32_t block_no, uint8_t *buff) {
+    uint32_t max_blocks = fs->block_size / sizeof(uint32_t);
+    putf_const("[+] max_blocks:%x read[%x]", max_blocks, block_no);
+    if (block_no < EXT2_SIND_BLOCK) {
+        putf_const("[%s] direct write[%x]:%x\n", __func__, block_no, inode->i_block[block_no]);
+        if (inode->i_block[block_no] == 0) {
+            //Alloc block;
+            if (ext2_alloc_block(fs, &inode->i_block[block_no])) {
+                puterr_const("Cannot alloc new block.");
+                return -1;
+            }
+        }
+
+        return ext2_write_block(fs, inode->i_block[block_no], 1, buff);
+    } else if (block_no < EXT2_SIND_BLOCK + max_blocks) {
+        //singly Linked
+        putf_const("[%s] singly direct write[%x]:%x\n", __func__, block_no, inode->i_block[block_no]);
+        TODO;
+    } else
+        TODO;
+}
+
+/**
+ * @return write bytes or -1 error*/
+int ext2_write_file(ext2_t *fs, ext2_inode_t *inode, uint32_t offset, uint32_t size, uint8_t *buff) {
+    uint32_t block_offset = offset / fs->block_size;
+    uint32_t block_count = size / fs->block_size;
+    uint8_t *tbuff = 0;
+    uint32_t hblk_off = offset % fs->block_size;
+    uint32_t fblk_size = size % fs->block_size;
+    int x = 0;
+    if (hblk_off || block_offset == 0) {
+        tbuff = (uint8_t *) kmalloc_paging(sizeof(fs->super_blk.s_block_size), NULL);
+        uint32_t tblkno = 0;
+        ext2_get_file_blockid(fs, inode, block_offset, &tblkno);
+        putf_const("[+]write hblk blkid:%x hblk_off:%x size:%x", tblkno, hblk_off,
+                   MIN(fs->block_size - hblk_off, size - hblk_off));
+        ext2_read_block(fs, tblkno, 1, tbuff);
+        memcpy(&tbuff[hblk_off], buff, MIN(fs->block_size - hblk_off, size - hblk_off));
+        ext2_write_block(fs, tblkno, 1, tbuff);
+        x++;
+    }
+    for (; x < block_count; x++) {
+        int err = ext2_write_file_block(fs, inode, block_offset + x, buff + x * fs->block_size);
+        if (err) {
+            return -1;
+        }
+        if (x == block_count - 1 && size % fblk_size != 0) {
+            uint32_t tblkno = 0;
+            ext2_get_file_blockid(fs, inode, block_offset + block_count, &tblkno);
+            ext2_read_block(fs, tblkno, 1, tbuff);
+            memcpy(tbuff, buff, MIN(fs->block_size, size - block_count * fs->super_blk.s_block_size));
+            ext2_write_block(fs, tblkno, 1, tbuff);
+        }
+    }
     return 0;
 }
 
 void ext2_test() {
     //Test code...
-
     dev.read = ata_section_read;
     dev.write = ata_section_write;
     strcpy(dev.name, "DCAT DISK1");
     ext2_init(&dev);
-    ext2_inode_t node;
+    ext2_inode_t node, *sillynode;
     uint8_t *buff = kmalloc_paging(1024, NULL);
-    uint32_t offset;
-    ext2_get_inode_block(&ext2_fs, 2, &offset, NULL, buff);
+    uint32_t offset, blk_no;
+    ext2_get_inode_block(&ext2_fs, 2, &offset, NULL, NULL, buff);
     memcpy(&node, buff + offset * sizeof(ext2_inode_t), sizeof(ext2_inode_t));
     //ext2_find_inote(&ext2_fs, 2, &node);
     ASSERT(IS_DIR(node.i_mode));
-    ext2_make(&ext2_fs, INODE_TYPE_FILE, 2, "silly");
-    ext2_make(&ext2_fs, INODE_TYPE_DIRECTORY, 2, "sill3y");
+    uint32_t sillyid;
+    ext2_make(&ext2_fs, INODE_TYPE_FILE, 2, "silly", &sillyid);
+    ext2_make(&ext2_fs, INODE_TYPE_DIRECTORY, 2, "sill3y", NULL);
+
+    ext2_get_inode_block(&ext2_fs, sillyid, NULL, &blk_no, &sillynode, buff);
+    putf_const("[+]silly id:[%x][%x]\n", sillyid, sillynode);
+    char sillybuff[25];
+    strcpy(sillybuff, STR("DCAT'"));
+    ASSERT(ext2_write_file(&ext2_fs, sillynode, 0, 5, sillybuff) == 0);
+    sillynode->i_size = 5;
+    ext2_write_block(&ext2_fs, blk_no, 1, buff);
     ext2_dir_iterator_t iter;
     ext2_dir_iterator_init(&ext2_fs, &node, &iter);
     ext2_dir_t *d;
@@ -458,13 +564,14 @@ void ext2_init(blk_dev_t *dev) {
     ASSERT(ext2_fs.super_blk.s_magic == EXT2_MAGIC);
     ext2_super_block_t *super_blk = &ext2_fs.super_blk;
     ext2_fs.block_size = (uint32_t) (1 << (super_blk->s_block_size + 10));//log2(x)-10
-    ext2_fs.fragment_size = 1 << (super_blk->s_fragment_size + 10);
+    ext2_fs.fragment_size = (uint32_t) (1 << (super_blk->s_fragment_size + 10));
     ext2_fs.sections_per_group = ext2_fs.block_size / SECTION_SIZE;
+    ext2_fs.addr_per_blocks = super_blk->s_block_size / sizeof(uint32_t);
     ASSERT(ext2_fs.sections_per_group > 0);
     ext2_fs.block_group_count = (super_blk->s_blocks_count - super_blk->s_first_data_block - 1) /
                                 super_blk->s_blocks_per_group + 1;
-    ext2_fs.block_group = kmalloc_paging(ext2_fs.block_group_count *
-                                         sizeof(ext2_group_desc_t), NULL);
+    ext2_fs.block_group = (ext2_group_desc_t *) kmalloc_paging(ext2_fs.block_group_count *
+                                                               sizeof(ext2_group_desc_t), NULL);
     ext2_fs.dev->read(0x800, ext2_fs.block_group_count * sizeof(ext2_group_desc_t),
                       ext2_fs.block_group);
 }

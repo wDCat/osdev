@@ -83,6 +83,7 @@ typedef struct {
     uint32_t sections_per_group;
     uint32_t block_size;
     uint32_t fragment_size;
+    uint32_t addr_per_blocks;
 } ext2_t;
 typedef struct {
     ext2_t *fs;
@@ -94,6 +95,12 @@ typedef struct {
 #define BIT_GET(x, index) (((x)>>(index))&1)
 #define BIT_SET(x, index) ((x)|=1<<(index))
 #define BIT_CLEAR(x, index) ((x)^=1<<(index))
+#define MAX(a, b) ((a)>(b))?(a):(b)
+#define MIN(a, b) ((a)>(b))?(b):(a)
+#define CHK(fun, msg, args...) if(fun){\
+putf_const("[%s] " #fun " Failed:" msg,__func__,##args);\
+goto _err;\
+}
 
 void ext2_init(blk_dev_t *dev);
 
