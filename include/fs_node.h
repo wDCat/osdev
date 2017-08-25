@@ -14,18 +14,20 @@
 #define FS_PIPE        0x05
 #define FS_SYMLINK     0x06
 #define FS_MOUNTPOINT  0x08
+typedef void __fs_special_t;
 
-typedef uint32_t (*read_type_t)(struct fs_node *, uint32_t, uint32_t, uint8_t *);
+typedef int32_t (*read_type_t)(struct fs_node *, __fs_special_t *fsp, uint32_t, uint32_t, uint8_t *);
 
-typedef uint32_t (*write_type_t)(struct fs_node *, uint32_t, uint32_t, uint8_t *);
+typedef int32_t (*write_type_t)(struct fs_node *, __fs_special_t *fsp, uint32_t, uint32_t, uint8_t *);
 
-typedef void (*open_type_t)(struct fs_node *);
+typedef void (*open_type_t)(struct fs_node *, __fs_special_t *fsp);
 
-typedef void (*close_type_t)(struct fs_node *);
+typedef void (*close_type_t)(struct fs_node *, __fs_special_t *fsp);
 
-typedef struct dirent *(*readdir_type_t)(struct fs_node *, uint32_t);
+//typedef dirent_t *(*readdir_type_t)(struct fs_node *, uint32_t);
+typedef int32_t (*readdir_type_t)(struct fs_node *node, __fs_special_t *fsp, uint32_t count, struct dirent *result);
 
-typedef struct fs_node *(*finddir_type_t)(struct fs_node *, char *name);
+typedef int (*finddir_type_t)(struct fs_node *, __fs_special_t *fsp, char *name, struct fs_node *result_out);
 
 typedef struct fs_node {
     char name[256];
@@ -36,14 +38,24 @@ typedef struct fs_node {
     uint32_t inode;       // This is device-specific - provides a way for a filesystem to identify files.
     uint32_t length;      // Size of the file, in bytes.
     uint32_t impl;        // An implementation-defined number.
+    uint32_t mount_point;
+    __fs_special_t *fsp;
+    /*
     read_type_t read;
     write_type_t write;
     open_type_t open;
     close_type_t close;
     readdir_type_t readdir;
     finddir_type_t finddir;
+    */
     struct fs_node *ptr;
 } fs_node_t;
+typedef struct dirent {
+    uint32_t node;
+    unsigned short name_len; /* length of this d_name 文件名长 */
+    unsigned char type; /* the type of d_name 文件类型 */
+    char name[256]; /* file name (null-terminated) 文件名，最长255字符 */
+} dirent_t;
 
 uint32_t read_fs(fs_node_t *node, uint32_t offset, uint32_t size, uint8_t *buff);
 

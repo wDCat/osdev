@@ -5,6 +5,7 @@
 #ifndef W2_EXT2_H
 #define W2_EXT2_H
 
+#include "fs_node.h"
 #include "superblk.h"
 #include "blk_dev.h"
 
@@ -76,6 +77,7 @@ typedef struct {
 } ext2_dir_t;
 
 typedef struct {
+    uint16_t magic;
     ext2_super_block_t super_blk;
     blk_dev_t *dev;
     uint32_t block_group_count;
@@ -92,16 +94,13 @@ typedef struct {
     uint8_t *block;
     ext2_dir_t *cur_dir;
 } ext2_dir_iterator_t;
-#define BIT_GET(x, index) (((x)>>(index))&1)
-#define BIT_SET(x, index) ((x)|=1<<(index))
-#define BIT_CLEAR(x, index) ((x)^=1<<(index))
-#define MAX(a, b) ((a)>(b))?(a):(b)
-#define MIN(a, b) ((a)>(b))?(b):(a)
 #define CHK(fun, msg, args...) if(fun){\
 putf_const("[%s] " #fun " Failed:" msg,__func__,##args);\
 goto _err;\
 }
 
-void ext2_init(blk_dev_t *dev);
+int ext2_init(ext2_t *fs_out, blk_dev_t *dev);
+
+void ext2_create_fstype();
 
 #endif //W2_EXT2_H

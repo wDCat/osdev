@@ -18,6 +18,6 @@ paging_heap_t *pheap_create(uint32_t start_addr, uint32_t size);
 
 uint32_t *pheap_alloc(paging_heap_t *heap, uint32_t size);
 
-void pheap_free(paging_heap_t *heap, uint32_t *pointer);
+void pheap_free(paging_heap_t *heap, uint32_t pointer);
 
 #endif //W2_PAGING_HEAP_H

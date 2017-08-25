@@ -32,9 +32,9 @@ void on_keyboard_event(int kc) {
 
 void pause() {
     key_waiter = false;
-    putln_const("Press any key to continue...");
+    putf_const("Press any key to continue...");
     while (!key_waiter) {
-        k_delay(3000);
+        k_delay(3);
     }
     key_waiter = false;
 }

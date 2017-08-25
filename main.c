@@ -14,7 +14,7 @@
 #include "page.h"
 #include "contious_heap.h"
 #include "multiboot.h"
-#include "fs/catmfs/catmfs.h"
+#include "fs/catmfs/include/catrfmt.h"
 #include "syscall.h"
 #include "proc.h"
 #include "fs/ext2/include/ext2.h"
@@ -112,6 +112,7 @@ void str_test() {
     putln(b);
 }
 
+/*
 void catmfs_test(uint32_t addr) {
     catmfs_t *fs = catmfs_init(addr);
     putf_const("init done.%x", fs);
@@ -145,7 +146,7 @@ void catmfs_test(uint32_t addr) {
     }
 }
 
-
+*/
 void user_app() {
     syscall_helloworld();
     syscall_screen_print(STR("[]Hello DCat~"));
@@ -229,7 +230,6 @@ void usermode() {
 
 void ide_test() {
     cli();
-    ide_initialize(0x1F0, 0x3F6, 0x170, 0x376, 0x000);
     uint8_t data[1024];
     //memset(data, 0, sizeof(uint8_t) * 1024);
     uint8_t err;
@@ -277,7 +277,6 @@ int main(multiboot_info_t *mul_arg, uint32_t init_esp_arg) {
     putf_const("[+] Built Time: %d \n", _BUILD_TIME);
     putln_const("[+] Now enable IRQs");
     sti();
-
     //dumphex("mod count:", mul.mods_count);
     //dumphex("initrd_start:", initrd_start);
     //dumphex("initrd_end:", initrd_end);
@@ -286,10 +285,13 @@ int main(multiboot_info_t *mul_arg, uint32_t init_esp_arg) {
     for (int x = 0; x < initrd_end - initrd_start; x++) {
         putc(initrd_raw[x]);
     }*/
-    catmfs_test(initrd_start);
+    //catmfs_test(initrd_start);
     //delay(2);
     //usermode();
-    ide_test();
+    //ide_test();
+    ide_initialize(0x1F0, 0x3F6, 0x170, 0x376, 0x000);
+    extern void vfs_test();
+    vfs_test();
     puts_const("[+] main done.");
     for (;;);
 }

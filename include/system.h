@@ -10,6 +10,11 @@
 //String cannot be used as a argument directly.
 #define STR(x) (const char[]) {x}
 #define LOOP() for(;;);
+#define BIT_GET(x, index) (((x)>>(index))&1)
+#define BIT_SET(x, index) ((x)|=1<<(index))
+#define BIT_CLEAR(x, index) ((x)&=~(1<<(index)))
+#define MAX(a, b) ((a)>(b))?(a):(b)
+#define MIN(a, b) ((a)>(b))?(b):(a)
 #define ASSERT(x) {\
     if(!(x)){\
 screenSetColor(COLOR_RED,COLOR_BLACK);\
@@ -39,10 +44,10 @@ putc('\n');\
 for(;;);\
 }\
 }
-#define PANIC(x) { \
+#define PANIC(x, args...) { \
 screenSetColor(COLOR_RED,COLOR_BLACK);\
 puts_const("[PANIC]");\
-puts_const(x);\
+putf_const(x,##args);\
 puts_const(" at ");\
 puts_const(__FILE__);\
 puts_const(" : ");\

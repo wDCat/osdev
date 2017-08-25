@@ -137,6 +137,10 @@ uint itohexs(const int num, char *out) {
     out[len] = '\0';
 }
 
+bool strcmp(const char *s1, const char *s2) {
+    return strlen(s1) == strlen(s2) && strstr(s1, s2) == 0;
+}
+
 uint strformat(char *out, const char *fmt, ...) {
     va_list args;
     va_start(args, fmt);

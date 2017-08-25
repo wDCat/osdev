@@ -22,6 +22,8 @@ uint strcat(char *target, const char *src);
 
 uint strncpy(char *target, const char *src, int len);
 
+bool strcmp(const char *s1, const char *s2);
+
 char *strfmt_insspace(char *out, int tok_pos, int tok_len, int buff_len);
 
 #endif //W2_STR_H

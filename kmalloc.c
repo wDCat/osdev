@@ -62,9 +62,9 @@ uint32_t kmalloc_internal(uint32_t sz, bool align, uint32_t *phys, heap_t *heap)
 }
 
 void kfree(void *ptr) {
-    ASSERT(kernel_heap);
-    if (KHEAP_START < (uint32_t) ptr < KHEAP_START + KHEAP_SIZE) {
-        hfree(kernel_heap, ptr);
-    } else
-        TODO;
+    ASSERT(kernel_pheap);
+    putf_const("[+][kfree]try to free:%x", ptr);
+    if (KPHEAP_START < (uint32_t) ptr < KPHEAP_START + KPHEAP_SIZE) {
+        pheap_free(kernel_pheap, ptr);
+    } else PANIC("[-][kfree]try to free a unknown[%x] memory space.", ptr);
 }

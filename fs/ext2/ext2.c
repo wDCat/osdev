@@ -7,9 +7,11 @@
 #include "ext2.h"
 #include "ide.h"
 #include "kmalloc.h"
+#include "vfs.h"
 
-ext2_t ext2_fs;
+ext2_t ext2_fs_test;
 blk_dev_t dev;
+fs_t ext2_fs;
 
 int ata_section_read(uint32_t offset, uint32_t len, uint8_t *buff) {
     if (offset % SECTION_SIZE != 0) {
@@ -233,6 +235,7 @@ int ext2_make(ext2_t *fs, uint16_t type, uint32_t father_id, char *name, uint32_
     uint8_t name_len = (uint8_t) strlen(name);
     ext2_dir_iterator_init(fs, father, &iter);
     while (ext2_dir_iterator_next(&iter, &dir)) {
+        //FIXME wrong algo.
         if (dir->name_length == name_len) {
             int x = 0;
             for (; x < name_len && dir->name[x] == name[x]; x++);
@@ -470,7 +473,7 @@ int ext2_write_file(ext2_t *fs, ext2_inode_t *inode, uint32_t offset, uint32_t s
     if (hblk_off || block_offset == 0) {
         tbuff = (uint8_t *) kmalloc_paging(sizeof(fs->super_blk.s_block_size), NULL);
         uint32_t tblkno = 0;
-        ext2_get_file_blockid(fs, inode, block_offset, &tblkno);
+        ext2_get_file_blockid(fs, inode, block_offset, true, &tblkno);
         putf_const("[+]write hblk blkid:%x hblk_off:%x size:%x", tblkno, hblk_off,
                    MIN(fs->block_size - hblk_off, size - hblk_off));
         ext2_read_block(fs, tblkno, 1, tbuff);
@@ -485,7 +488,7 @@ int ext2_write_file(ext2_t *fs, ext2_inode_t *inode, uint32_t offset, uint32_t s
         }
         if (x == block_count - 1 && size % fblk_size != 0) {
             uint32_t tblkno = 0;
-            ext2_get_file_blockid(fs, inode, block_offset + block_count, &tblkno);
+            ext2_get_file_blockid(fs, inode, block_offset + block_count, true, &tblkno);
             ext2_read_block(fs, tblkno, 1, tbuff);
             memcpy(tbuff, buff, MIN(fs->block_size, size - block_count * fs->super_blk.s_block_size));
             ext2_write_block(fs, tblkno, 1, tbuff);
@@ -499,27 +502,27 @@ void ext2_test() {
     dev.read = ata_section_read;
     dev.write = ata_section_write;
     strcpy(dev.name, "DCAT DISK1");
-    ext2_init(&dev);
+    ext2_init(&ext2_fs_test, &dev);
     ext2_inode_t node, *sillynode;
     uint8_t *buff = kmalloc_paging(1024, NULL);
     uint32_t offset, blk_no;
-    ext2_get_inode_block(&ext2_fs, 2, &offset, NULL, NULL, buff);
+    ext2_get_inode_block(&ext2_fs_test, 2, &offset, NULL, NULL, buff);
     memcpy(&node, buff + offset * sizeof(ext2_inode_t), sizeof(ext2_inode_t));
     //ext2_find_inote(&ext2_fs, 2, &node);
     ASSERT(IS_DIR(node.i_mode));
     uint32_t sillyid;
-    ext2_make(&ext2_fs, INODE_TYPE_FILE, 2, "silly", &sillyid);
-    ext2_make(&ext2_fs, INODE_TYPE_DIRECTORY, 2, "sill3y", NULL);
+    ext2_make(&ext2_fs_test, INODE_TYPE_FILE, 2, "silly", &sillyid);
+    ext2_make(&ext2_fs_test, INODE_TYPE_DIRECTORY, 2, "sill3y", NULL);
 
-    ext2_get_inode_block(&ext2_fs, sillyid, NULL, &blk_no, &sillynode, buff);
+    ext2_get_inode_block(&ext2_fs_test, sillyid, NULL, &blk_no, &sillynode, buff);
     putf_const("[+]silly id:[%x][%x]\n", sillyid, sillynode);
     char sillybuff[25];
     strcpy(sillybuff, STR("DCAT'"));
-    ASSERT(ext2_write_file(&ext2_fs, sillynode, 0, 5, sillybuff) == 0);
+    ASSERT(ext2_write_file(&ext2_fs_test, sillynode, 0, 5, sillybuff) == 0);
     sillynode->i_size = 5;
-    ext2_write_block(&ext2_fs, blk_no, 1, buff);
+    ext2_write_block(&ext2_fs_test, blk_no, 1, buff);
     ext2_dir_iterator_t iter;
-    ext2_dir_iterator_init(&ext2_fs, &node, &iter);
+    ext2_dir_iterator_init(&ext2_fs_test, &node, &iter);
     ext2_dir_t *d;
     while (ext2_dir_iterator_next(&iter, &d)) {
         char name[256];
@@ -527,14 +530,14 @@ void ext2_test() {
         name[d->name_length] = '\0';
         if (name[0] != 's')continue;
         ext2_inode_t inode;
-        ext2_find_inote(&ext2_fs, d->inode_id, &inode);
+        ext2_find_inote(&ext2_fs_test, d->inode_id, &inode);
         putf_const("[+] [%x]fn:%s file_size:%x ", d->inode_id, name, inode.i_size);
         putf_const("uid:%x es:%x next:%x\n", inode.i_uid, d->size, ((uint32_t) iter.cur_dir) + iter.cur_dir->size);
         /*if (name[0] == 'b') {
             putf_const("[+] try to read file\n");
             uint8_t *buff = (uint8_t *) kmalloc_paging(0x1000, NULL);
             putf_const("[+]buff addr:%x\n", buff);
-            ext2_read_file(&ext2_fs, &inode, 0x3000, 1024, buff);
+            ext2_read_file(&ext2_fs_test, &inode, 0x3000, 1024, buff);
             buff[0xFFF] = '\0';
             puts(buff);
             //putf_const("read data:%s\n", buff);
@@ -543,9 +546,9 @@ void ext2_test() {
     ext2_dir_iterator_exit(&iter);
     putf_const("all done![%x]", sizeof(ext2_inode_t));
     for (;;);
-    putf_const("first block addr:[%x][%x]", node.i_block[0], node.i_block[0] * ext2_fs.block_size / 2);
-    ext2_dir_t *dir = kmalloc(ext2_fs.block_size);
-    ext2_read_block(&ext2_fs, node.i_block[0], 1, dir);
+    putf_const("first block addr:[%x][%x]", node.i_block[0], node.i_block[0] * ext2_fs_test.block_size / 2);
+    ext2_dir_t *dir = kmalloc(ext2_fs_test.block_size);
+    ext2_read_block(&ext2_fs_test, node.i_block[0], 1, dir);
     while (dir->inode_id != 0) {
         char name[256];
         memcpy(name, dir->name, dir->name_length);
@@ -557,21 +560,170 @@ void ext2_test() {
     for (;;);
 }
 
-void ext2_init(blk_dev_t *dev) {
-    memset(&ext2_fs, 0, sizeof(ext2_t));
-    ext2_fs.dev = dev;
-    ext2_fs.dev->read(0x400, sizeof(ext2_super_block_t), &ext2_fs.super_blk);
-    ASSERT(ext2_fs.super_blk.s_magic == EXT2_MAGIC);
-    ext2_super_block_t *super_blk = &ext2_fs.super_blk;
-    ext2_fs.block_size = (uint32_t) (1 << (super_blk->s_block_size + 10));//log2(x)-10
-    ext2_fs.fragment_size = (uint32_t) (1 << (super_blk->s_fragment_size + 10));
-    ext2_fs.sections_per_group = ext2_fs.block_size / SECTION_SIZE;
-    ext2_fs.addr_per_blocks = super_blk->s_block_size / sizeof(uint32_t);
-    ASSERT(ext2_fs.sections_per_group > 0);
-    ext2_fs.block_group_count = (super_blk->s_blocks_count - super_blk->s_first_data_block - 1) /
+int ext2_init(ext2_t *fs_out, blk_dev_t *dev) {
+    putf_const("[ext2_init]callin\n");
+    memset(fs_out, 0, sizeof(ext2_t));
+    fs_out->magic = EXT2_MAGIC;
+    fs_out->dev = dev;
+    fs_out->dev->read(0x400, sizeof(ext2_super_block_t), (uint8_t *) &fs_out->super_blk);
+    ASSERT(fs_out->super_blk.s_magic == EXT2_MAGIC);
+    ext2_super_block_t *super_blk = &fs_out->super_blk;
+    fs_out->block_size = (uint32_t) (1 << (super_blk->s_block_size + 10));//log2(x)-10
+    fs_out->fragment_size = (uint32_t) (1 << (super_blk->s_fragment_size + 10));
+    fs_out->sections_per_group = fs_out->block_size / SECTION_SIZE;
+    fs_out->addr_per_blocks = super_blk->s_block_size / sizeof(uint32_t);
+    ASSERT(fs_out->sections_per_group > 0);
+    fs_out->block_group_count = (super_blk->s_blocks_count - super_blk->s_first_data_block - 1) /
                                 super_blk->s_blocks_per_group + 1;
-    ext2_fs.block_group = (ext2_group_desc_t *) kmalloc_paging(ext2_fs.block_group_count *
+    fs_out->block_group = (ext2_group_desc_t *) kmalloc_paging(fs_out->block_group_count *
                                                                sizeof(ext2_group_desc_t), NULL);
-    ext2_fs.dev->read(0x800, ext2_fs.block_group_count * sizeof(ext2_group_desc_t),
-                      ext2_fs.block_group);
+    fs_out->dev->read(0x800, fs_out->block_group_count * sizeof(ext2_group_desc_t),
+                      fs_out->block_group);
+    return 0;
+}
+
+int32_t ext2_fs_node_write(fs_node_t *node, uint32_t offset, uint32_t len, uint8_t *buff) {
+    return -1;
+}
+
+int32_t ext2_fs_node_read(fs_node_t *node, uint32_t offset, uint32_t len, uint8_t *buff) {
+    return -1;
+}
+
+int ext2_get_fs_node(ext2_t *fs, uint32_t inode_id, const char *fn, fs_node_t *node) {
+    strcpy(node->name, fn);
+    ext2_inode_t inode;
+    ext2_find_inote(fs, inode_id, &inode);
+    node->mask = inode.i_mode;
+    node->uid = inode.i_uid;
+    node->gid = inode.i_gid;
+    if (IS_DIR(inode.i_mode)) {
+        node->flags = FS_DIRECTORY;
+    } else if (IS_FILE(inode.i_mode)) {
+        node->flags = FS_FILE;
+    } else node->flags = 0;//?
+    node->length = inode.i_size;
+    node->fsp = fs;
+    node->inode = inode_id;
+    return 0;
+}
+
+int32_t ext2_fs_node_readdir(fs_node_t *node, __fs_special_t *fsp, uint32_t count, dirent_t *result) {
+    ext2_t *fs = fsp;
+    ASSERT(fs->magic == EXT2_MAGIC);
+    ext2_inode_t inode;
+    CHK(ext2_find_inote(fs, node->inode, &inode), "inode not exist");
+    ext2_dir_iterator_t iter;
+    ext2_dir_t *dir;
+    ext2_inode_t cinode;
+    fs_node_t tmp_node;
+    int x = 0;
+    ext2_dir_iterator_init(fs, &inode, &iter);
+    while (ext2_dir_iterator_next(&iter, &dir)) {
+        ASSERT(dir->name_length < 256);
+        memcpy(result[x].name, dir->name, dir->name_length);
+        result[x].name[dir->name_length] = '\0';
+        result[x].node = dir->inode_id;
+        result[x].name_len = dir->name_length;
+        if (dir->type_indicator == INODE_DIR_TYPE_INDICATOR_DIRECTORY)
+            result[x].type = FS_DIRECTORY;
+        else if (dir->type_indicator = INODE_DIR_TYPE_INDICATOR_FILE)
+            result[x].type = FS_FILE;
+        else PANIC("Unknown file type:%x", dir->type_indicator);
+        //CHK(ext2_find_inote(fs, dir->inode_id, &cinode), "");
+        //ext2_get_fs_node(fs, &cinode, result[x].name, &result[x].node);
+        if (x >= count)break;
+        x++;
+    }
+    ext2_dir_iterator_exit(&iter);
+    return x;
+    _err:
+    return -1;
+}
+
+int ext2_fs_node_finddir(fs_node_t *node, __fs_special_t *fsp, char *name, fs_node_t *result) {
+    ext2_t *fs = fsp;
+    char sname[256];
+    bool found = false;
+    ASSERT(fs->magic == EXT2_MAGIC);
+    ext2_inode_t inode;
+    CHK(ext2_find_inote(fs, node->inode, &inode), "inode not exist");
+    ext2_dir_iterator_t iter;
+    ext2_dir_t *dir;
+    ext2_inode_t cinode;
+    int x = 0;
+    ext2_dir_iterator_init(fs, &inode, &iter);
+    while (ext2_dir_iterator_next(&iter, &dir)) {
+        ASSERT(dir->name_length < 256);
+        memcpy(sname, dir->name, dir->name_length);
+        sname[dir->name_length] = '\0';
+        //putf_const("[ext2_fs_node_finddir]fn:%s[%x]\n", sname, (uint32_t) strstr(sname, name));
+        if (strstr(sname, name) == 0) {
+            found = true;
+            ext2_get_fs_node(fs, dir->inode_id, sname, result);
+            break;
+        }
+        x++;
+    }
+    ext2_dir_iterator_exit(&iter);
+    if (found)
+        return 0;
+    else
+        return 1;
+    _err:
+    return -1;
+}
+
+int ext2_fs_node_get_node(__fs_special_t *fsp, uint32_t inode_id, fs_node_t *node) {
+    ext2_t *fs = fsp;
+    char sname[256];
+    bool found = false;
+    ASSERT(fs->magic == EXT2_MAGIC);
+    return ext2_find_inote(fs, inode_id, node);
+}
+
+int ext2_fs_node_make(fs_node_t *node, __fs_special_t *fsp, uint8_t type, char *name, fs_node_t *new_node_out) {
+    ext2_t *fs = fsp;
+    uint32_t inode_id = node->inode;
+    int e2type;
+    switch (type) {
+        case FS_DIRECTORY:
+            e2type = INODE_TYPE_DIRECTORY;
+            break;
+        case FS_FILE:
+            e2type = INODE_DIR_TYPE_INDICATOR_FILE;
+            break;
+        default: putf_const("[ext2_fs_node_make]unknown type:%x\n", type);
+            return -1;
+    }
+    uint32_t new_nnid;
+    CHK(ext2_make(fs, e2type, inode_id, name, &new_nnid), "make failed.");
+    ext2_get_fs_node(fs, new_nnid, name, new_node_out);
+    return 0;
+    _err:
+    return 1;
+}
+
+__fs_special_t *ext2_fs_node_mount(blk_dev_t *dev, fs_node_t *rootnode) {
+    ext2_t *fs = kmalloc(sizeof(ext2_t));
+    CHK(ext2_init(fs, dev), "[ext2]fail to mount");
+    rootnode->inode = 2;
+    rootnode->fsp = fs;
+    return fs;
+    _err:
+    return 0;
+}
+
+void ext2_create_fstype() {
+    strcpy(ext2_fs.name, STR("EXT2_TEST"));
+    ext2_fs.mount = ext2_fs_node_mount;
+    ext2_fs.read = ext2_fs_node_read;
+    ext2_fs.write = ext2_fs_node_write;
+    ext2_fs.readdir = ext2_fs_node_readdir;
+    ext2_fs.finddir = ext2_fs_node_finddir;
+    ext2_fs.getnode = ext2_fs_node_get_node;
+    ext2_fs.make = ext2_fs_node_make;
+    //Test
+    dev.read = ata_section_read;
+    dev.write = ata_section_write;
 }

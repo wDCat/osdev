@@ -49,9 +49,9 @@ extern void _switch_page_dir_internal(uint32_t addr);
 #define FRAME_STATUS_USED 1
 #define FRAME_STATUS_FREE 0
 #define KHEAP_START 0xA000000
-#define KHEAP_SIZE  0x30000
-#define KPHEAP_START 0xA300000
-#define KPHEAP_SIZE  0x30000
+#define KHEAP_SIZE  0x50000
+#define KPHEAP_START 0xA500000
+#define KPHEAP_SIZE  0x50000
 #define KCONTHEAP_SIZE  0x10000
 #define disable_paging(){\
 uint32_t cr0;\

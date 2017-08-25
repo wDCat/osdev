@@ -159,26 +159,6 @@ void paging_install() {
     for (uint32_t i = 0; i < kernel_area + 0x30000; i += 0x1000) {
         alloc_frame(get_page(i, true, kernel_dir), true, false);
     }
-
-/*
-    int32_t x = get_continuous_free_frame((KCONTHEAP_SIZE + 0x1000) / 0x1000);
-    if (x < 0) {
-        PANIC("no continuous frame//");
-    }
-    for (uint32_t i = 0; i < KCONTHEAP_SIZE + 0x1000; i += 0x1000) {
-        uint32_t addr = x * 0x1000 + i;
-        page_t *page = get_page(addr, true, kernel_dir);
-        page->present = true;
-        page->frame = addr / 0x1000;
-        page->user = true;
-        page->rw = false;
-        set_frame_status(addr, FRAME_STATUS_USED);
-        memset(addr, 0x00, 0x1000);
-    }
-    kernel_vep_heap = create_heap(x * 0x1000, x * 0x1000 + KCONTHEAP_SIZE + 0x1000,
-                                  x * 0x1000 + KCONTHEAP_SIZE + 0x1000,
-                                  kernel_dir);
-*/
     for (uint32_t i = KHEAP_START; i < KHEAP_START + KHEAP_SIZE + 0x1000; i += 0x1000) {
         alloc_frame(get_page(i, true, kernel_dir), true, false);
     }
@@ -197,13 +177,7 @@ void paging_install() {
 
 void switch_page_directory(page_directory_t *dir) {
     current_dir = dir;
-    //_switch_page_dir_internal(&dir->table_physical_addr);
     __asm__ __volatile__("mov %0, %%cr3"::"r"(dir->physical_addr));
-    /*
-    uint32_t cr0;
-    __asm__ __volatile__("mov %%cr0, %0":"=r"(cr0));
-    cr0 |= 0x80000000;
-    __asm__ __volatile__("mov %0, %%cr0"::"r"(cr0));*/
 
 }
 
