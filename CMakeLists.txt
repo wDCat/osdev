@@ -13,8 +13,9 @@ include_directories(fs/ext2/include)
 include_directories(fs/catmfs/include)
 include_directories(fs/vfs/include)
 
-FILE(GLOB MyCSources *.c)
-FILE(GLOB MyCSources fs/ext2/ext2.c)
-FILE(GLOB MyCSources fs/vfs/vfs.c)
-FILE(GLOB MyCSources fs/catmfs/*.c)
+FILE(GLOB MyCSources *.c
+        fs/ext2/ext2.c
+        fs/vfs/vfs.c
+        fs/catmfs/*.c
+        dev/*.c)
 ADD_EXECUTABLE(MyExecutable ${MyCSources})

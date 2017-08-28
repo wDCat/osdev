@@ -4,6 +4,7 @@
 #include "screen.h"
 #include "bochs_debug.h"
 #include "intdef.h"
+#include "serial.h"
 
 #define true 1
 #define false 0
@@ -57,6 +58,8 @@ for(;;);\
 }
 #define cli() __asm__ __volatile__ ("cli")
 #define sti() __asm__ __volatile__ ("sti")
+
+
 typedef struct regs {
     unsigned int gs, fs, es, ds;      /* pushed the segs last */
     unsigned int edi, esi, ebp, esp, ebx, edx, ecx, eax;  /* pushed by 'pusha' */
@@ -82,4 +85,15 @@ extern void k_delay(uint32_t time);
 
 extern uint32_t get_eip();
 
+uint8_t memcmp(uint8_t *a1, uint8_t *a2, uint8_t len);
+
+//debug print
+void dprint_(const char *str);
+
+#define dprintf(str, args...) ({\
+strformatw(serial_write, COM1,"[D][%s] " str "\n",__func__,##args);\
+})
+#define deprintf(str, args...) ({\
+strformatw(serial_write, COM1,"[ERROR][%s] " str "\n",__func__,##args);\
+})
 #endif

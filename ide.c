@@ -267,18 +267,12 @@ void ide_initialize(unsigned int BAR0, unsigned int BAR1, unsigned int BAR2, uns
     // 4- Print Summary:
     for (int i = 0; i < 4; i++)
         if (ide_devices[i].reserved == 1) {
-            puts_const("[");
-            putint(i);
-            puts_const("]Found Drive - ");
-            putint(ide_devices[i].type);
-            puts_const(" - ");
-            putint(ide_devices[i].size);
-            puts_const(" - ");
-            puthex(ide_devices[i].channel);
-
-            puts_const("   ");
-            puts(ide_devices[i].model);
-            putn();
+            dprintf("[%d]Drive %s size:%x channel:%x model:%s",
+                    i,
+                    ide_devices[i].type == 0 ? "ATA" : "ATATI",
+                    ide_devices[i].size,
+                    ide_devices[i].channel,
+                    ide_devices[i].model);
         }
 }
 

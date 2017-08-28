@@ -95,7 +95,7 @@ typedef struct {
     ext2_dir_t *cur_dir;
 } ext2_dir_iterator_t;
 #define CHK(fun, msg, args...) if(fun){\
-putf_const("[%s] " #fun " Failed:" msg,__func__,##args);\
+deprintf("CHK::[%s] " #fun " Failed:" msg,__func__,##args);\
 goto _err;\
 }
 

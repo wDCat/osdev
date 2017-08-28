@@ -27,6 +27,7 @@ all:
 	gcc $(C_FLAGS) -o $$name.o $$name;\
 	done
 	gcc $(C_FLAGS) -o blk_dev.c.o dev/blk_dev.c
+	gcc $(C_FLAGS) -o serial.c.o dev/serial.c
 	gcc $(C_FLAGS) -o catrfmt.c.o fs/catmfs/catrfmt.c
 	gcc $(C_FLAGS) -o catmfs.c.o fs/catmfs/catmfs.c
 	gcc $(C_FLAGS) -o ext2.c.o fs/ext2/ext2.c
@@ -53,7 +54,7 @@ bochs:
 debug:
 	bochs -q -f ../bochsrc_debug.txt
 qemu:
-	qemu-system-i386 -hda ../bgrub.img -hdb ../disk.img -m 16 -k en-us -sdl  -s -d guest_errors,cpu_reset,pcall,cpu_reset -no-reboot
+	qemu-system-i386 -serial stdio -hda ../bgrub.img -hdb ../disk.img -m 16 -k en-us -sdl  -s -d guest_errors,pcall,cpu_reset -no-reboot
 run:
 	qemu-system-i386 -hda ../bgrub.img -fdb ../disk.img -m 16 -k en-us -sdl  -s
 clean:

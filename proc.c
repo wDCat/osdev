@@ -257,7 +257,7 @@ void
 copy_current_stack(uint32_t start_addr, uint32_t size, uint32_t *new_ebp, uint32_t *new_esp, uint32_t start_esp,
                    page_directory_t *dir) {
     ASSERT(current_dir != NULL);
-    putf_const("creating user stack:%x %x\n", start_addr, size);
+    dprintf("creating user stack:%x %x", start_addr, size);
     uint32_t old_stack_pointer;
     uint32_t old_base_pointer;
     __asm__ __volatile__("mov %%esp, %0" : "=r" (old_stack_pointer));
@@ -265,17 +265,18 @@ copy_current_stack(uint32_t start_addr, uint32_t size, uint32_t *new_ebp, uint32
     for (int x = size; x >= 0; x -= 0x1000) {
         page_t *page = get_page(start_addr - x, true, dir);//栈是高地址到低地址增长的
         ASSERT(page);
-        putf_const("[%x]page addr:%x dir:%x\n", start_addr - x, page, dir)
+        dprintf("[%x]page addr:%x dir:%x", start_addr - x, page, dir);
         alloc_frame(page, false, true);
     }
     flush_TLB();
     int32_t offset = (uint32_t) start_addr - start_esp;
-    putf_const("A[%x][%x][%d]B", old_base_pointer, old_stack_pointer, offset);
+    dprintf("A[%x][%x][%x]B", old_base_pointer, old_stack_pointer, offset);
     uint32_t new_stack_pointer = old_stack_pointer + offset;
     uint32_t new_base_pointer = old_base_pointer + offset;
-    putf_const("copy %x to %x size:%x\n", old_stack_pointer, new_stack_pointer, start_esp - old_stack_pointer);
+    dprintf("copy %x to %x size:%x", old_stack_pointer, new_stack_pointer, start_esp - old_stack_pointer);
     uint32_t *p = new_stack_pointer;
     memcpy(new_stack_pointer, old_stack_pointer, start_esp - old_stack_pointer);
+    dprintf("copy done.");
 
     //FIXME May crash some stack entries....
     for (int i = (uint32_t) start_addr; i > (uint32_t) start_addr - size; i -= 4) {
@@ -293,6 +294,7 @@ copy_current_stack(uint32_t start_addr, uint32_t size, uint32_t *new_ebp, uint32
         *new_ebp = new_base_pointer;
     if (new_esp)
         *new_esp = new_stack_pointer;
+    dprintf("all done.now ret.");
 }
 
 void enter_ring3(uint32_t start_addr) {

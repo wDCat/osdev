@@ -26,4 +26,6 @@ bool strcmp(const char *s1, const char *s2);
 
 char *strfmt_insspace(char *out, int tok_pos, int tok_len, int buff_len);
 
+uint strformatw(void (*writer)(void *extern_data, char c), void *extern_data, const char *fmt, ...);
+
 #endif //W2_STR_H

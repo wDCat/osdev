@@ -28,7 +28,7 @@ int ata_section_read(uint32_t offset, uint32_t len, uint8_t *buff) {
     if (len % SECTION_SIZE != 0) {
         err = ide_ata_access(ATA_READ, 1, blk_no + blk_count, 1, tbuff);
         ASSERT(err == 0);
-        putf_const("[+] copy %x to %x size %x", buff + (blk_count) * SECTION_SIZE, buff, len % SECTION_SIZE);
+        dprintf("copy %x to %x size %x", buff + (blk_count) * SECTION_SIZE, buff, len % SECTION_SIZE);
         memcpy(buff + (blk_count) * SECTION_SIZE, tbuff, len % SECTION_SIZE);
         //for (;;);
     }
@@ -52,13 +52,14 @@ int ata_section_write(uint32_t offset, uint32_t len, uint8_t *buff) {
 int ext2_read_block(ext2_t *fs, uint32_t base, uint32_t count, uint8_t *buff) {
     uint32_t offset = base * fs->block_size;
     uint32_t size = count * fs->block_size;
-    putf_const("[%x] <==> [%x]\n", offset, buff);
+    dprintf("[%x] ==> [%x]", offset, buff);
     return fs->dev->read(offset, size, buff);
 }
 
 int ext2_write_block(ext2_t *fs, uint32_t base, uint32_t count, uint8_t *buff) {
     uint32_t offset = base * fs->block_size;
     uint32_t size = count * fs->block_size;
+    dprintf("[%x] <== [%x]", offset, buff);
     return fs->dev->write(offset, size, buff);
 }
 
@@ -104,8 +105,7 @@ int ext2_find_inote(ext2_t *ext2_fs, uint32_t inode_id, ext2_inode_t *inode_out)
     }
     inode = (ext2_inode_t *) (blk + off_les);
     memcpy(inode_out, inode, sizeof(ext2_inode_t));
-    putf_const("[+]neko[%x][%x]", inode_id, off + off_les);
-    putf_const("[%x][%x]\n", off_les, inode);
+    dprintf("inode[%x][%x][%x][%x]", inode_id, off + off_les, off_les, inode);
     return 0;
 }
 
@@ -121,7 +121,8 @@ void ext2_dir_iterator_init(ext2_t *fs, ext2_inode_t *inode, ext2_dir_iterator_t
 int ext2_dir_iterator_next(ext2_dir_iterator_t *iter, ext2_dir_t **dir) {
     if (iter->cur_dir == 0 || iter->cur_dir->inode_id == 0) {
         //load next block
-        putf_const("[+] switch block:%x[%x]\n", iter->next_block_id, iter->block);
+        dprintf("switch block:%x/%x [%x][%x]", iter->next_block_id, EXT2_NDIR_BLOCKS,
+                iter->inode->i_block[iter->next_block_id], iter->block);
         ext2_read_block(iter->fs, iter->inode->i_block[iter->next_block_id], 1, iter->block);
         iter->next_block_id++;
         iter->cur_dir = (ext2_dir_t *) iter->block;
@@ -139,7 +140,8 @@ int ext2_dir_iterator_next(ext2_dir_iterator_t *iter, ext2_dir_t **dir) {
 }
 
 int ext2_dir_iterator_exit(ext2_dir_iterator_t *iter) {
-    //kfree(iter->block);
+    dprintf("free blk:%x", iter->block);
+    kfree(iter->block);
 }
 
 
@@ -154,7 +156,7 @@ int ext2_update_sblk_and_bg(ext2_t *fs) {
 int ext2_alloc_inodeid(ext2_t *fs, uint16_t type, uint32_t *new_inode_id) {
     uint8_t *bitmap = (uint8_t *) kmalloc_paging(fs->block_size, NULL);
     if (fs->super_blk.s_free_inodes_count <= 0) {
-        puterr_const("[-] out of inode!");
+        deprintf("[-] out of inode!");
         return -1;
     }
     for (uint32_t x = 0; x < fs->block_group_count; x++) {
@@ -166,7 +168,7 @@ int ext2_alloc_inodeid(ext2_t *fs, uint16_t type, uint32_t *new_inode_id) {
                 if (BIT_GET(bitmap[y / 8], y % 8) == 0) {
                     BIT_SET(bitmap[y / 8], y % 8);
                     *new_inode_id = x * fs->super_blk.s_inodes_per_group + y + 1;//inode id begin at 1
-                    putf_const("[+][%x] found empty inode:%x\n", bitmap, *new_inode_id);
+                    dprintf("[+][%x] found empty inode:%x", bitmap, *new_inode_id);
                     fs->block_group[x].bg_free_inodes_count--;
                     fs->super_blk.s_free_inodes_count--;
                     if (IS_DIR(type))
@@ -187,18 +189,18 @@ int ext2_alloc_inodeid(ext2_t *fs, uint16_t type, uint32_t *new_inode_id) {
 int ext2_alloc_block(ext2_t *fs, uint32_t *new_block_id) {
     uint8_t *bitmap = (uint8_t *) kmalloc_paging(fs->block_size, NULL);
     if (fs->super_blk.s_free_blocks_count <= 0) {
-        puterr_const("[-] out of block!");
+        deprintf("[-] out of block!");
         return -1;
     }
     for (uint32_t x = 0; x < fs->block_group_count; x++) {
         if (fs->block_group[x].bg_free_blocks_count > 0) {
-            putf_const("[search:%x]", x);
+            dprintf("[search:%x]", x);
             if (ext2_read_block(fs, fs->block_group[x].bg_block_bitmap, 1, bitmap)) {
                 PANIC("[-] fail to read block.")
             }
             for (uint32_t y = 0; y < fs->super_blk.s_blocks_per_group; y++) {
                 if (BIT_GET(bitmap[y / 8], y % 8) == 0) {
-                    putf_const("[+][%x] found empty block:=%x\n", bitmap, y);
+                    dprintf("[+][%x] found empty block:=%x", bitmap, y);
                     BIT_SET(bitmap[y / 8], y % 8);
                     *new_block_id = (uint32_t) fs->super_blk.s_blocks_per_group * x + y;
                     fs->block_group[x].bg_free_blocks_count--;
@@ -220,13 +222,13 @@ int ext2_alloc_block(ext2_t *fs, uint32_t *new_block_id) {
 
 int ext2_make(ext2_t *fs, uint16_t type, uint32_t father_id, char *name, uint32_t *new_id_out) {
     uint32_t ninode_id;
-    if (ext2_alloc_inodeid(fs, type, &ninode_id)) PANIC("cannot alloc inodeid");
+    CHK (ext2_alloc_inodeid(fs, type, &ninode_id), "out of inodeid?");
     if (new_id_out)
         *new_id_out = ninode_id;
     uint8_t *fblk = (uint8_t *) kmalloc_paging(fs->block_size, NULL);
     uint8_t *blk = (uint8_t *) kmalloc_paging(fs->block_size, NULL);
     uint32_t fblkno, findex;
-    ext2_get_inode_block(fs, father_id, &findex, &fblkno, NULL, fblk);
+    CHK(ext2_get_inode_block(fs, father_id, &findex, &fblkno, NULL, fblk), "cannot get father inode");
     ext2_inode_t *father = (ext2_inode_t *) (fblk + findex * sizeof(ext2_inode_t));
     ASSERT(IS_DIR(father->i_mode));
     //Check whether file exists.
@@ -235,12 +237,10 @@ int ext2_make(ext2_t *fs, uint16_t type, uint32_t father_id, char *name, uint32_
     uint8_t name_len = (uint8_t) strlen(name);
     ext2_dir_iterator_init(fs, father, &iter);
     while (ext2_dir_iterator_next(&iter, &dir)) {
-        //FIXME wrong algo.
+        char *np = dir->name;
         if (dir->name_length == name_len) {
-            int x = 0;
-            for (; x < name_len && dir->name[x] == name[x]; x++);
-            if (x == name_len - 1) {
-                putf_const("[-] %s already exists.\n", name);
+            if (!memcmp(np, name, name_len)) {
+                dprintf("[-] %s already exists.", name);
                 return 1;
             }
         }
@@ -248,11 +248,11 @@ int ext2_make(ext2_t *fs, uint16_t type, uint32_t father_id, char *name, uint32_
     ext2_dir_iterator_exit(&iter);
     //Update inode
     uint32_t index, blk_no;
-    if (ext2_get_inode_block(fs, ninode_id, &index, &blk_no, NULL, blk)) PANIC("cannot get inode block.");
+    CHK(ext2_get_inode_block(fs, ninode_id, &index, &blk_no, NULL, blk), "cannot get child inode");
     ASSERT(index < fs->block_size / sizeof(ext2_inode_t));
     ext2_inode_t *inode = (ext2_inode_t *) ((uint32_t) blk + sizeof(ext2_inode_t) * index);
     //ASSERT(inode->i_mode == 0);
-    putf_const("[-]blockNO[%x][OFF:%x]", blk_no, blk_no * fs->block_size + sizeof(ext2_inode_t) * index);
+    dprintf("[-]blockNO[%x][OFF:%x]", blk_no, blk_no * fs->block_size + sizeof(ext2_inode_t) * index);
     memset(inode, 0, sizeof(ext2_inode_t));
     type &= 0xF000;
     inode->i_mode = (uint16_t) (type | 0x1FF);
@@ -271,6 +271,7 @@ int ext2_make(ext2_t *fs, uint16_t type, uint32_t father_id, char *name, uint32_
         inode->i_size = 3;
     }
     ext2_write_block(fs, blk_no, 1, blk);
+
     inode = NULL;
     if (type == INODE_TYPE_DIRECTORY) {
         //Create the default directories;
@@ -301,11 +302,11 @@ int ext2_make(ext2_t *fs, uint16_t type, uint32_t father_id, char *name, uint32_
         ext2_write_block(fs, bno, 1, blk);
     }
     //Update dir table.
-    //ASSERT(father->i_block[father->i_blocks_count - 1]);
     ext2_read_block(fs, father->i_block[0], 1, blk);
     dir = (ext2_dir_t *) blk;
     uint8_t found = false;
     int x = 0;
+    uint32_t offset = 0;
     for (; x < EXT2_NDIR_BLOCKS && !found;) {
         while (true) {
             if ((uint32_t) dir >= (uint32_t) ((uint32_t) blk + fs->block_size)) {
@@ -325,25 +326,37 @@ int ext2_make(ext2_t *fs, uint16_t type, uint32_t father_id, char *name, uint32_
             if (dir->inode_id == 0) {
                 found = true;
                 break;
-            } else putf_const("[|%x]", dir->inode_id);
+            } else
+                dprintf("[|%x]", dir->inode_id);
             uint32_t tsize = 8 + dir->name_length;
             if (tsize % 4 != 0)
                 tsize += 4 - tsize % 4;
-            if (dir->size != tsize) {
+            dprintf("[dir]nlen:%x size:%x tsize:%x", dir->name_length, dir->size, tsize);
+            if (dir->size != tsize && offset + dir->size >= fs->block_size) {
+                //jump to ignore deleted dir?
+                /*Offset   0  1  2  3  4  5  6  7   8  9  A  B  C  D  E  F
+                01140800   F1 0F 00 00 0C 00 01 02  2E 00 00 00 02 00 00 00   ñ       .
+                01140810   24 00 02 02 2E 2E 00 00  F7 0F 00 00 18 00 0F 02   $   ..  ÷
+                01140820   75 6E 74 69 74 6C 65 64  20 66 6F 6C 64 65 72 00   untitled folder
+                01140830   F2 0F 00 00 0C 00 02 02  73 31 00 00 F3 0F 00 00   ò       s1  ó
+                01140840   0C 00 02 01 63 31 00 00  F4 0F 00 00 0C 00 02 01       c1  ô
+                01140850   63 32 00 00 F5 0F 00 00  0C 00 02 01 63 33 00 00   c2  õ       c3
+                01140860   F6 0F 00 00 0C 00 02 01  63 34 00 00 F7 0F 00 00   ö       c4  ÷
+                01140870   94 03 02 02 73 32 00 00  00 00 00 00 00 00 00 00   ”   s2
+                 */
                 //fix length
                 uint32_t old_len = dir->size;
-                dir->size = (uint16_t) (8 + dir->name_length);
-                if (dir->size % 4 != 0)
-                    dir->size += 4 - dir->size % 4;
-                putf_const("[**] fix length:[%x] -->[%x]\n", old_len, dir->size);
+                dir->size = tsize;
+                dprintf("[**] fix length:[%x] -->[%x]", old_len, dir->size);
                 dir = (ext2_dir_t *) ((uint32_t) dir + dir->size);
-                k_delay(5);
                 found = true;
                 break;
             }
             dir = (ext2_dir_t *) ((uint32_t) dir + dir->size);
+            offset += dir->size;
         }
     }
+
     ASSERT(dir);
     dir->inode_id = ninode_id;
     dir->type_indicator = (uint8_t) (IS_DIR(type) ? INODE_DIR_TYPE_INDICATOR_DIRECTORY : INODE_DIR_TYPE_INDICATOR_FILE);
@@ -353,7 +366,15 @@ int ext2_make(ext2_t *fs, uint16_t type, uint32_t father_id, char *name, uint32_
     dir->name[name_len] = 0;
     dir->size = (uint16_t) ((uint16_t) blk + fs->block_size - ((uint16_t) dir));
     ext2_write_block(fs, father->i_block[x], 1, blk);
+    kfree(blk);
+    kfree(fblk);
+    dprintf("make done");
     return 0;
+    _err:
+    kfree(blk);
+    kfree(fblk);
+    return 1;
+
 }
 
 int ext2_read_file_block_singly(ext2_t *fs, ext2_inode_t *inode, uint32_t block_no, uint8_t *buff) {
@@ -362,7 +383,7 @@ int ext2_read_file_block_singly(ext2_t *fs, ext2_inode_t *inode, uint32_t block_
     ext2_read_block(fs, inode->i_singly_block, 1, blk);
     uint32_t no = block_no - EXT2_SIND_BLOCK;
     ASSERT(no < max_blocks);
-    putf_const("[%s] %x", __func__, blk[no]);
+    dprintf("[%s] %x", __func__, blk[no]);
     if (blk[no] == 0)
         return 1;
     int err = ext2_read_block(fs, blk[no], 1, buff);
@@ -378,13 +399,13 @@ int ext2_read_file_block_doubly(ext2_t *fs, ext2_inode_t *inode, uint32_t block_
  * @return 0:succ */
 int ext2_read_file_block(ext2_t *fs, ext2_inode_t *inode, uint32_t block_no, uint8_t *buff) {
     uint32_t max_blocks = fs->block_size / sizeof(uint32_t);
-    putf_const("[+] max_blocks:%x read[%x]", max_blocks, block_no);
+    dprintf("[+] max_blocks:%x read[%x]", max_blocks, block_no);
     if (block_no < EXT2_SIND_BLOCK) {
-        putf_const("[%s] direct read[%x]:%x\n", __func__, block_no, inode->i_block[block_no]);
+        dprintf("[%s] direct read[%x]:%x", __func__, block_no, inode->i_block[block_no]);
         return ext2_read_block(fs, inode->i_block[block_no], 1, buff);
     } else if (block_no < EXT2_SIND_BLOCK + max_blocks) {
         //singly Linked
-        putf_const("[%s] singly direct read[%x]:%x\n", __func__, block_no, inode->i_block[block_no]);
+        dprintf("[%s] singly direct read[%x]:%x", __func__, block_no, inode->i_block[block_no]);
         return ext2_read_file_block_singly(fs, inode, block_no, buff);
     } else
         TODO;
@@ -441,13 +462,13 @@ int ext2_get_file_blockid(ext2_t *fs, ext2_inode_t *inode, uint32_t block_no, bo
 int
 ext2_write_file_block(ext2_t *fs, ext2_inode_t *inode, uint32_t block_no, uint8_t *buff) {
     uint32_t max_blocks = fs->block_size / sizeof(uint32_t);
-    putf_const("[+] max_blocks:%x read[%x]", max_blocks, block_no);
+    dprintf("[+] max_blocks:%x read[%x]", max_blocks, block_no);
     if (block_no < EXT2_SIND_BLOCK) {
-        putf_const("[%s] direct write[%x]:%x\n", __func__, block_no, inode->i_block[block_no]);
+        dprintf("[%s] direct write[%x]:%x", __func__, block_no, inode->i_block[block_no]);
         if (inode->i_block[block_no] == 0) {
             //Alloc block;
             if (ext2_alloc_block(fs, &inode->i_block[block_no])) {
-                puterr_const("Cannot alloc new block.");
+                deprintf("Cannot alloc new block.");
                 return -1;
             }
         }
@@ -455,7 +476,7 @@ ext2_write_file_block(ext2_t *fs, ext2_inode_t *inode, uint32_t block_no, uint8_
         return ext2_write_block(fs, inode->i_block[block_no], 1, buff);
     } else if (block_no < EXT2_SIND_BLOCK + max_blocks) {
         //singly Linked
-        putf_const("[%s] singly direct write[%x]:%x\n", __func__, block_no, inode->i_block[block_no]);
+        dprintf("[%s] singly direct write[%x]:%x", __func__, block_no, inode->i_block[block_no]);
         TODO;
     } else
         TODO;
@@ -469,13 +490,14 @@ int ext2_write_file(ext2_t *fs, ext2_inode_t *inode, uint32_t offset, uint32_t s
     uint8_t *tbuff = 0;
     uint32_t hblk_off = offset % fs->block_size;
     uint32_t fblk_size = size % fs->block_size;
+    uint32_t orig_size = inode->i_size;
     int x = 0;
     if (hblk_off || block_offset == 0) {
         tbuff = (uint8_t *) kmalloc_paging(sizeof(fs->super_blk.s_block_size), NULL);
         uint32_t tblkno = 0;
         ext2_get_file_blockid(fs, inode, block_offset, true, &tblkno);
-        putf_const("[+]write hblk blkid:%x hblk_off:%x size:%x", tblkno, hblk_off,
-                   MIN(fs->block_size - hblk_off, size - hblk_off));
+        dprintf("write hblk blkid:%x hblk_off:%x size:%x", tblkno, hblk_off,
+                MIN(fs->block_size - hblk_off, size - hblk_off));
         ext2_read_block(fs, tblkno, 1, tbuff);
         memcpy(&tbuff[hblk_off], buff, MIN(fs->block_size - hblk_off, size - hblk_off));
         ext2_write_block(fs, tblkno, 1, tbuff);
@@ -494,6 +516,8 @@ int ext2_write_file(ext2_t *fs, ext2_inode_t *inode, uint32_t offset, uint32_t s
             ext2_write_block(fs, tblkno, 1, tbuff);
         }
     }
+    if (offset + size > orig_size)
+        inode->i_size = offset + size;
     return 0;
 }
 
@@ -561,7 +585,7 @@ void ext2_test() {
 }
 
 int ext2_init(ext2_t *fs_out, blk_dev_t *dev) {
-    putf_const("[ext2_init]callin\n");
+    dprintf("callin");
     memset(fs_out, 0, sizeof(ext2_t));
     fs_out->magic = EXT2_MAGIC;
     fs_out->dev = dev;
@@ -582,26 +606,42 @@ int ext2_init(ext2_t *fs_out, blk_dev_t *dev) {
     return 0;
 }
 
-int32_t ext2_fs_node_write(fs_node_t *node, uint32_t offset, uint32_t len, uint8_t *buff) {
+int32_t ext2_fs_node_write(fs_node_t *node, __fs_special_t *fsp, uint32_t offset, uint32_t len, uint8_t *buff) {
+    ext2_t *fs = fsp;
+    ASSERT(fs->magic == EXT2_MAGIC);
+    ext2_inode_t inode;
+    CHK(ext2_find_inote(fs, node->inode, &inode), "inode not exist");
+    return ext2_write_file(fs, &inode, offset, len, buff);
+    _err:
     return -1;
 }
 
-int32_t ext2_fs_node_read(fs_node_t *node, uint32_t offset, uint32_t len, uint8_t *buff) {
+int32_t ext2_fs_node_read(fs_node_t *node, __fs_special_t *fsp, uint32_t offset, uint32_t len, uint8_t *buff) {
+    ext2_t *fs = fsp;
+    ASSERT(fs->magic == EXT2_MAGIC);
+    ext2_inode_t inode;
+    CHK(ext2_find_inote(fs, node->inode, &inode), "inode not exist");
+    _err:
     return -1;
 }
 
 int ext2_get_fs_node(ext2_t *fs, uint32_t inode_id, const char *fn, fs_node_t *node) {
+    if (inode_id < 2) {
+        deprintf("Bad inode_id:%x", inode_id);
+        return 1;
+    }
     strcpy(node->name, fn);
     ext2_inode_t inode;
     ext2_find_inote(fs, inode_id, &inode);
     node->mask = inode.i_mode;
     node->uid = inode.i_uid;
     node->gid = inode.i_gid;
-    if (IS_DIR(inode.i_mode)) {
+    if (IS_DIR(inode.i_mode) || inode_id == 2) {
         node->flags = FS_DIRECTORY;
     } else if (IS_FILE(inode.i_mode)) {
         node->flags = FS_FILE;
     } else node->flags = 0;//?
+
     node->length = inode.i_size;
     node->fsp = fs;
     node->inode = inode_id;
@@ -676,13 +716,11 @@ int ext2_fs_node_finddir(fs_node_t *node, __fs_special_t *fsp, char *name, fs_no
 
 int ext2_fs_node_get_node(__fs_special_t *fsp, uint32_t inode_id, fs_node_t *node) {
     ext2_t *fs = fsp;
-    char sname[256];
-    bool found = false;
     ASSERT(fs->magic == EXT2_MAGIC);
-    return ext2_find_inote(fs, inode_id, node);
+    TODO;
 }
 
-int ext2_fs_node_make(fs_node_t *node, __fs_special_t *fsp, uint8_t type, char *name, fs_node_t *new_node_out) {
+int ext2_fs_node_make(fs_node_t *node, __fs_special_t *fsp, uint8_t type, char *name) {
     ext2_t *fs = fsp;
     uint32_t inode_id = node->inode;
     int e2type;
@@ -691,14 +729,15 @@ int ext2_fs_node_make(fs_node_t *node, __fs_special_t *fsp, uint8_t type, char *
             e2type = INODE_TYPE_DIRECTORY;
             break;
         case FS_FILE:
-            e2type = INODE_DIR_TYPE_INDICATOR_FILE;
+            e2type = INODE_TYPE_FILE;
             break;
-        default: putf_const("[ext2_fs_node_make]unknown type:%x\n", type);
+        default:
+            deprintf("[ext2_fs_node_make]unknown type:%x", type);
             return -1;
     }
     uint32_t new_nnid;
     CHK(ext2_make(fs, e2type, inode_id, name, &new_nnid), "make failed.");
-    ext2_get_fs_node(fs, new_nnid, name, new_node_out);
+    //ext2_get_fs_node(fs, new_nnid, name, new_node_out);
     return 0;
     _err:
     return 1;
@@ -709,6 +748,7 @@ __fs_special_t *ext2_fs_node_mount(blk_dev_t *dev, fs_node_t *rootnode) {
     CHK(ext2_init(fs, dev), "[ext2]fail to mount");
     rootnode->inode = 2;
     rootnode->fsp = fs;
+    rootnode->flags = FS_DIRECTORY;
     return fs;
     _err:
     return 0;

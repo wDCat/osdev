@@ -3,21 +3,26 @@
 //
 
 #include <proc.h>
+#include <irqs.h>
+#include <str.h>
 #include "include/keyboard.h"
 
 //FIXME No work too... :(
 void keyboard_handler(struct regs *r) {
+
     //putln("A BIGGGGGG MASK");
     int scancode;
     scancode = inportb(0x60);
     scancode = scancode & 0xFF;
+    dprintf("key down:%x", scancode);
     if (scancode & 0x80) {
         //Control
     } else {
         //No work:
-        //putc(kbdus[scancode]);
+        putc(kbdus[scancode]);
         //No work v2:
-        /*for (int x = 0; x < 0xFF; x++) {
+        /*
+        for (int x = 0; x < 0xFF; x++) {
             if (x == scancode) {
                 putint(x);
                 if (x == 2) {
@@ -31,6 +36,7 @@ void keyboard_handler(struct regs *r) {
         }*/
         //For screen's pause
         on_keyboard_event(scancode);
+        /*
         if (scancode < 10) {
             putint(scancode - 1);
         } else {
@@ -51,7 +57,7 @@ void keyboard_handler(struct regs *r) {
                 default:
                     putc('*');
             }
-        }
+        }*/
     }
 }
 

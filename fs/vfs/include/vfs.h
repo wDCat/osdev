@@ -37,6 +37,7 @@ typedef struct {
 typedef struct {
     char path[256];
     fs_node_t current;
+    fs_node_t current_dir;
 } vfs_t;
 mount_point_t mount_points[MAX_MOUNT_POINTS];
 uint32_t mount_points_count;

@@ -1,3 +1,4 @@
+#include <str.h>
 #include "system.h"
 
 
@@ -19,6 +20,13 @@ unsigned char *memset(unsigned char *dest, unsigned char val, int count) {
         dest[x] = val;
     }
     return NULL;
+}
+
+uint8_t memcmp(uint8_t *a1, uint8_t *a2, uint8_t len) {
+    for (uint8_t x = 0; x < len; x++)
+        if (a1[x] != a2[x])
+            return x;
+    return 0;
 }
 
 inline unsigned char inportb(unsigned short _port) {
@@ -71,4 +79,9 @@ uint32_t get_eip() {
     __asm__ __volatile__ (""
             "pop %eax;"
             "jmp %eax;");
+}
+
+inline void dprint_(const char *str) {
+    for (int x = 0; str[x] != '\0' && x < 0xFF; x++)
+        serial_write(COM1, str[x]);
 }

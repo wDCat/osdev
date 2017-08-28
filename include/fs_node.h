@@ -27,7 +27,7 @@ typedef void (*close_type_t)(struct fs_node *, __fs_special_t *fsp);
 //typedef dirent_t *(*readdir_type_t)(struct fs_node *, uint32_t);
 typedef int32_t (*readdir_type_t)(struct fs_node *node, __fs_special_t *fsp, uint32_t count, struct dirent *result);
 
-typedef int (*finddir_type_t)(struct fs_node *, __fs_special_t *fsp, char *name, struct fs_node *result_out);
+typedef int (*finddir_type_t)(struct fs_node *, __fs_special_t *fsp, const char *name, struct fs_node *result_out);
 
 typedef struct fs_node {
     char name[256];

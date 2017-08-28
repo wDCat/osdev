@@ -86,6 +86,7 @@ void heap_test() {
 }
 
 void install_all() {
+    serial_install();
     gdt_install();
     idt_install();
     isrs_install();
@@ -253,10 +254,33 @@ void ide_test() {
 
 }
 
+
 uint32_t init_esp;
 #ifndef _BUILD_TIME
 #define _BUILD_TIME 00
 #endif
+
+int little_test() {
+    extern void vfs_test();
+    vfs_test();
+    //dprintf("done.");
+    for (;;);
+}
+
+int move_kernel_stack(uint32_t start_addr, uint32_t size) {
+    uint32_t ebp, esp;
+    for (int32_t x = 0x4000; x >= 0; x -= 0x1000) {
+        page_t *page = get_page(start_addr - x, true, kernel_dir);
+        ASSERT(page);
+        //dprintf("alloc frame for:%x", start_addr - x);
+        alloc_frame(page, false, true);
+    }
+    ebp = 0xBB0000 - 0x4;
+    esp = 0xBB0000 - 0x8;
+    dprintf("kernel stack:ebp:%x esp:%x", ebp, esp);
+    change_stack(ebp, esp);
+    __asm__ __volatile__("jmp %0;"::"m"(little_test));
+}
 
 int main(multiboot_info_t *mul_arg, uint32_t init_esp_arg) {
     init_esp = init_esp_arg;
@@ -268,6 +292,7 @@ int main(multiboot_info_t *mul_arg, uint32_t init_esp_arg) {
     memcpy(&mul, mul_arg, sizeof(multiboot_info_t));
     //MUL HEADER LOST AFTER INSTALL!!!
     install_all();
+    dprintf("init esp:%x", init_esp);
     if (mul.mods_count <= 0) {
         PANIC("module not found..")
     }
@@ -290,8 +315,7 @@ int main(multiboot_info_t *mul_arg, uint32_t init_esp_arg) {
     //usermode();
     //ide_test();
     ide_initialize(0x1F0, 0x3F6, 0x170, 0x376, 0x000);
-    extern void vfs_test();
-    vfs_test();
+    move_kernel_stack(0xBB0000, 0x10000);
     puts_const("[+] main done.");
     for (;;);
 }

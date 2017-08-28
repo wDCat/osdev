@@ -184,3 +184,51 @@ uint strformat(char *out, const char *fmt, ...) {
     }
     va_end(args);
 }
+
+uint strformatw(void (*writer)(void *extern_data, char c), void *extern_data, const char *fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    int pos = 0;
+    while (true) {
+        const char *les = &fmt[pos];
+        char *nextmk = strchr(les, '%');
+        if (nextmk <= 0)break;
+        int off = (int) (nextmk - les);
+        for (int x = pos; x < pos + off; x++)
+            writer(extern_data, fmt[x]);
+        pos += off + 1;
+        char tok = nextmk[1];
+        switch (tok) {
+            case 's': {
+                pos++;
+                char *data = va_arg(args, char*);
+                for (int x = 0; data[x] != '\0' && x < 0xFF; x++)
+                    writer(extern_data, data[x]);
+            }
+                break;
+            case 'd': {
+                pos++;
+                int n = va_arg(args, int);
+                char c2[32];
+                itos(n, c2);
+                for (int x = 0; c2[x] != '\0' && x < 0x32; x++)
+                    writer(extern_data, c2[x]);
+            }
+                break;
+            case 'x': {
+                pos++;
+                int n = va_arg(args, int);
+                char c2[32];
+                itohexs(n, c2);
+                for (int x = 0; c2[x] != '\0' && x < 0x32; x++)
+                    writer(extern_data, c2[x]);
+            }
+                break;
+            default:
+                continue;
+        }
+    }
+    for (int x = pos; fmt[x] != '\0'; x++)
+        writer(extern_data, fmt[x]);
+    va_end(args);
+}

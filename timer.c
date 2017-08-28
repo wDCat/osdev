@@ -17,6 +17,7 @@ void get_time_count(uint32_t *data) {
 
 void timer_handler(struct regs *r) {
     cli();
+    //dprintf("timer routine.");
     timer_count++;
     //if (timer_count >= 0xFFFFFFFF)timer_count = 0;
     if (timer_count % 36 == 0) {

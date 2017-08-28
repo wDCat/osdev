@@ -12,7 +12,7 @@ extern void irq_remap();
 void do_schedule(regs_t *r) {
     extern bool proc_ready;
     if (!getpcb(2)->present || !getpcb(3)->present)return;
-    putf_const("[+] sch routine\n");
+    dprintf("sch routine\n");
     //FIXME some place damaged the irq remap......
     irq_remap();
     pcb_t *cur_pcb = getpcb(getpid());
