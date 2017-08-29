@@ -8,16 +8,16 @@ pre:
 	sudo losetup /dev/loop$(LOOP_DEVICE_ID) ../bgrub.img
 	sudo kpartx -a /dev/loop$(LOOP_DEVICE_ID)
 mount_disk:
-	sudo losetup /dev/loop2 ../disk.img || echo ""
-	sudo kpartx -a /dev/loop2 || echo ""
-	sudo mount /dev/mapper/loop2p1 /home/dcat/osdev/disk/ || echo ""
+	sudo losetup /dev/loop3 ../disk.img || echo ""
+	sudo kpartx -a /dev/loop3 || echo ""
+	sudo mount /dev/mapper/loop3p1 /home/dcat/osdev/disk/ || echo ""
 umount_disk:
-	sudo umount /dev/mapper/loop2p1 || echo ""
-	sudo kpartx -d /dev/loop2 || echo ""
-	sudo losetup -d /dev/loop2 || echo ""
+	sudo umount /dev/mapper/loop3p1 || echo ""
+	sudo kpartx -d /dev/loop3 || echo ""
+	sudo losetup -d /dev/loop3 || echo ""
 fsck_disk:
-	sudo umount /dev/mapper/loop2p1 || echo ""
-	sudo fsck -f /dev/mapper/loop2p1
+	sudo umount /dev/mapper/loop3p1 || echo ""
+	sudo fsck -f /dev/mapper/loop3p1
 all:
 	rm -rf *.o
 	nasm -f elf -o start.o asm/start.asm

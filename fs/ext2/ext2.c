@@ -52,14 +52,14 @@ int ata_section_write(uint32_t offset, uint32_t len, uint8_t *buff) {
 int ext2_read_block(ext2_t *fs, uint32_t base, uint32_t count, uint8_t *buff) {
     uint32_t offset = base * fs->block_size;
     uint32_t size = count * fs->block_size;
-    dprintf("[%x] ==> [%x]", offset, buff);
+    dprintf("[%x:%x] ==> [%x]", base, offset, buff);
     return fs->dev->read(offset, size, buff);
 }
 
 int ext2_write_block(ext2_t *fs, uint32_t base, uint32_t count, uint8_t *buff) {
     uint32_t offset = base * fs->block_size;
     uint32_t size = count * fs->block_size;
-    dprintf("[%x] <== [%x]", offset, buff);
+    dprintf("[%x:%x] <== [%x]", base, offset, buff);
     return fs->dev->write(offset, size, buff);
 }
 
@@ -186,7 +186,7 @@ int ext2_alloc_inodeid(ext2_t *fs, uint16_t type, uint32_t *new_inode_id) {
     return 1;
 }
 
-int ext2_alloc_block(ext2_t *fs, uint32_t *new_block_id) {
+int ext2_alloc_block(ext2_t *fs, uint32_t *new_block_id, bool empty) {
     uint8_t *bitmap = (uint8_t *) kmalloc_paging(fs->block_size, NULL);
     if (fs->super_blk.s_free_blocks_count <= 0) {
         deprintf("[-] out of block!");
@@ -208,6 +208,11 @@ int ext2_alloc_block(ext2_t *fs, uint32_t *new_block_id) {
                     //Write back
                     ext2_write_block(fs, fs->block_group[x].bg_block_bitmap, 1, bitmap);
                     ext2_update_sblk_and_bg(fs);
+                    if (empty) {
+                        dprintf("clear blk:%x", *new_block_id);
+                        memset(bitmap, 0, fs->block_size);
+                        ext2_write_block(fs, *new_block_id, 1, bitmap);
+                    }
                     return 0;
                     break;
                 }
@@ -216,9 +221,9 @@ int ext2_alloc_block(ext2_t *fs, uint32_t *new_block_id) {
         }
     }
     PANIC("[-] Out of block! but fs->super_blk.s_free_blocks_count>0");
+    kfree(bitmap);
     return 1;
 }
-
 
 int ext2_make(ext2_t *fs, uint16_t type, uint32_t father_id, char *name, uint32_t *new_id_out) {
     uint32_t ninode_id;
@@ -262,7 +267,7 @@ int ext2_make(ext2_t *fs, uint16_t type, uint32_t father_id, char *name, uint32_
     inode->i_links_count = 1;
     inode->i_sectors_count = fs->sections_per_group;
     uint32_t bno;
-    ASSERT(ext2_alloc_block(fs, &bno) == 0);
+    ASSERT(ext2_alloc_block(fs, &bno, true) == 0);
     ASSERT(bno < fs->super_blk.s_blocks_count);
     inode->i_block[0] = bno;
     if (type == INODE_TYPE_DIRECTORY) {
@@ -271,7 +276,6 @@ int ext2_make(ext2_t *fs, uint16_t type, uint32_t father_id, char *name, uint32_
         inode->i_size = 3;
     }
     ext2_write_block(fs, blk_no, 1, blk);
-
     inode = NULL;
     if (type == INODE_TYPE_DIRECTORY) {
         //Create the default directories;
@@ -293,13 +297,6 @@ int ext2_make(ext2_t *fs, uint16_t type, uint32_t father_id, char *name, uint32_
         dd->size = (uint16_t) (fs->block_size - 12);
         ext2_write_block(fs, bno, 1, blk);
     } else {
-        //Test
-        ext2_read_block(fs, bno, 1, blk);
-        memset(blk, 0xFF, fs->block_size);
-        blk[0] = 'A';
-        blk[1] = 'S';
-        blk[2] = 'S';
-        ext2_write_block(fs, bno, 1, blk);
     }
     //Update dir table.
     ext2_read_block(fs, father->i_block[0], 1, blk);
@@ -314,7 +311,7 @@ int ext2_make(ext2_t *fs, uint16_t type, uint32_t father_id, char *name, uint32_
                 if (father->i_block[x] == 0) {
                     TODO;
                     //Create a new block.
-                    ext2_alloc_block(fs, &father->i_block[x]);
+                    ext2_alloc_block(fs, &father->i_block[x], false);
                     father->i_sectors_count += fs->sections_per_group;//Write back..
                     ext2_read_block(fs, father->i_block[x], 1, blk);
                     dir = (ext2_dir_t *) blk;
@@ -377,36 +374,44 @@ int ext2_make(ext2_t *fs, uint16_t type, uint32_t father_id, char *name, uint32_
 
 }
 
-int ext2_read_file_block_singly(ext2_t *fs, ext2_inode_t *inode, uint32_t block_no, uint8_t *buff) {
+int ext2_read_file_block_singly(ext2_t *fs, ext2_inode_t *inode, uint32_t block_no, bool create, uint8_t *buff) {
     uint32_t max_blocks = fs->block_size / sizeof(uint32_t);
-    uint32_t *blk = (uint32_t *) kmalloc(fs->block_size);
+    uint32_t *blk = (uint32_t *) kmalloc_paging(fs->block_size, NULL);
     ext2_read_block(fs, inode->i_singly_block, 1, blk);
     uint32_t no = block_no - EXT2_SIND_BLOCK;
     ASSERT(no < max_blocks);
     dprintf("[%s] %x", __func__, blk[no]);
     if (blk[no] == 0)
-        return 1;
+        if (create)TODO;
+        else return -1;
     int err = ext2_read_block(fs, blk[no], 1, buff);
-    //kfree(blk);
+    kfree(blk);
     return err;
 }
 
-int ext2_read_file_block_doubly(ext2_t *fs, ext2_inode_t *inode, uint32_t block_no, uint8_t *buff) {
+int ext2_read_file_block_doubly(ext2_t *fs, ext2_inode_t *inode, uint32_t block_no, bool create, uint8_t *buff) {
     TODO;
 }
 
 /**
  * @return 0:succ */
-int ext2_read_file_block(ext2_t *fs, ext2_inode_t *inode, uint32_t block_no, uint8_t *buff) {
+int ext2_read_file_block(ext2_t *fs, ext2_inode_t *inode, uint32_t block_no, bool create, uint8_t *buff) {
     uint32_t max_blocks = fs->block_size / sizeof(uint32_t);
-    dprintf("[+] max_blocks:%x read[%x]", max_blocks, block_no);
+    dprintf("max_blocks:%x read[%x]", max_blocks, block_no);
     if (block_no < EXT2_SIND_BLOCK) {
-        dprintf("[%s] direct read[%x]:%x", __func__, block_no, inode->i_block[block_no]);
+        dprintf("direct read[%x]:%x", block_no, inode->i_block[block_no]);
+        if (inode->i_block[block_no] == 0) {
+            if (!create)return 1;
+            if (ext2_alloc_block(fs, &inode->i_block[block_no], true)) {
+                deprintf("cannot alloc blk");
+                return 1;
+            }
+        }
         return ext2_read_block(fs, inode->i_block[block_no], 1, buff);
     } else if (block_no < EXT2_SIND_BLOCK + max_blocks) {
         //singly Linked
-        dprintf("[%s] singly direct read[%x]:%x", __func__, block_no, inode->i_block[block_no]);
-        return ext2_read_file_block_singly(fs, inode, block_no, buff);
+        dprintf("singly direct read[%x]:%x", block_no, inode->i_block[block_no]);
+        return ext2_read_file_block_singly(fs, inode, block_no, create, buff);
     } else
         TODO;
 }
@@ -417,12 +422,12 @@ int ext2_read_file(ext2_t *fs, ext2_inode_t *inode, uint32_t offset, uint32_t si
     uint32_t block_offset = offset / fs->block_size;
     uint32_t block_count = size / fs->block_size;
     for (int x = 0; x < block_count; x++) {
-        int err = ext2_read_file_block(fs, inode, block_offset + x, buff + x * fs->block_size);
+        int err = ext2_read_file_block(fs, inode, block_offset + x, false, buff + x * fs->block_size);
         if (err) {
             return -1;
         }
     }
-    return size;//TODO
+    return size;
 }
 
 inline uint32_t ext2_get_block_section(ext2_t *fs, uint32_t blk_no, uint8_t section_no) {
@@ -438,13 +443,13 @@ int ext2_get_file_blockid(ext2_t *fs, ext2_inode_t *inode, uint32_t block_no, bo
         if (inode->i_singly_block == 0) {
             if (!create)return 1;
             //Alloc block
-            CHK(ext2_alloc_block(fs, &inode->i_singly_block), "fail to alloc new block");
+            CHK(ext2_alloc_block(fs, &inode->i_singly_block, true), "fail to alloc new block");
             uint32_t *blkids = (uint32_t *) kmalloc_paging(fs->super_blk.s_block_size, NULL);
             uint32_t *blkids_p = blkids;
             if (blkids == 0)goto _err;
             memset((uint8_t *) blkids, 0, fs->super_blk.s_block_size);
             for (int x = 0; x <= block_no - EXT2_SIND_BLOCK; x++) {
-                CHK(ext2_alloc_block(fs, blkids_p), "fail to alloc new child block:%x", x);
+                CHK(ext2_alloc_block(fs, blkids_p, true), "fail to alloc new child block:%x", x);
                 blkids_p++;
             }
             CHK(ext2_write_block(fs, inode->i_singly_block, 1, (uint8_t *) blkids), "I/O");
@@ -459,15 +464,15 @@ int ext2_get_file_blockid(ext2_t *fs, ext2_inode_t *inode, uint32_t block_no, bo
     return -1;
 }
 
-int
-ext2_write_file_block(ext2_t *fs, ext2_inode_t *inode, uint32_t block_no, uint8_t *buff) {
+int ext2_write_file_block(ext2_t *fs, ext2_inode_t *inode, uint32_t block_no, uint8_t *buff) {
     uint32_t max_blocks = fs->block_size / sizeof(uint32_t);
-    dprintf("[+] max_blocks:%x read[%x]", max_blocks, block_no);
+    dprintf("max_blocks:%x read[%x]", max_blocks, block_no);
     if (block_no < EXT2_SIND_BLOCK) {
-        dprintf("[%s] direct write[%x]:%x", __func__, block_no, inode->i_block[block_no]);
+        dprintf("direct write[%x]:%x", block_no, inode->i_block[block_no]);
         if (inode->i_block[block_no] == 0) {
             //Alloc block;
-            if (ext2_alloc_block(fs, &inode->i_block[block_no])) {
+            if (block_no == 0) PANIC("blkno[0]==0");
+            if (ext2_alloc_block(fs, &inode->i_block[block_no], true)) {
                 deprintf("Cannot alloc new block.");
                 return -1;
             }
@@ -476,49 +481,71 @@ ext2_write_file_block(ext2_t *fs, ext2_inode_t *inode, uint32_t block_no, uint8_
         return ext2_write_block(fs, inode->i_block[block_no], 1, buff);
     } else if (block_no < EXT2_SIND_BLOCK + max_blocks) {
         //singly Linked
-        dprintf("[%s] singly direct write[%x]:%x", __func__, block_no, inode->i_block[block_no]);
+        dprintf("singly direct write[%x]:%x", block_no, inode->i_block[block_no]);
         TODO;
     } else
         TODO;
 }
 
+int ext2_update_inode(ext2_t *fs, uint32_t inode_id, ext2_inode_t *new_inode) {
+
+    uint8_t *blk = (uint8_t *) kmalloc_paging(fs->block_size, NULL);
+    uint32_t fblkno, findex;
+    CHK(ext2_get_inode_block(fs, inode_id, &findex, &fblkno, NULL, blk), "cannot get inode");
+    ext2_inode_t *inode = (ext2_inode_t *) (blk + findex * sizeof(ext2_inode_t));
+    memcpy(inode, new_inode, sizeof(ext2_inode_t));
+    dprintf("saving inode %x", inode_id);
+    CHK(ext2_write_block(fs, fblkno, 1, blk), "");
+    return 0;
+    _err:
+    return 1;
+}
+
 /**
  * @return write bytes or -1 error*/
-int ext2_write_file(ext2_t *fs, ext2_inode_t *inode, uint32_t offset, uint32_t size, uint8_t *buff) {
-    uint32_t block_offset = offset / fs->block_size;
-    uint32_t block_count = size / fs->block_size;
+int32_t ext2_write_file(ext2_t *fs, ext2_inode_t *inode, uint32_t offset, uint32_t size, uint8_t *buff) {
+    uint32_t block_size = fs->block_size;
+    uint32_t block_offset = offset / block_size;
+    uint32_t block_count = size / block_size;
     uint8_t *tbuff = 0;
-    uint32_t hblk_off = offset % fs->block_size;
-    uint32_t fblk_size = size % fs->block_size;
-    uint32_t orig_size = inode->i_size;
-    int x = 0;
-    if (hblk_off || block_offset == 0) {
-        tbuff = (uint8_t *) kmalloc_paging(sizeof(fs->super_blk.s_block_size), NULL);
-        uint32_t tblkno = 0;
-        ext2_get_file_blockid(fs, inode, block_offset, true, &tblkno);
-        dprintf("write hblk blkid:%x hblk_off:%x size:%x", tblkno, hblk_off,
-                MIN(fs->block_size - hblk_off, size - hblk_off));
-        ext2_read_block(fs, tblkno, 1, tbuff);
-        memcpy(&tbuff[hblk_off], buff, MIN(fs->block_size - hblk_off, size - hblk_off));
-        ext2_write_block(fs, tblkno, 1, tbuff);
+    uint32_t hblk_off = offset % block_size;
+    uint32_t off = 0, les = size;
+    dprintf("boff:%x bcou:%x", block_offset, block_count);
+    uint32_t x = block_offset;
+    if (hblk_off) {
+        if (!tbuff)
+            tbuff = (uint8_t *) kmalloc_paging(block_size, NULL);
+        CHK(ext2_read_file_block(fs, inode, x, true, tbuff), "");
+        uint32_t s = MIN(les, block_size - hblk_off);
+        dprintf("head dblk no:%x offset:%x size:%x", x, hblk_off, s);
+        memcpy(&tbuff[hblk_off], &buff[off], s);
+        CHK(ext2_write_file_block(fs, inode, x, tbuff), "");
+        les -= s;
+        off += s;
         x++;
     }
-    for (; x < block_count; x++) {
-        int err = ext2_write_file_block(fs, inode, block_offset + x, buff + x * fs->block_size);
-        if (err) {
-            return -1;
+    if (block_count > 0)
+        for (; x < block_offset + block_count; x++) {
+            CHK(ext2_write_file_block(fs, inode, x, &buff[off]), "");
+            les -= block_offset;
+            off += block_size;
         }
-        if (x == block_count - 1 && size % fblk_size != 0) {
-            uint32_t tblkno = 0;
-            ext2_get_file_blockid(fs, inode, block_offset + block_count, true, &tblkno);
-            ext2_read_block(fs, tblkno, 1, tbuff);
-            memcpy(tbuff, buff, MIN(fs->block_size, size - block_count * fs->super_blk.s_block_size));
-            ext2_write_block(fs, tblkno, 1, tbuff);
-        }
+    if (les) {
+        if (!tbuff)
+            tbuff = (uint8_t *) kmalloc_paging(block_size, NULL);
+        CHK(ext2_read_file_block(fs, inode, x, true, tbuff), "");
+        dprintf("footer dblk no:%x size:%x", x, les);
+        memcpy(tbuff, &buff[off], les);
+        CHK(ext2_write_file_block(fs, inode, x, tbuff), "");
+        off += les;
+
     }
-    if (offset + size > orig_size)
-        inode->i_size = offset + size;
-    return 0;
+    _err:
+    if (tbuff) {
+        //kfree(tbuff);
+    }
+    return off;
+
 }
 
 void ext2_test() {
@@ -611,7 +638,13 @@ int32_t ext2_fs_node_write(fs_node_t *node, __fs_special_t *fsp, uint32_t offset
     ASSERT(fs->magic == EXT2_MAGIC);
     ext2_inode_t inode;
     CHK(ext2_find_inote(fs, node->inode, &inode), "inode not exist");
-    return ext2_write_file(fs, &inode, offset, len, buff);
+    int32_t ret = ext2_write_file(fs, &inode, offset, len, buff);
+    if (offset + len > inode.i_size) {
+        dprintf("update inode %x size %x ==> %x", node->inode, inode.i_size, offset + len);
+        inode.i_size = offset + len;
+        CHK(ext2_update_inode(fs, node->inode, &inode), "");
+    }
+    return ret;
     _err:
     return -1;
 }
@@ -621,6 +654,8 @@ int32_t ext2_fs_node_read(fs_node_t *node, __fs_special_t *fsp, uint32_t offset,
     ASSERT(fs->magic == EXT2_MAGIC);
     ext2_inode_t inode;
     CHK(ext2_find_inote(fs, node->inode, &inode), "inode not exist");
+    int32_t ret = ext2_read_file(fs, &inode, offset, len, buff);
+    return ret;
     _err:
     return -1;
 }
