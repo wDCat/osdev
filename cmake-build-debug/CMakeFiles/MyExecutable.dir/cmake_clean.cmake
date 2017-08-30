@@ -27,6 +27,7 @@ file(REMOVE_RECURSE
   "CMakeFiles/MyExecutable.dir/fs/catmfs/catrfmt.c.o"
   "CMakeFiles/MyExecutable.dir/dev/blk_dev.c.o"
   "CMakeFiles/MyExecutable.dir/dev/serial.c.o"
+  "CMakeFiles/MyExecutable.dir/exec/elf/elfloader.c.o"
   "MyExecutable.pdb"
   "MyExecutable"
 )

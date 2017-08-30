@@ -204,6 +204,33 @@ dev/serial.c.s:
 	$(MAKE) -f CMakeFiles/MyExecutable.dir/build.make CMakeFiles/MyExecutable.dir/dev/serial.c.s
 .PHONY : dev/serial.c.s
 
+exec/elf/elfloader.o: exec/elf/elfloader.c.o
+
+.PHONY : exec/elf/elfloader.o
+
+# target to build an object file
+exec/elf/elfloader.c.o:
+	$(MAKE) -f CMakeFiles/MyExecutable.dir/build.make CMakeFiles/MyExecutable.dir/exec/elf/elfloader.c.o
+.PHONY : exec/elf/elfloader.c.o
+
+exec/elf/elfloader.i: exec/elf/elfloader.c.i
+
+.PHONY : exec/elf/elfloader.i
+
+# target to preprocess a source file
+exec/elf/elfloader.c.i:
+	$(MAKE) -f CMakeFiles/MyExecutable.dir/build.make CMakeFiles/MyExecutable.dir/exec/elf/elfloader.c.i
+.PHONY : exec/elf/elfloader.c.i
+
+exec/elf/elfloader.s: exec/elf/elfloader.c.s
+
+.PHONY : exec/elf/elfloader.s
+
+# target to generate assembly for a file
+exec/elf/elfloader.c.s:
+	$(MAKE) -f CMakeFiles/MyExecutable.dir/build.make CMakeFiles/MyExecutable.dir/exec/elf/elfloader.c.s
+.PHONY : exec/elf/elfloader.c.s
+
 fs/catmfs/catmfs.o: fs/catmfs/catmfs.c.o
 
 .PHONY : fs/catmfs/catmfs.o
@@ -897,6 +924,9 @@ help:
 	@echo "... dev/serial.o"
 	@echo "... dev/serial.i"
 	@echo "... dev/serial.s"
+	@echo "... exec/elf/elfloader.o"
+	@echo "... exec/elf/elfloader.i"
+	@echo "... exec/elf/elfloader.s"
 	@echo "... fs/catmfs/catmfs.o"
 	@echo "... fs/catmfs/catmfs.i"
 	@echo "... fs/catmfs/catmfs.s"

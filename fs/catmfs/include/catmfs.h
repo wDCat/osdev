@@ -10,14 +10,19 @@
 
 #define CATMFS_MAGIC 0x3366
 #define CATMFS_BLK 0xAA32
-typedef struct {
+#define CATMFS_ERR_NONE 0
+#define CATMFS_ERR_GEN 1
+#define CATMFS_ERR_IO 2
+#define CATMFS_ERR_NO_EMPTY_DIR 3
+typedef struct catmfs_inode {
     uint16_t magic;
     uint8_t type;/*FS_** */
     uint16_t permission;
     uint32_t size;
     uint32_t uid;
     uint32_t gid;
-    uint32_t reserved;
+    uint32_t reserved;/*DIR:child inodes count;FILE:undefined*/
+    struct catmfs_inode *finode;
     uint32_t singly_block;
     //data;
 } catmfs_inode_t;
@@ -35,6 +40,7 @@ typedef struct {
     uint32_t root_inode_id;
     uint32_t page_size;
     uint32_t max_singly_blks;
+    int8_t errno;
 } catmfs_special_t;
 
 void catmfs_create_fstype();

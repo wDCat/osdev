@@ -108,11 +108,13 @@ int vfs_mount(vfs_t *vfs, const char *path, fs_t *fs, void *dev) {
     mp->fsp = fs->mount(dev, &mp->root);
     dprintf("root inode:%x", mp->root.inode);
     if (mp->fsp == 0) {
-        dprintf("fail to mount %s to %s", fs->name, path);
+        deprintf("fail to mount %s to %s", fs->name, path);
+        return 1;
     }
     mp->fs = fs;
     strcpy(mp->path, path);
     mount_points_count++;
+    dprintf("%s mount to %s", fs->name, path);
     return 0;
 }
 
@@ -173,8 +175,18 @@ int32_t vfs_write(vfs_t *vfs, uint32_t offset, uint32_t size, uint8_t *buff) {
     return mp->fs->write(&vfs->current, mp->fsp, offset, size, buff);
 }
 
-int vfs_open(vfs_t *vfs, const char *name) {
+int vfs_rm(vfs_t *vfs) {
+    mount_point_t *mp;
+    char *rpath;
+    if (vfs_find_mount_point(vfs, vfs->path, &mp, &rpath)) {
+        deprintf("mount point not found:%s", vfs->path);
+        return -1;
+    }
+    return mp->fs->rm(&vfs->current, mp->fsp);
+}
 
+int vfs_open(vfs_t *vfs, const char *name) {
+    return -1;
 }
 
 void vfs_test() {
@@ -182,7 +194,7 @@ void vfs_test() {
     ext2_create_fstype();
     vfs_init(&test);
     catmfs_create_fstype();
-    vfs_mount(&test, "/", &ext2_fs, &dev);
+    vfs_mount(&test, "/", &catmfs, &dev);
     putf("[vfs]ROOTFS(CATMFS) mount to /\n");
     //pause();
     vfs_cd(&test, "/");
@@ -194,27 +206,40 @@ void vfs_test() {
     char *bigneko = (char *) kmalloc_paging(size, NULL);
     putf_const("bigneko:%x\n", bigneko);
     memset(bigneko, 'H', size);
-    int32_t a = vfs_write(&test, 0, size, bigneko);
+    int32_t a = vfs_write(&test, 0, 10, bigneko);
     kfree(bigneko);
     size = 0x2032;
     bigneko = (char *) kmalloc_paging(size, NULL);
-    putf_const("write[1]ret:%x", a);
+    putf_const("write[1]ret:%x\n", a);
     memset(bigneko, 'P', size);
-    a = vfs_write(&test, 1025, size / 2, bigneko);
-    putf_const("write[2]ret:%x", a);
-    char nya[250];
-    memset(nya, 0, 250);
-    ASSERT(vfs_read(&test, 0xFE4, 20, nya) == 20);
-    putf("read result:%s", nya);
-    return;
+    a = vfs_write(&test, 10, 10, bigneko);
+    putf_const("write[2]ret:%x\n", a);
+    char *nya = (char *) kmalloc_paging(size, NULL);
+    memset(nya, 0, 2032);
+    int ret = vfs_read(&test, 10, 10, nya);
+    putnf("[%x][%d]read result:%s", 100, nya, ret, nya);
+
     ASSERT(vfs_make(&test, FS_FILE, STR("nemkoo")) == 0);
     ASSERT(vfs_make(&test, FS_FILE, STR("nemykoo")) == 0);
     ASSERT(vfs_make(&test, FS_FILE, STR("akami")) == 0);
     ASSERT(vfs_make(&test, FS_DIRECTORY, STR("neko")) == 0);
+    vfs_cd(&test, "/neko");
+    ASSERT(vfs_make(&test, FS_FILE, STR("akami2")) == 0);
+    vfs_cd(&test, "/neko/akami2");
+    ASSERT(vfs_rm(&test) == 0);
+    vfs_cd(&test, "/neko");
+    ASSERT(vfs_rm(&test) == 0);
+    vfs_cd(&test, "/");
+    int count = vfs_ls(&test, dirs, 20);
+    putf("[vfs]there are %x files in / [%x]\n", count, test.current.inode);
+    for (int x = 0; x < count; x++) {
+        putf("[file]%s type:%x inode:%x\n", dirs[x].name, dirs[x].type, dirs[x].node);
+    }
+    ASSERT(vfs_make(&test, FS_DIRECTORY, STR("neko")) == 0);
     vfs_cd(&test, "/neko/");
     ASSERT(vfs_make(&test, FS_FILE, STR("s1")) == 0);
     ASSERT(vfs_make(&test, FS_DIRECTORY, STR("ext2")) == 0);
-    int count = vfs_ls(&test, dirs, 20);
+    count = vfs_ls(&test, dirs, 20);
     putf("[vfs]there are %x files in /neko [%x]\n", count, test.current.inode);
     for (int x = 0; x < count; x++) {
         putf("[file]%s type:%x inode:%x\n", dirs[x].name, dirs[x].type, dirs[x].node);

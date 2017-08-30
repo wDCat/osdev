@@ -1,4 +1,4 @@
-INCLUDE=-I./include -I./dev/include -I./fs/ext2/include -I./fs/vfs/include -I./fs/catmfs/include
+INCLUDE=-I./include -I./dev/include -I./fs/ext2/include -I./fs/vfs/include -I./fs/catmfs/include -I./exec/elf/include
 C_FLAGS= -fdiagnostics-color=always -fno-stack-protector -m32 -std=c99 -Wall -O0 -O -fstrength-reduce -fomit-frame-pointer -D _BUILD_TIME=`date +%s` -finline-functions -nostdinc -fno-builtin $(INCLUDE) -c
 LD_FLAGS=  -n -m elf_i386 -A elf32-i386 -nostdlib -T linker.ld
 LOOP_DEVICE_ID=5
@@ -32,6 +32,7 @@ all:
 	gcc $(C_FLAGS) -o catmfs.c.o fs/catmfs/catmfs.c
 	gcc $(C_FLAGS) -o ext2.c.o fs/ext2/ext2.c
 	gcc $(C_FLAGS) -o vfs.c.o fs/vfs/vfs.c
+	gcc $(C_FLAGS) -o elfloader.c.o exec/elf/elfloader.c
 	#Copy files and remount
 	ld $(LD_FLAGS) -o kernel.bin start.o *.asm.o *.c.o
 	sudo mount /dev/mapper/loop$(LOOP_DEVICE_ID)p1 /home/dcat/osdev/bgrub/ || echo ""

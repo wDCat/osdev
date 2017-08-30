@@ -262,7 +262,9 @@ uint32_t init_esp;
 
 int little_test() {
     extern void vfs_test();
-    vfs_test();
+    extern void elf_test();
+    elf_test();
+    //vfs_test();
     //dprintf("done.");
     for (;;);
 }

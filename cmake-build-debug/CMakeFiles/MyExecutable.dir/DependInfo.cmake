@@ -7,6 +7,7 @@ set(CMAKE_DEPENDS_CHECK_C
   "/home/dcat/osdev/w2/contious_heap.c" "/home/dcat/osdev/w2/cmake-build-debug/CMakeFiles/MyExecutable.dir/contious_heap.c.o"
   "/home/dcat/osdev/w2/dev/blk_dev.c" "/home/dcat/osdev/w2/cmake-build-debug/CMakeFiles/MyExecutable.dir/dev/blk_dev.c.o"
   "/home/dcat/osdev/w2/dev/serial.c" "/home/dcat/osdev/w2/cmake-build-debug/CMakeFiles/MyExecutable.dir/dev/serial.c.o"
+  "/home/dcat/osdev/w2/exec/elf/elfloader.c" "/home/dcat/osdev/w2/cmake-build-debug/CMakeFiles/MyExecutable.dir/exec/elf/elfloader.c.o"
   "/home/dcat/osdev/w2/fs/catmfs/catmfs.c" "/home/dcat/osdev/w2/cmake-build-debug/CMakeFiles/MyExecutable.dir/fs/catmfs/catmfs.c.o"
   "/home/dcat/osdev/w2/fs/catmfs/catrfmt.c" "/home/dcat/osdev/w2/cmake-build-debug/CMakeFiles/MyExecutable.dir/fs/catmfs/catrfmt.c.o"
   "/home/dcat/osdev/w2/fs/ext2/ext2.c" "/home/dcat/osdev/w2/cmake-build-debug/CMakeFiles/MyExecutable.dir/fs/ext2/ext2.c.o"
@@ -42,6 +43,7 @@ set(CMAKE_C_TARGET_INCLUDE_PATH
   "../fs/catmfs/include"
   "../fs/ext2/include"
   "../fs/vfs/include"
+  "../exec/elf/include"
   )
 
 # Targets to which this target links.

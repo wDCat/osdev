@@ -34,17 +34,9 @@ uint32_t kmalloc_internal(uint32_t sz, bool align, uint32_t *phys, heap_t *heap)
     if (heap) {
         void *ret = halloc(heap, sz, align);
         if (!ret) PANIC("[kmalloc]Out of heap.");
-        //putf_const("[%x][%x]", ret, sz);
         if (phys != 0) {
-            //FIXME  错误的phys返回值  使用 get_physical_address  代替
-            /*
-            page_t *page = get_page((uint32_t) ret, 0, kernel_dir);
-            ASSERT(page->frame);
-            *phys = page->frame * 0x1000 + (uint32_t) ret & 0xFFF;*/
             *phys = get_physical_address(ret);
-            //putf_const("[%x]", *phys);
         }
-        //putf_const("-");
         return ret;
     } else {
         if (align && (heap_placement_addr & 0xFFFFF000)) {
@@ -63,8 +55,9 @@ uint32_t kmalloc_internal(uint32_t sz, bool align, uint32_t *phys, heap_t *heap)
 
 void kfree(void *ptr) {
     ASSERT(kernel_pheap);
-    putf_const("[+][kfree]try to free:%x", ptr);
+    dprintf("try to free:%x", ptr);
     if (KPHEAP_START < (uint32_t) ptr < KPHEAP_START + KPHEAP_SIZE) {
         pheap_free(kernel_pheap, ptr);
-    } else PANIC("[-][kfree]try to free a unknown[%x] memory space.", ptr);
+    } else
+        deprintf("try to free a unknown[%x] memory space.", ptr);
 }

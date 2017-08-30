@@ -49,6 +49,7 @@
 					<Add directory="/home/dcat/osdev/w2/fs/catmfs/include"/>
 					<Add directory="/home/dcat/osdev/w2/fs/ext2/include"/>
 					<Add directory="/home/dcat/osdev/w2/fs/vfs/include"/>
+					<Add directory="/home/dcat/osdev/w2/exec/elf/include"/>
 					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/5/include"/>
 					<Add directory="/usr/local/include"/>
 					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/5/include-fixed"/>
@@ -77,6 +78,7 @@
 					<Add directory="/home/dcat/osdev/w2/fs/catmfs/include"/>
 					<Add directory="/home/dcat/osdev/w2/fs/ext2/include"/>
 					<Add directory="/home/dcat/osdev/w2/fs/vfs/include"/>
+					<Add directory="/home/dcat/osdev/w2/exec/elf/include"/>
 					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/5/include"/>
 					<Add directory="/usr/local/include"/>
 					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/5/include-fixed"/>
@@ -101,6 +103,12 @@
 			<Option target="MyExecutable"/>
 		</Unit>
 		<Unit filename="/home/dcat/osdev/w2/dev/serial.c">
+			<Option target="MyExecutable"/>
+		</Unit>
+		<Unit filename="/home/dcat/osdev/w2/exec/elf/elfloader.c">
+			<Option target="MyExecutable"/>
+		</Unit>
+		<Unit filename="/home/dcat/osdev/w2/exec/elf/include">
 			<Option target="MyExecutable"/>
 		</Unit>
 		<Unit filename="/home/dcat/osdev/w2/fs/catmfs/catmfs.c">

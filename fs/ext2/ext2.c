@@ -419,15 +419,45 @@ int ext2_read_file_block(ext2_t *fs, ext2_inode_t *inode, uint32_t block_no, boo
 /**
  * @return read bytes*/
 int ext2_read_file(ext2_t *fs, ext2_inode_t *inode, uint32_t offset, uint32_t size, uint8_t *buff) {
-    uint32_t block_offset = offset / fs->block_size;
-    uint32_t block_count = size / fs->block_size;
-    for (int x = 0; x < block_count; x++) {
-        int err = ext2_read_file_block(fs, inode, block_offset + x, false, buff + x * fs->block_size);
-        if (err) {
-            return -1;
-        }
+    uint32_t block_size = fs->block_size;
+    uint32_t block_offset = offset / block_size;
+    uint32_t block_count = size / block_size;
+    uint8_t *tbuff = 0;
+    uint32_t hblk_off = offset % block_size;
+    uint32_t off = 0, les = size;
+    dprintf("boff:%x bcou:%x", block_offset, block_count);
+    uint32_t x = block_offset;
+    if (hblk_off) {
+        if (!tbuff)
+            tbuff = (uint8_t *) kmalloc_paging(block_size, NULL);
+        CHK(ext2_read_file_block(fs, inode, x, true, tbuff), "");
+        uint32_t s = MIN(les, block_size - hblk_off);
+        dprintf("head dblk no:%x offset:%x size:%x", x, hblk_off, s);
+        memcpy(&buff[off], &tbuff[hblk_off], s);
+        les -= s;
+        off += s;
+        x++;
     }
-    return size;
+    if (block_count > 0)
+        for (; x < block_offset + block_count; x++) {
+            CHK(ext2_read_file_block(fs, inode, x, false, &buff[off]), "");
+            les -= block_size;
+            off += block_size;
+        }
+    if (les) {
+        if (!tbuff)
+            tbuff = (uint8_t *) kmalloc_paging(block_size, NULL);
+        CHK(ext2_read_file_block(fs, inode, x, false, tbuff), "");
+        dprintf("footer dblk no:%x size:%x", x, les);
+        memcpy(&buff[off], tbuff, les);
+        off += les;
+
+    }
+    _err:
+    if (tbuff) {
+        kfree(tbuff);
+    }
+    return off;
 }
 
 inline uint32_t ext2_get_block_section(ext2_t *fs, uint32_t blk_no, uint8_t section_no) {
@@ -542,7 +572,7 @@ int32_t ext2_write_file(ext2_t *fs, ext2_inode_t *inode, uint32_t offset, uint32
     }
     _err:
     if (tbuff) {
-        //kfree(tbuff);
+        kfree(tbuff);
     }
     return off;
 
