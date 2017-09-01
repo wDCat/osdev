@@ -13,41 +13,6 @@ ext2_t ext2_fs_test;
 blk_dev_t dev;
 fs_t ext2_fs;
 
-int ata_section_read(uint32_t offset, uint32_t len, uint8_t *buff) {
-    if (offset % SECTION_SIZE != 0) {
-        PANIC("offset and len must be block align!");
-    }
-    uint32_t blk_no = (offset + 0x100000) / SECTION_SIZE;
-    uint32_t blk_count = len / SECTION_SIZE;
-    uint8_t err;
-    uint8_t tbuff[SECTION_SIZE];
-    for (uint32_t x = 0; x < blk_count; x++) {
-        err = ide_ata_access(ATA_READ, 1, blk_no + x, 1, buff + x * SECTION_SIZE);
-        ASSERT(err == 0);
-    }
-    if (len % SECTION_SIZE != 0) {
-        err = ide_ata_access(ATA_READ, 1, blk_no + blk_count, 1, tbuff);
-        ASSERT(err == 0);
-        dprintf("copy %x to %x size %x", buff + (blk_count) * SECTION_SIZE, buff, len % SECTION_SIZE);
-        memcpy(buff + (blk_count) * SECTION_SIZE, tbuff, len % SECTION_SIZE);
-        //for (;;);
-    }
-    return err;
-}
-
-int ata_section_write(uint32_t offset, uint32_t len, uint8_t *buff) {
-    if (offset % SECTION_SIZE != 0 || len % SECTION_SIZE != 0) {
-        PANIC("offset and len must be block align!");
-    }
-    uint32_t blk_no = (offset + 0x100000) / SECTION_SIZE;
-    uint32_t blk_count = len / SECTION_SIZE;
-    uint8_t err;
-    for (uint32_t x = 0; x < blk_count; x++) {
-        err = ide_ata_access(ATA_WRITE, 1, blk_no + x, 1, buff + x * SECTION_SIZE);
-        ASSERT(err == 0);
-    }
-    return err;
-}
 
 int ext2_read_block(ext2_t *fs, uint32_t base, uint32_t count, uint8_t *buff) {
     uint32_t offset = base * fs->block_size;
@@ -585,9 +550,6 @@ int32_t ext2_write_file(ext2_t *fs, ext2_inode_t *inode, uint32_t offset, uint32
 
 void ext2_test() {
     //Test code...
-    dev.read = ata_section_read;
-    dev.write = ata_section_write;
-    strcpy(dev.name, "DCAT DISK1");
     ext2_init(&ext2_fs_test, &dev);
     ext2_inode_t node, *sillynode;
     uint8_t *buff = kmalloc_paging(1024, NULL);
@@ -833,7 +795,4 @@ void ext2_create_fstype() {
     ext2_fs.finddir = ext2_fs_node_finddir;
     ext2_fs.getnode = ext2_fs_node_get_node;
     ext2_fs.make = ext2_fs_node_make;
-    //Test
-    dev.read = ata_section_read;
-    dev.write = ata_section_write;
 }

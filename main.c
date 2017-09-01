@@ -4,6 +4,10 @@
 #include <heap_array_list.h>
 #include <ide.h>
 #include <page.h>
+#include <exec.h>
+#include <catmfs.h>
+#include <catrfmt.h>
+#include <catrfmt_def.h>
 #include "gdt.h"
 #include "idt.h"
 #include "include/system.h"
@@ -99,6 +103,7 @@ void install_all() {
     syscall_install();
     proc_install();
     vfs_install();
+    blk_dev_install();
 }
 
 void str_test() {
@@ -114,17 +119,17 @@ void str_test() {
     putln(b);
 }
 
-/*
+
 void catmfs_test(uint32_t addr) {
-    catmfs_t *fs = catmfs_init(addr);
+    catrfmt_t *fs = catrfmt_init(addr);
     putf_const("init done.%x", fs);
     fs_node_t *node;
-    catmfs_dumpfilelist(fs);
-    if (catmfs_findbyname(fs, STR("neko.1"), &node)) {
+    catrfmt_dumpfilelist(fs);
+    if (catrfmt_findbyname(fs, STR("neko.1"), &node)) {
         putf(STR("found:%s\n"), node->name);
         char data[250];
         memset(data, 0xCC, sizeof(char) * 250);
-        uint32_t count = read_fs(node, 0, 200, data);
+        uint32_t count = catrfmt_read(node, 0, 200, data);
         data[count] = '\0';
         putf(STR("[%d]read data:"), count);
         puts(data);
@@ -132,11 +137,11 @@ void catmfs_test(uint32_t addr) {
     } else {
         PANIC("file not found.")
     }
-    if (catmfs_findbyname(fs, STR("a.out"), &node)) {
+    if (catrfmt_findbyname(fs, STR("a.out"), &node)) {
         putf(STR("found:%s\n"), node->name);
         char data[0x1000];
         memset(data, 0xCC, sizeof(char) * 0x1000);
-        uint32_t count = read_fs(node, 0, 0x1000, data);
+        uint32_t count = catrfmt_read(node, 0, 0x1000, data);
         data[count] = '\0';
         //putf_const("now exec it.");
         alloc_frame(get_page(0xB0000000, true, current_dir), false, false);
@@ -148,7 +153,6 @@ void catmfs_test(uint32_t addr) {
     }
 }
 
-*/
 void user_app() {
     syscall_helloworld();
     syscall_screen_print(STR("[]Hello DCat~"));
@@ -222,9 +226,6 @@ void usermode() {
     __asm__ __volatile__("mov %%esp, %0" : "=r" (esp));
     __asm__ __volatile__("mov %%ebp, %0" : "=r" (ebp));
     set_kernel_stack(esp);
-    putf_const("syscall_fork[%x][%x]", syscall_fork, esp);
-    //enter_user_mode();
-    //syscall_hello_switcher(1);
     long a;
     __asm__ __volatile__("int $0x60" : "=a" (a) : "0" (3));//It will enter user mode and clear the stack.
     //Never exec..
@@ -262,11 +263,7 @@ uint32_t init_esp;
 #endif
 
 int little_test() {
-    extern void vfs_test();
-    extern void elf_test();
-    elf_test();
-    //vfs_test();
-    //dprintf("done.");
+    usermode();
     for (;;);
 }
 
@@ -305,19 +302,8 @@ int main(multiboot_info_t *mul_arg, uint32_t init_esp_arg) {
     putf_const("[+] Built Time: %d \n", _BUILD_TIME);
     putln_const("[+] Now enable IRQs");
     sti();
-    //dumphex("mod count:", mul.mods_count);
-    //dumphex("initrd_start:", initrd_start);
-    //dumphex("initrd_end:", initrd_end);
-    /*
-    uint8_t *initrd_raw = (uint8_t *) initrd_start;
-    for (int x = 0; x < initrd_end - initrd_start; x++) {
-        putc(initrd_raw[x]);
-    }*/
-    //catmfs_test(initrd_start);
-    //delay(2);
-    //usermode();
-    //ide_test();
     ide_initialize(0x1F0, 0x3F6, 0x170, 0x376, 0x000);
+    mount_rootfs(initrd_start);
     move_kernel_stack(0xBB0000, 0x10000);
     puts_const("[+] main done.");
     for (;;);

@@ -3,7 +3,7 @@
 //
 #include <str.h>
 #include <idt.h>
-#include "include/proc.h"
+#include "proc/elf/include/proc.h"
 #include "include/syscall.h"
 #include "include/timer.h"
 

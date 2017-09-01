@@ -9,7 +9,6 @@
 #include "superblk.h"
 #include "blk_dev.h"
 
-#define SECTION_SIZE 512
 #define EXT2_NDIR_BLOCKS 12
 #define EXT2_SIND_BLOCK EXT2_NDIR_BLOCKS //一层
 #define EXT2_DIND_BLOCK (EXT2_SIND_BLOCK + 1) //二层
@@ -94,10 +93,6 @@ typedef struct {
     uint8_t *block;
     ext2_dir_t *cur_dir;
 } ext2_dir_iterator_t;
-#define CHK(fun, msg, args...) if(fun){\
-deprintf("CHK::[%s] " #fun " Failed:" msg,__func__,##args);\
-goto _err;\
-}
 
 int ext2_init(ext2_t *fs_out, blk_dev_t *dev);
 

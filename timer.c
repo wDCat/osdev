@@ -4,6 +4,7 @@
 
 #include <str.h>
 #include <schedule.h>
+#include <proc.h>
 #include "include/timer.h"
 #include "include/irqs.h"
 
@@ -17,9 +18,7 @@ void get_time_count(uint32_t *data) {
 
 void timer_handler(struct regs *r) {
     cli();
-    //dprintf("timer routine.");
     timer_count++;
-    //if (timer_count >= 0xFFFFFFFF)timer_count = 0;
     if (timer_count % 36 == 0) {
         do_schedule(r);
     }
@@ -27,10 +26,10 @@ void timer_handler(struct regs *r) {
 }
 
 void delay(unsigned long sec) {
+    dprintf("proc %x delay %ds.", getpid(), sec);
     uint32_t tm;
     get_time_count(&tm);
     uint32_t target_timer_count = tm + sec * 18;
-    //putf_const("[C]target:%x cur:%x\n", target_timer_count, tm);
     unsigned long last_timer = 0;
     while (tm < target_timer_count) {
         get_time_count(&tm);

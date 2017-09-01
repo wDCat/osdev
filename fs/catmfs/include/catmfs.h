@@ -43,6 +43,8 @@ typedef struct {
     int8_t errno;
 } catmfs_special_t;
 
+int catmfs_fs_node_load_catrfmt(fs_node_t *node, __fs_special_t *fsp_, uint32_t start_addr);
+
 void catmfs_create_fstype();
 
 #endif //W2_CATMFS_H

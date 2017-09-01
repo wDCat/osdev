@@ -2,8 +2,8 @@
 // Created by dcat on 4/3/17.
 //
 
-#ifndef W2_CATMFS_H
-#define W2_CATMFS_H
+#ifndef W2_CATMFSM_H
+#define W2_CATMFSM_H
 
 #include "system.h"
 #include "kmalloc.h"
@@ -30,4 +30,4 @@ uint8_t catrfmt_findbyname(catrfmt_t *fs, char *fn, fs_node_t **fs_node_out);
 
 void catrfmt_dumpfilelist(catrfmt_t *fs);
 
-#endif //W2_CATMFS_H
+#endif //W2_CATMFSM_H

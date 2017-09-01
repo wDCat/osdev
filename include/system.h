@@ -96,4 +96,8 @@ strformatw(serial_write, COM1,"[D][%s] " str "\n",__func__,##args);\
 #define deprintf(str, args...) ({\
 strformatw(serial_write, COM1,"[ERROR][%s] " str "\n",__func__,##args);\
 })
+#define CHK(fun, msg, args...) if(fun){\
+deprintf("CHK::" #fun " Failed:" msg,##args);\
+goto _err;\
+}
 #endif

@@ -6,7 +6,7 @@
 #define W2_SYSCALL_H
 
 #include "isrs.h"
-#include "proc.h"
+#include "../proc/elf/include/proc.h"
 
 #define _define_syscall0(fn, num) long syscall_##fn()
 #define _define_syscall1(fn, num, P1) long syscall_##fn(P1 p1)

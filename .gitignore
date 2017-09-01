@@ -58,3 +58,6 @@ CTestTestfile.cmake
 cmake-build-debug/CMakeFiles/CMakeTmp/
 cmake-build-debug/
 kernel.bin
+kernel.*.bin
+kernel.sym
+*.o

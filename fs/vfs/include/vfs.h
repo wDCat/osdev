@@ -60,6 +60,10 @@ file_handle_t global_fh_table[MAX_FILE_HANDLES];
 
 void vfs_install();
 
+void mount_rootfs(uint32_t initrd);
+
+int load_initrd(uint32_t initrd);
+
 void vfs_init(vfs_t *vfs);
 
 int vfs_cd(vfs_t *vfs, const char *path);
@@ -73,6 +77,10 @@ int vfs_make(vfs_t *vfs, uint8_t type, const char *name);
 int32_t vfs_read(vfs_t *vfs, uint32_t offset, uint32_t size, uchar_t *buff);
 
 int8_t sys_open(const char *name, uint8_t mode);
+
+int8_t kclose(uint32_t pid, int8_t fd);
+
+int8_t kopen(uint32_t pid, const char *name, uint8_t mode);
 
 int32_t sys_read(int8_t fd, int32_t size, uchar_t *buff);
 

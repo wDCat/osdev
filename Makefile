@@ -1,9 +1,8 @@
 INCLUDE=-I./include -I./dev/include -I./fs/ext2/include \
--I./fs/vfs/include -I./fs/catmfs/include -I./exec/elf/include \
--I./exec/include
-#-fdiagnostics-color=always
+-I./fs/vfs/include -I./fs/catmfs/include -I./proc/elf/include \
+-I./proc/include
 C_FLAGS= -fno-stack-protector -m32 -std=c99 -Wall -O0 -O -fstrength-reduce -fomit-frame-pointer -D _BUILD_TIME=`date +%s` -finline-functions -nostdinc -fno-builtin $(INCLUDE) -c
-LD_FLAGS=  -n -m elf_i386 -A elf32-i386 -nostdlib -T linker.ld
+LD_FLAGS=  -n -m elf_i386 -A elf32-i386 -nostdlib
 LOOP_DEVICE_ID=5
 cfiles :=$(wildcard *.c)
 pre:
@@ -23,8 +22,10 @@ fsck_disk:
 	sudo fsck -f /dev/mapper/loop3p1
 all:
 	rm -rf *.o
+	#build asm
 	nasm -f elf -o start.o asm/start.asm
 	nasm -f elf -o syscall.asm.o asm/syscall.asm
+	#build c
 	for name in `ls *.c`; \
 	do \
 	gcc $(C_FLAGS) -o $$name.o $$name;\
@@ -35,10 +36,19 @@ all:
 	gcc $(C_FLAGS) -o catmfs.c.o fs/catmfs/catmfs.c
 	gcc $(C_FLAGS) -o ext2.c.o fs/ext2/ext2.c
 	gcc $(C_FLAGS) -o vfs.c.o fs/vfs/vfs.c
-	gcc $(C_FLAGS) -o elfloader.c.o exec/elf/elfloader.c
-	gcc $(C_FLAGS) -o exec.c.o exec/exec.c
+	gcc $(C_FLAGS) -o elfloader.c.o proc/elf/elfloader.c
+	gcc $(C_FLAGS) -o exec.c.o proc/exec.c
+	gcc $(C_FLAGS) -o proc.c.o proc/proc.c
+	gcc $(C_FLAGS) -o ide.c.o dev/ide.c
+	#build linker script
+	gcc -E -P linker_script/linker_script.c -D__keep_symbol__ -o kernelsym.ld.o
+	gcc -E -P linker_script/linker_script.c -o kernel.ld.o
+	#link them or zelda them
+	ld $(LD_FLAGS) -T kernelsym.ld.o -o kernel.sym.bin start.o *.asm.o *.c.o
+	ld $(LD_FLAGS) -T kernel.ld.o -o kernel.bin start.o *.asm.o *.c.o
+	#Export symbol table
+	nm -v kernel.sym.bin > kernel.sym
 	#Copy files and remount
-	ld $(LD_FLAGS) -o kernel.bin start.o *.asm.o *.c.o
 	sudo mount /dev/mapper/loop$(LOOP_DEVICE_ID)p1 /home/dcat/osdev/bgrub/ || echo ""
 	sudo rm -f /home/dcat/osdev/bgrub/kernel.bin
 	sudo cp kernel.bin /home/dcat/osdev/bgrub/
