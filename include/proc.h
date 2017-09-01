@@ -8,6 +8,7 @@
 #include "intdef.h"
 #include "page.h"
 #include "tss.h"
+#include "vfs.h"
 
 #define MAX_PROC_COUNT 256
 /*"pop %eax;" \
@@ -55,6 +56,8 @@ typedef struct {
     ldt_limit_entry_t *ldt_table;
     uint8_t ldt_table_count;
     uint32_t reserved_page;
+    vfs_t vfs;
+    file_handle_t fh[MAX_FILE_HANDLES];
 } pcb_t;
 typedef struct {
     uint32_t count;

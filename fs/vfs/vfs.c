@@ -8,13 +8,27 @@
 #include <kmalloc.h>
 #include <catmfs.h>
 #include <vfs.h>
-#include "include/vfs.h"
+#include "proc.h"
 
 fs_node_t fs_root;
 vfs_t test;
 extern fs_t ext2_fs;
 extern fs_t catmfs;
 extern blk_dev_t dev;
+
+void stdio_install() {
+    pcb_t *pcb = getpcb(1);
+    pcb->fh[0].present = 1;
+    pcb->fh[1].present = 1;
+    pcb->fh[2].present = 1;
+}
+
+void vfs_install() {
+    memset(mount_points, 0, sizeof(mount_point_t) * MAX_MOUNT_POINTS);
+    mount_points_count = 0;
+    memset(global_fh_table, 0, sizeof(file_handle_t) * MAX_FILE_HANDLES);
+    stdio_install();
+}
 
 void vfs_init(vfs_t *vfs) {
     memset(vfs, 0, sizeof(vfs_t));
@@ -48,7 +62,8 @@ inline int vfs_cpynode(fs_node_t *target, fs_node_t *src) {
     memcpy(target, src, sizeof(fs_node_t));
 }
 
-int vfs_cd(vfs_t *vfs, const char *path) {
+
+int vfs_get_node(vfs_t *vfs, const char *path, fs_node_t *node) {
     dprintf("target:%s", path);
     fs_node_t cur;
     int x = 0;
@@ -63,8 +78,8 @@ int vfs_cd(vfs_t *vfs, const char *path) {
     }
     if (tlen == 1 && path[0] == '/') {
         dprintf("cd to root");
-        vfs_cpynode(&vfs->current, &mp->root);
-        goto _succ;
+        vfs_cpynode(node, &mp->root);
+        return 0;
     }
     vfs_cpynode(&cur, &mp->root);
     int slen = strlen(rpath);
@@ -83,14 +98,21 @@ int vfs_cd(vfs_t *vfs, const char *path) {
         dprintf("cd fn:%s", name);
         fs_node_t tmp;
         if (mp->fs->finddir(&cur, mp->fsp, name, &tmp)) {
-            dprintf("dir not found:%s", name);
+            dprintf("obj not found:%s", name);
             return 1;
         }
         vfs_cpynode(&cur, &tmp);
         x += len + 1;
     }
-    vfs_cpynode(&vfs->current, &cur);
-    _succ:
+    vfs_cpynode(node, &cur);
+    return 0;
+}
+
+int vfs_cd(vfs_t *vfs, const char *path) {
+    if (vfs_get_node(vfs, path, &vfs->current)) {
+        deprintf("no such file or dir:%s", path);
+        return 1;
+    }
     if (vfs->current.flags == FS_DIRECTORY) {
         dprintf("cd to dir:%s", path);
         vfs_cpynode(&vfs->current_dir, &vfs->current);
@@ -101,6 +123,10 @@ int vfs_cd(vfs_t *vfs, const char *path) {
     strcpy(vfs->path, path);
     dprintf("%s inode:%x", path, vfs->current.inode);
     return 0;
+}
+
+void vfs_cd_pdir(vfs_t *vfs) {
+    vfs_cpynode(&vfs->current, &vfs->current_dir);
 }
 
 int vfs_mount(vfs_t *vfs, const char *path, fs_t *fs, void *dev) {
@@ -147,7 +173,7 @@ inline int vfs_touch(vfs_t *vfs, const char *name) {
     return vfs_make(vfs, FS_FILE, name);
 }
 
-int32_t vfs_read(vfs_t *vfs, uint32_t offset, uint32_t size, uint8_t *buff) {
+int32_t vfs_read(vfs_t *vfs, uint32_t offset, uint32_t size, uchar_t *buff) {
     mount_point_t *mp;
     char *rpath;
     if (vfs_find_mount_point(vfs, vfs->path, &mp, &rpath)) {
@@ -161,7 +187,7 @@ int32_t vfs_read(vfs_t *vfs, uint32_t offset, uint32_t size, uint8_t *buff) {
     return mp->fs->read(&vfs->current, mp->fsp, offset, size, buff);
 }
 
-int32_t vfs_write(vfs_t *vfs, uint32_t offset, uint32_t size, uint8_t *buff) {
+int32_t vfs_write(vfs_t *vfs, uint32_t offset, uint32_t size, uchar_t *buff) {
     mount_point_t *mp;
     char *rpath;
     if (vfs_find_mount_point(vfs, vfs->path, &mp, &rpath)) {
@@ -185,11 +211,90 @@ int vfs_rm(vfs_t *vfs) {
     return mp->fs->rm(&vfs->current, mp->fsp);
 }
 
-int vfs_open(vfs_t *vfs, const char *name) {
-    return -1;
+int8_t sys_open(const char *name, uint8_t mode) {
+    pcb_t *pcb = getpcb(getpid());
+    const char *path = name;
+    mount_point_t *mp;
+    int8_t fd = -1;
+    for (int8_t x = 0; x < MAX_FILE_HANDLES; x++) {
+        if (!pcb->fh[x].present) {
+            fd = x;
+            break;
+        }
+    }
+    if (fd == -1) {
+        deprintf("cannot open more than %x files.", MAX_FILE_HANDLES);
+        return -1;
+    }
+    file_handle_t *fh = &pcb->fh[fd];
+    if (vfs_get_node(&pcb->vfs, path, &fh->node)) {
+        deprintf("no such file or dir:%s", name);
+        return -1;
+    }
+    if (vfs_find_mount_point(&pcb->vfs, path, &mp, NULL)) {
+        dprintf("mount point not found:%s", path);
+        return 1;
+    }
+    fh->present = 1;
+    fh->mode = mode;
+    fh->mp = mp;
+    dprintf("proc %x open %s fd:%x", getpid(), path, fd);
+    return fd;
+}
+
+int sys_close(int8_t fd) {
+    pcb_t *pcb = getpcb(getpid());
+    if (!pcb->fh[fd].present) {
+        deprintf("cannot close a closed file:%x", fd);
+        return -1;
+    }
+    pcb->fh[fd].present = 0;
+    return 0;
+}
+
+int32_t kread(uint32_t pid, int8_t fd, uint32_t offset, int32_t size, uchar_t *buff) {
+    pcb_t *pcb = getpcb(pid);
+    file_handle_t *fh = &pcb->fh[fd];
+    if (!fh->present) {
+        deprintf("fd %x not present.", fd);
+        return -1;
+    }
+    if (fh->mp == 0) {
+        deprintf("[%x]mount point not found.", fd);
+        return -1;
+    }
+    int32_t ret = fh->mp->fs->read(&fh->node, fh->mp->fsp, offset, size, buff);
+
+    return ret;
+}
+
+int32_t sys_read(int8_t fd, int32_t size, uchar_t *buff) {
+    pcb_t *pcb = getpcb(getpid());
+    file_handle_t *fh = &pcb->fh[fd];
+    int32_t ret = kread(getpid(), fd, fh->offset, size, buff);
+    fh->offset += ret;
+    return ret;
 }
 
 void vfs_test() {
+    ext2_create_fstype();
+    vfs_init(&test);
+    catmfs_create_fstype();
+    vfs_mount(&test, "/", &ext2_fs, &dev);
+
+    putf("[vfs]ROOTFS(CATMFS) mount to /\n");
+    putf("[vfs]proc pid:%x\n", getpid());
+    int fd = sys_open("/a.elf", 0);
+    putf("[vfs]open fd:%x\n", fd);
+    uchar_t *d = (uchar_t *) kmalloc_paging(0x4000, NULL);
+    putf_const("data:%x\n", d);
+    putf_const("read %x bytes\n", sys_read(fd, 0x4000, d));
+    d[10] = 0;
+    putf(d);
+    for (;;);
+}
+
+void vfs_test_old() {
     dirent_t *dirs = (dirent_t *) kmalloc_paging(0x2000, NULL);
     ext2_create_fstype();
     vfs_init(&test);

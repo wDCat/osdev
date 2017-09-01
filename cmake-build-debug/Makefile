@@ -231,6 +231,33 @@ exec/elf/elfloader.c.s:
 	$(MAKE) -f CMakeFiles/MyExecutable.dir/build.make CMakeFiles/MyExecutable.dir/exec/elf/elfloader.c.s
 .PHONY : exec/elf/elfloader.c.s
 
+exec/exec.o: exec/exec.c.o
+
+.PHONY : exec/exec.o
+
+# target to build an object file
+exec/exec.c.o:
+	$(MAKE) -f CMakeFiles/MyExecutable.dir/build.make CMakeFiles/MyExecutable.dir/exec/exec.c.o
+.PHONY : exec/exec.c.o
+
+exec/exec.i: exec/exec.c.i
+
+.PHONY : exec/exec.i
+
+# target to preprocess a source file
+exec/exec.c.i:
+	$(MAKE) -f CMakeFiles/MyExecutable.dir/build.make CMakeFiles/MyExecutable.dir/exec/exec.c.i
+.PHONY : exec/exec.c.i
+
+exec/exec.s: exec/exec.c.s
+
+.PHONY : exec/exec.s
+
+# target to generate assembly for a file
+exec/exec.c.s:
+	$(MAKE) -f CMakeFiles/MyExecutable.dir/build.make CMakeFiles/MyExecutable.dir/exec/exec.c.s
+.PHONY : exec/exec.c.s
+
 fs/catmfs/catmfs.o: fs/catmfs/catmfs.c.o
 
 .PHONY : fs/catmfs/catmfs.o
@@ -927,6 +954,9 @@ help:
 	@echo "... exec/elf/elfloader.o"
 	@echo "... exec/elf/elfloader.i"
 	@echo "... exec/elf/elfloader.s"
+	@echo "... exec/exec.o"
+	@echo "... exec/exec.i"
+	@echo "... exec/exec.s"
 	@echo "... fs/catmfs/catmfs.o"
 	@echo "... fs/catmfs/catmfs.i"
 	@echo "... fs/catmfs/catmfs.s"

@@ -6,5 +6,5 @@ C_FLAGS = -g
 
 C_DEFINES = 
 
-C_INCLUDES = -I/home/dcat/osdev/w2/include -I/home/dcat/osdev/w2/dev/include -I/home/dcat/osdev/w2/fs/catmfs/include -I/home/dcat/osdev/w2/fs/ext2/include -I/home/dcat/osdev/w2/fs/vfs/include -I/home/dcat/osdev/w2/exec/elf/include 
+C_INCLUDES = -I/home/dcat/osdev/w2/include -I/home/dcat/osdev/w2/dev/include -I/home/dcat/osdev/w2/fs/catmfs/include -I/home/dcat/osdev/w2/fs/ext2/include -I/home/dcat/osdev/w2/fs/vfs/include -I/home/dcat/osdev/w2/exec/elf/include -I/home/dcat/osdev/w2/exec/include 
 

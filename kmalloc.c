@@ -23,9 +23,12 @@ uint32_t kmalloc_paging(uint32_t sz, uint32_t *phys) {
         if (phys) {
             *phys = get_physical_address(r);
         }
+        dprintf("allocated space:%x", r);
         return r;
-    } else
+    } else {
+        dprintf("heap not present.");
         return kmalloc_internal(sz, true, phys, NULL);
+    }
 }
 
 uint32_t kmalloc_internal(uint32_t sz, bool align, uint32_t *phys, heap_t *heap) {

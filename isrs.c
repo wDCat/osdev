@@ -4,6 +4,7 @@
 
 #include <page.h>
 #include <str.h>
+#include <schedule.h>
 #include "include/isrs.h"
 #include "include/idt.h"
 #include "include/system.h"
@@ -12,15 +13,16 @@
 
 
 void dump_regs(regs_t *r) {
-    putf_const("[EAX:%x][EBX:%x][ECX:%x]", r->eax, r->ebx, r->ecx);
-    putf_const("[EDX:%x][EBP:%x][ESP:%x]\n", r->edx, r->ebp, r->useresp);
-    putf_const("[CS:%x][DX:%x][ES:%x]", r->cs, r->ds, r->es, r->fs, r->gs);
-    putf_const("[FS:%x][GX:%x][EIP:%x]", r->fs, r->gs, r->eip);
+    dprintf("[EAX:%x][EBX:%x][ECX:%x]", r->eax, r->ebx, r->ecx);
+    dprintf("[EDX:%x][EBP:%x][ESP:%x]", r->edx, r->ebp, r->useresp);
+    dprintf("[CS:%x][DX:%x][ES:%x]", r->cs, r->ds, r->es, r->fs, r->gs);
+    dprintf("[FS:%x][GX:%x][EIP:%x]", r->fs, r->gs, r->eip);
 }
 
 void fault_handler(struct regs *r) {
     cli();
     int a = 0;
+    bool umoude_con = false;
     //TODO:move kernel stack before disable paging:(
     switch (r->int_no) {
         case 0: puterr_const("[-] Division by zero fault.");
@@ -43,10 +45,12 @@ void fault_handler(struct regs *r) {
         case 0xD: puterr_const("[-] General Protection Fault Exception");
             dumpint("        ErrorCode:", r->err_code);
             dumphex("        PC:", r->eip);
+            umoude_con = true;
             break;
         case 0xE: {
             //disable_paging();//
             puterr_const("[-] Page Fault.Paging has been disabled.");
+            umoude_con = true;
             page_fault_handler(r);
         }
             break;
@@ -63,7 +67,14 @@ void fault_handler(struct regs *r) {
             break;
     }
     if (r->int_no <= 18) {
-        dump_regs(r);
+        //dump_regs(r);
+        if (umoude_con) {
+            dprintf("Proc %x cause NO.%x fault.Kill it.PC:%x", getpid(), r->int_no, r->eip);
+            set_proc_status(getpcb(getpid()), STATUS_DIED);
+            do_schedule(r);
+            for (;;);
+            return;
+        }
         for (;;);
     }
 }

@@ -419,6 +419,11 @@ int ext2_read_file_block(ext2_t *fs, ext2_inode_t *inode, uint32_t block_no, boo
 /**
  * @return read bytes*/
 int ext2_read_file(ext2_t *fs, ext2_inode_t *inode, uint32_t offset, uint32_t size, uint8_t *buff) {
+    if (offset > inode->i_size)return 0;
+    if (offset + size > inode->i_size) {
+        dprintf("fix size:%x --> %x", size, inode->i_size - offset);
+        size = inode->i_size - offset;
+    }
     uint32_t block_size = fs->block_size;
     uint32_t block_offset = offset / block_size;
     uint32_t block_count = size / block_size;

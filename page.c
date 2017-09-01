@@ -280,8 +280,7 @@ page_table_t *clone_page_table(page_table_t *src, uint32_t *phy_out, uint32_t nu
 
 page_directory_t *clone_page_directory(page_directory_t *src) {
     uint32_t phy_addr;
-    page_directory_t *target = (page_directory_t *) kmalloc_internal(sizeof(page_directory_t), true, &phy_addr,
-                                                                     kernel_heap);
+    page_directory_t *target = (page_directory_t *) kmalloc_paging(sizeof(page_directory_t), &phy_addr);
     memset(target, 0, sizeof(page_directory_t));
     //calc offset 1024*pointer = 1K
     uint32_t offset = (uint32_t) target->table_physical_addr - (uint32_t) target;

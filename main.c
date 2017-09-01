@@ -98,6 +98,7 @@ void install_all() {
     paging_install();
     syscall_install();
     proc_install();
+    vfs_install();
 }
 
 void str_test() {
@@ -270,11 +271,11 @@ int little_test() {
 }
 
 int move_kernel_stack(uint32_t start_addr, uint32_t size) {
+    //proc 1
     uint32_t ebp, esp;
     for (int32_t x = 0x4000; x >= 0; x -= 0x1000) {
         page_t *page = get_page(start_addr - x, true, kernel_dir);
         ASSERT(page);
-        //dprintf("alloc frame for:%x", start_addr - x);
         alloc_frame(page, false, true);
     }
     ebp = 0xBB0000 - 0x4;
