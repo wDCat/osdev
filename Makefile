@@ -1,10 +1,6 @@
-INCLUDE=-I./include -I./dev/include -I./fs/ext2/include \
--I./fs/vfs/include -I./fs/catmfs/include -I./proc/elf/include \
--I./proc/include
-C_FLAGS= -fno-stack-protector -m32 -std=c99 -Wall -O0 -O -fstrength-reduce -fomit-frame-pointer -D _BUILD_TIME=`date +%s` -finline-functions -nostdinc -fno-builtin $(INCLUDE) -c
+include build_all.makefile
 LD_FLAGS=  -n -m elf_i386 -A elf32-i386 -nostdlib
 LOOP_DEVICE_ID=5
-cfiles :=$(wildcard *.c)
 pre:
 	sudo umount /home/dcat/osdev/bgrub/ || echo ""
 	sudo losetup /dev/loop$(LOOP_DEVICE_ID) ../bgrub.img
@@ -20,32 +16,19 @@ umount_disk:
 fsck_disk:
 	sudo umount /dev/mapper/loop3p1 || echo ""
 	sudo fsck -f /dev/mapper/loop3p1
+update:
+	#update file list
+	cd build && kotlinc src/build.kt -include-runtime -d w2_build.jar
+	cd build &&java -jar w2_build.jar
 all:
-	rm -rf *.o
-	#build asm
-	nasm -f elf -o start.o asm/start.asm
-	nasm -f elf -o syscall.asm.o asm/syscall.asm
-	#build c
-	for name in `ls *.c`; \
-	do \
-	gcc $(C_FLAGS) -o $$name.o $$name;\
-	done
-	gcc $(C_FLAGS) -o blk_dev.c.o dev/blk_dev.c
-	gcc $(C_FLAGS) -o serial.c.o dev/serial.c
-	gcc $(C_FLAGS) -o catrfmt.c.o fs/catmfs/catrfmt.c
-	gcc $(C_FLAGS) -o catmfs.c.o fs/catmfs/catmfs.c
-	gcc $(C_FLAGS) -o ext2.c.o fs/ext2/ext2.c
-	gcc $(C_FLAGS) -o vfs.c.o fs/vfs/vfs.c
-	gcc $(C_FLAGS) -o elfloader.c.o proc/elf/elfloader.c
-	gcc $(C_FLAGS) -o exec.c.o proc/exec.c
-	gcc $(C_FLAGS) -o proc.c.o proc/proc.c
-	gcc $(C_FLAGS) -o ide.c.o dev/ide.c
+	#build all
+	make build_all
 	#build linker script
 	gcc -E -P linker_script/linker_script.c -D__keep_symbol__ -o kernelsym.ld.o
 	gcc -E -P linker_script/linker_script.c -o kernel.ld.o
 	#link them or zelda them
-	ld $(LD_FLAGS) -T kernelsym.ld.o -o kernel.sym.bin start.o *.asm.o *.c.o
-	ld $(LD_FLAGS) -T kernel.ld.o -o kernel.bin start.o *.asm.o *.c.o
+	ld $(LD_FLAGS) -T kernelsym.ld.o -o kernel.sym.bin OUTPUT/*.o
+	ld $(LD_FLAGS) -T kernel.ld.o -o kernel.bin OUTPUT/*.o
 	#Export symbol table
 	nm -v kernel.sym.bin > kernel.sym
 	#Copy files and remount
@@ -74,3 +57,4 @@ run:
 	qemu-system-i386 -hda ../bgrub.img -fdb ../disk.img -m 16 -k en-us -sdl  -s
 clean:
 	rm -rf *.o kernel.bin
+	rm -rf OUTPUT

@@ -6,7 +6,7 @@
 #define W2_SERIAL_H
 
 #include <intdef.h>
-#include <system.h>
+#include "../../ker/include/system.h"
 
 #define COM1 0x3F8
 #define COM2 0x2F8

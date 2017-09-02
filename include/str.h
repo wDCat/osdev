@@ -6,7 +6,7 @@
 #define W2_STR_H
 
 #include "va.h"
-#include "system.h"
+#include "../ker/include/system.h"
 
 uint strlen(const char *str);
 

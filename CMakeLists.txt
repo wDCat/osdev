@@ -1,21 +1,47 @@
-##Go die.
 cmake_minimum_required(VERSION 3.6)
 project(W2)
-set(CMAKE_C_FLAGS "")
-
-include_directories(include)
-include_directories(dev/include)
-include_directories(fs/catmfs/include)
-include_directories(fs/ext2/include)
-include_directories(fs/catmfs/include)
-include_directories(fs/vfs/include)
-include_directories(proc/elf/include)
-include_directories(proc/include)
-FILE(GLOB MyCSources *.c
-        fs/ext2/ext2.c
-        fs/vfs/vfs.c
-        fs/catmfs/*.c
-        dev/*.c
-        proc/elf/*.c
-        proc/*.c)
+set(CMAKE_C_FLAGS "-fno-stack-protector -m32 -std=c99 -Wall -O0 -O -fstrength-reduce -fomit-frame-pointer -D__DCAT__ -finline-functions -c -nostdinc -fno-builtin")
+include_directories(/home/dcat/osdev/w2/include)
+include_directories(/home/dcat/osdev/w2/dev/include)
+include_directories(/home/dcat/osdev/w2/proc/include)
+include_directories(/home/dcat/osdev/w2/proc/elf/include)
+include_directories(/home/dcat/osdev/w2/fs/vfs/include)
+include_directories(/home/dcat/osdev/w2/fs/ext2/include)
+include_directories(/home/dcat/osdev/w2/fs/catmfs/include)
+include_directories(/home/dcat/osdev/w2/memory/include)
+include_directories(/home/dcat/osdev/w2/ker/include)
+FILE(GLOB MyCSources
+        /home/dcat/osdev/w2/fs_node.c
+        /home/dcat/osdev/w2/main.c
+        /home/dcat/osdev/w2/str.c
+        /home/dcat/osdev/w2/schedule.c
+        /home/dcat/osdev/w2/syscall.c
+        /home/dcat/osdev/w2/dev/io.c
+        /home/dcat/osdev/w2/dev/screen.c
+        /home/dcat/osdev/w2/dev/keyboard.c
+        /home/dcat/osdev/w2/dev/blk_dev.c
+        /home/dcat/osdev/w2/dev/ide.c
+        /home/dcat/osdev/w2/dev/timer.c
+        /home/dcat/osdev/w2/dev/serial.c
+        /home/dcat/osdev/w2/proc/exec.c
+        /home/dcat/osdev/w2/proc/proc.c
+        /home/dcat/osdev/w2/proc/elf/elfloader.c
+        /home/dcat/osdev/w2/fs/vfs/vfs.c
+        /home/dcat/osdev/w2/fs/ext2/ext2.c
+        /home/dcat/osdev/w2/fs/catmfs/catrfmt.c
+        /home/dcat/osdev/w2/fs/catmfs/catmfs.c
+        /home/dcat/osdev/w2/memory/mem.c
+        /home/dcat/osdev/w2/memory/contious_heap.c
+        /home/dcat/osdev/w2/memory/page.c
+        /home/dcat/osdev/w2/memory/heap_array_list.c
+        /home/dcat/osdev/w2/memory/kmalloc.c
+        /home/dcat/osdev/w2/memory/linkedlist.c
+        /home/dcat/osdev/w2/memory/paging_heap.c
+        /home/dcat/osdev/w2/ker/irqs.c
+        /home/dcat/osdev/w2/ker/gdt.c
+        /home/dcat/osdev/w2/ker/idt.c
+        /home/dcat/osdev/w2/ker/system.c
+        /home/dcat/osdev/w2/ker/isrs.c
+        /home/dcat/osdev/w2/ker/tss.c
+        )
 ADD_EXECUTABLE(MyExecutable ${MyCSources})

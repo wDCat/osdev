@@ -2,7 +2,7 @@
 // Created by dcat on 8/11/17.
 //
 
-#include <system.h>
+#include "ker/include/system.h"
 #include <str.h>
 #include <proc.h>
 #include "schedule.h"

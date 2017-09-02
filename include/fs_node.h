@@ -5,7 +5,7 @@
 #ifndef W2_FS_NODE_H
 #define W2_FS_NODE_H
 
-#include "system.h"
+#include "../ker/include/system.h"
 
 #define FS_FILE        0x01
 #define FS_DIRECTORY   0x02

@@ -5,7 +5,7 @@
 #include <str.h>
 #include <blk_dev.h>
 #include <ext2.h>
-#include <kmalloc.h>
+#include "../../memory/include/kmalloc.h"
 #include <catmfs.h>
 #include <vfs.h>
 #include <catrfmt.h>

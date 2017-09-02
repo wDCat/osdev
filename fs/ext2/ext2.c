@@ -6,7 +6,7 @@
 #include <superblk.h>
 #include "ext2.h"
 #include "ide.h"
-#include "kmalloc.h"
+#include "../../memory/include/kmalloc.h"
 #include "vfs.h"
 
 ext2_t ext2_fs_test;

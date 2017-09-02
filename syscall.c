@@ -2,10 +2,10 @@
 // Created by dcat on 7/7/17.
 //
 #include <str.h>
-#include <idt.h>
+#include "ker/include/idt.h"
 #include "proc/elf/include/proc.h"
 #include "include/syscall.h"
-#include "include/timer.h"
+#include "timer.h"
 
 long errno;
 

@@ -5,8 +5,8 @@
 #ifndef W2_CATMFSM_H
 #define W2_CATMFSM_H
 
-#include "system.h"
-#include "kmalloc.h"
+#include "../../../ker/include/system.h"
+#include "../../../memory/include/kmalloc.h"
 #include "fs_node.h"
 
 #include "catrfmt_def.h"

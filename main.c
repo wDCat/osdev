@@ -1,23 +1,23 @@
-#include <isrs.h>
-#include <irqs.h>
-#include <kmalloc.h>
-#include <heap_array_list.h>
+#include "ker/include/isrs.h"
+#include "ker/include/irqs.h"
+#include "memory/include/kmalloc.h"
+#include "memory/include/heap_array_list.h"
 #include <ide.h>
-#include <page.h>
+#include "memory/include/page.h"
 #include <exec.h>
 #include <catmfs.h>
 #include <catrfmt.h>
 #include <catrfmt_def.h>
-#include "gdt.h"
-#include "idt.h"
-#include "include/system.h"
-#include "include/screen.h"
+#include "ker/include/gdt.h"
+#include "ker/include/idt.h"
+#include "ker/include/system.h"
+#include "screen.h"
 #include "include/str.h"
-#include "include/timer.h"
-#include "include/keyboard.h"
-#include "page.h"
-#include "contious_heap.h"
-#include "multiboot.h"
+#include "timer.h"
+#include "keyboard.h"
+#include "memory/include/page.h"
+#include "memory/include/contious_heap.h"
+#include "ker/include/multiboot.h"
 #include "fs/catmfs/include/catrfmt.h"
 #include "syscall.h"
 #include "proc.h"
@@ -292,19 +292,20 @@ int main(multiboot_info_t *mul_arg, uint32_t init_esp_arg) {
     memcpy(&mul, mul_arg, sizeof(multiboot_info_t));
     //MUL HEADER LOST AFTER INSTALL!!!
     install_all();
+    screen_clear();
+    putln_const("")
+    putln_const("            DCat's Kernel")
+    putln_const("")
+    putln_const("--------------------------------------------------------------------------------")
+    putln_const("")
     dprintf("init esp:%x", init_esp);
     if (mul.mods_count <= 0) {
         PANIC("module not found..")
     }
-    putln_const("[+] main called.");
-    ASSERT(strlen(STR("Hello DCat")) == 10);
-    putln_const("[+] Super Neko");
-    putf_const("[+] Built Time: %d \n", _BUILD_TIME);
-    putln_const("[+] Now enable IRQs");
     sti();
     ide_initialize(0x1F0, 0x3F6, 0x170, 0x376, 0x000);
     mount_rootfs(initrd_start);
+
     move_kernel_stack(0xBB0000, 0x10000);
-    puts_const("[+] main done.");
     for (;;);
 }

@@ -57,7 +57,12 @@ CTestTestfile.cmake
 .gitignore
 cmake-build-debug/CMakeFiles/CMakeTmp/
 cmake-build-debug/
+OUTPUT/
 kernel.bin
 kernel.*.bin
 kernel.sym
 *.o
+a.out
+build_all.makefile
+*.jar
+*.class

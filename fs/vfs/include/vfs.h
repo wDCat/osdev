@@ -5,7 +5,7 @@
 #ifndef W2_VFS_H
 #define W2_VFS_H
 
-#include "system.h"
+#include "../../../ker/include/system.h"
 #include "fs_node.h"
 
 #define MAX_MOUNT_POINTS 64
