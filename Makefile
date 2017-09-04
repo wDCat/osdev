@@ -1,6 +1,6 @@
 include build_all.makefile
 LD_FLAGS=  -n -m elf_i386 -A elf32-i386 -nostdlib
-LOOP_DEVICE_ID=5
+LOOP_DEVICE_ID=6
 pre:
 	sudo umount /home/dcat/osdev/bgrub/ || echo ""
 	sudo losetup /dev/loop$(LOOP_DEVICE_ID) ../bgrub.img
@@ -19,16 +19,17 @@ fsck_disk:
 update:
 	#update file list
 	cd build && kotlinc src/build.kt -include-runtime -d w2_build.jar
-	cd build &&java -jar w2_build.jar
+	cd build && java -jar w2_build.jar
 all:
 	#build all
 	make build_all
 	#build linker script
-	gcc -E -P linker_script/linker_script.c -D__keep_symbol__ -o kernelsym.ld.o
-	gcc -E -P linker_script/linker_script.c -o kernel.ld.o
+	cp -f linker_script.ldc OUTPUT/linker_script.c
+	gcc -E -P OUTPUT/linker_script.c -D__keep_symbol__ -o OUTPUT/kernelsym.ld
+	gcc -E -P OUTPUT/linker_script.c -o OUTPUT/kernel.ld
 	#link them or zelda them
-	ld $(LD_FLAGS) -T kernelsym.ld.o -o kernel.sym.bin OUTPUT/*.o
-	ld $(LD_FLAGS) -T kernel.ld.o -o kernel.bin OUTPUT/*.o
+	ld $(LD_FLAGS) -T OUTPUT/kernelsym.ld -o kernel.sym.bin OUTPUT/*.o
+	ld $(LD_FLAGS) -T OUTPUT/kernel.ld -o kernel.bin OUTPUT/*.o
 	#Export symbol table
 	nm -v kernel.sym.bin > kernel.sym
 	#Copy files and remount

@@ -7,13 +7,13 @@
 uchar_t *memcpy(void *dest, void *src, int count) {
     for (int x = 0; x < count; x++)
         ((uint8_t *) dest)[x] = ((uint8_t *) src)[x];
-
+    return count;
 }
 
 uchar_t *dmemcpy(void *dest, void *src, int count) {
     for (int x = count - 1; x >= 0; x--)
         ((uint8_t *) dest)[x] = ((uint8_t *) src)[x];
-
+    return count;
 }
 
 uchar_t *memset(void *dest, uint8_t val, int count) {

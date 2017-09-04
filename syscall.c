@@ -40,7 +40,10 @@ uint32_t syscalls_table[] = {
         &fork_s,
         &getpid,
         &hello_switcher,
-        &proc_exit
+        &proc_exit,
+        &sys_open,
+        &sys_close,
+        &sys_read
 };
 uint32_t syscalls_count = sizeof(syscalls_table) / sizeof(uint32_t);
 
@@ -63,6 +66,12 @@ _impl_syscall0(getpid, 4);
 _impl_syscall1(hello_switcher, 5, pid_t);
 
 _impl_syscall1(exit, 6, uint32_t);
+
+_impl_syscall2(open, 7, const char*, uint8_t);
+
+_impl_syscall1(close, 8, int8_t);
+
+_impl_syscall3(read, 9, int8_t, int32_t, uchar_t*);
 
 typedef uint32_t (*syscall_fun_t)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, regs_t *r);
 

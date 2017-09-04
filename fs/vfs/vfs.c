@@ -55,8 +55,11 @@ int vfs_find_mount_point(vfs_t *vfs, const char *path, mount_point_t **mp_out, c
         if (mp_out)
             *mp_out = mp;
         if (relatively_path)
-            *relatively_path = (char *) (path + maxpathlen);
-        dprintf("%s fs:%s rpath:%s", path, mp->fs->name, *relatively_path);
+            if (maxpathlen >= strlen(path))
+                *relatively_path = 0;
+            else
+                *relatively_path = (char *) (path + maxpathlen);
+        dprintf("%s fs:%s", path, mp->fs->name);
         return 0;
     }
 }
@@ -85,27 +88,29 @@ int vfs_get_node(vfs_t *vfs, const char *path, fs_node_t *node) {
         return 0;
     }
     vfs_cpynode(&cur, &mp->root);
-    int slen = strlen(rpath);
-    while (x < slen) {
-        char name[256];
-        int len;
-        if ((p = strchr(&rpath[x], '/'))) {
-            len = (int) (p - &rpath[x]);
-            memcpy(name, &rpath[x], len);
-            name[len] = '\0';
-        } else if (x + 1 < slen) {
-            len = slen - x + 1;
-            memcpy(name, &rpath[x], len);
-            name[len] = '\0';
-        } else break;
-        dprintf("cd fn:%s", name);
-        fs_node_t tmp;
-        if (mp->fs->finddir(&cur, mp->fsp, name, &tmp)) {
-            dprintf("obj not found:%s", name);
-            return 1;
+    if (rpath != 0) {
+        int slen = strlen(rpath);
+        while (x < slen) {
+            char name[256];
+            int len;
+            if ((p = strchr(&rpath[x], '/'))) {
+                len = (int) (p - &rpath[x]);
+                memcpy(name, &rpath[x], len);
+                name[len] = '\0';
+            } else if (x + 1 < slen) {
+                len = slen - x + 1;
+                memcpy(name, &rpath[x], len);
+                name[len] = '\0';
+            } else break;
+            dprintf("cd fn:%s", name);
+            fs_node_t tmp;
+            if (mp->fs->finddir(&cur, mp->fsp, name, &tmp)) {
+                dprintf("obj not found:%s", name);
+                return 1;
+            }
+            vfs_cpynode(&cur, &tmp);
+            x += len + 1;
         }
-        vfs_cpynode(&cur, &tmp);
-        x += len + 1;
     }
     vfs_cpynode(node, &cur);
     return 0;
@@ -245,7 +250,7 @@ int8_t kopen(uint32_t pid, const char *name, uint8_t mode) {
     return fd;
 }
 
-inline int8_t sys_open(const char *name, uint8_t mode) {
+int8_t sys_open(const char *name, uint8_t mode) {
     return kopen(getpid(), name, mode);
 }
 
@@ -259,7 +264,7 @@ int8_t kclose(uint32_t pid, int8_t fd) {
     return 0;
 }
 
-inline int8_t sys_close(int8_t fd) {
+int8_t sys_close(int8_t fd) {
     return kclose(getpid(), fd);
 }
 
@@ -300,6 +305,7 @@ void mount_rootfs(uint32_t initrd) {
     CHK(vfs_cd(&vfs, "/"), "");
     CHK(vfs_mkdir(&vfs, "data"), "");
     CHK(vfs_mount(&vfs, "/data/", &ext2_fs, &disk1), "");
+    dprintf("rootfs mounted.");
     return;
     _err:
     PANIC("Failed to mount rootfs.");

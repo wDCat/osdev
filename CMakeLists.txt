@@ -13,6 +13,7 @@ include_directories(/home/dcat/osdev/w2/ker/include)
 FILE(GLOB MyCSources
         /home/dcat/osdev/w2/fs_node.c
         /home/dcat/osdev/w2/main.c
+        /home/dcat/osdev/w2/mutex.c
         /home/dcat/osdev/w2/str.c
         /home/dcat/osdev/w2/schedule.c
         /home/dcat/osdev/w2/syscall.c

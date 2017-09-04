@@ -2,7 +2,6 @@
 ; or we can use this to setup the stack or other nice stuff, like
 ; perhaps setting up the GDT and segments. Please note that interrupts
 ; are disabled at this point: More on interrupts later!
-%include "asm/rmode.asm"
 [BITS 32]
 global start
 start:
@@ -36,12 +35,6 @@ mboot:
 ; This is an endless loop here. Make a note of this: Later on, we
 ; will insert an 'extern _main', followed by 'call _main', right
 ; before the 'jmp $'.
-enter_protected_mode:
-    cli
-    mov eax,cr0
-    or al,1
-    mov cr0,eax
-    ret
 stublet:
     mov esp, _sys_stack
     extern main
@@ -82,7 +75,6 @@ _idt_load:
 %include "asm/isrs.asm"
 %include "asm/irqs.asm"
 %include "asm/page.asm"
-%include "asm/ring.asm"
 ; Here is the definition of our BSS section. Right now, we'll use
 ; it just to store the stack. Remember that a stack actually grows
 ; downwards, so we declare the size of the data before declaring

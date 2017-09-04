@@ -58,6 +58,13 @@ _define_syscall0(getpid, 4);
 _define_syscall1(hello_switcher, 5, pid_t);
 
 _define_syscall1(exit, 6, uint32_t);
+
+_define_syscall2(open, 7, const char*, uint8_t);
+
+_define_syscall1(close, 8, int8_t);
+
+_define_syscall3(read, 9, int8_t, int32_t, uchar_t*);
+
 void syscall_install();
 
 int syscall_handler(regs_t *r);

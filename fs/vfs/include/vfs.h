@@ -78,6 +78,8 @@ int32_t vfs_read(vfs_t *vfs, uint32_t offset, uint32_t size, uchar_t *buff);
 
 int8_t sys_open(const char *name, uint8_t mode);
 
+int8_t sys_close(int8_t fd);
+
 int8_t kclose(uint32_t pid, int8_t fd);
 
 int8_t kopen(uint32_t pid, const char *name, uint8_t mode);

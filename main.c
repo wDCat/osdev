@@ -8,6 +8,7 @@
 #include <catmfs.h>
 #include <catrfmt.h>
 #include <catrfmt_def.h>
+#include <io.h>
 #include "ker/include/gdt.h"
 #include "ker/include/idt.h"
 #include "ker/include/system.h"
@@ -305,7 +306,6 @@ int main(multiboot_info_t *mul_arg, uint32_t init_esp_arg) {
     sti();
     ide_initialize(0x1F0, 0x3F6, 0x170, 0x376, 0x000);
     mount_rootfs(initrd_start);
-
     move_kernel_stack(0xBB0000, 0x10000);
     for (;;);
 }
