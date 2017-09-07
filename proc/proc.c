@@ -4,7 +4,7 @@
 
 #include <str.h>
 #include <proc.h>
-#include <syscall.h>
+#include <syscall_handler.h>
 #include <proc.h>
 #include "../memory/include/kmalloc.h"
 #include <exec.h>

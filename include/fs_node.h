@@ -50,12 +50,8 @@ typedef struct fs_node {
     */
     struct fs_node *ptr;
 } fs_node_t;
-typedef struct dirent {
-    uint32_t node;
-    unsigned short name_len; /* length of this d_name 文件名长 */
-    unsigned char type; /* the type of d_name 文件类型 */
-    char name[256]; /* file name (null-terminated) 文件名，最长255字符 */
-} dirent_t;
+
+#include "uvfs.h"
 
 uint32_t read_fs(fs_node_t *node, uint32_t offset, uint32_t size, uint8_t *buff);
 

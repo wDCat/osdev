@@ -18,13 +18,14 @@ fsck_disk:
 	sudo fsck -f /dev/mapper/loop3p1
 update:
 	#update file list
+	make clean
 	cd build && kotlinc src/build.kt -include-runtime -d w2_build.jar
 	cd build && java -jar w2_build.jar
 all:
 	#build all
 	make build_all
 	#build linker script
-	cp -f linker_script.ldc OUTPUT/linker_script.c
+	cp -f linker_script.pld OUTPUT/linker_script.c
 	gcc -E -P OUTPUT/linker_script.c -D__keep_symbol__ -o OUTPUT/kernelsym.ld
 	gcc -E -P OUTPUT/linker_script.c -o OUTPUT/kernel.ld
 	#link them or zelda them

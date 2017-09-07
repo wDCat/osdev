@@ -329,3 +329,7 @@ uint8_t ide_ata_access(uint8_t action, uint8_t drive, uint32_t lba, uint32_t blo
     }
     return 0;
 }
+
+void ide_install() {
+    ide_initialize(0x1F0, 0x3F6, 0x170, 0x376, 0x000);
+}

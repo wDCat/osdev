@@ -9,10 +9,12 @@
 #include "include/idt.h"
 #include "include/system.h"
 #include "intdef.h"
-#include "syscall.h"
+#include "syscall_handler.h"
 
 
 void dump_regs(regs_t *r) {
+    dprintf("REGS:");
+    dprintf("-------------------------------------------");
     dprintf("[EAX:%x][EBX:%x][ECX:%x]", r->eax, r->ebx, r->ecx);
     dprintf("[EDX:%x][EBP:%x][ESP:%x]", r->edx, r->ebp, r->useresp);
     dprintf("[CS:%x][DX:%x][ES:%x]", r->cs, r->ds, r->es, r->fs, r->gs);
@@ -67,11 +69,12 @@ void fault_handler(struct regs *r) {
             break;
     }
     if (r->int_no <= 18) {
-        //dump_regs(r);
+        dump_regs(r);
         if (umoude_con) {
             dprintf("Proc %x cause NO.%x fault.Kill it.PC:%x", getpid(), r->int_no, r->eip);
             set_proc_status(getpcb(getpid()), STATUS_DIED);
-            do_schedule(r);
+            if (getpid() == 1) {PANIC("Abort!"); }
+            else { do_schedule(r); }
             for (;;);
             return;
         }

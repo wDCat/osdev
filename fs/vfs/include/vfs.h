@@ -5,8 +5,9 @@
 #ifndef W2_VFS_H
 #define W2_VFS_H
 
-#include "../../../ker/include/system.h"
+#include "system.h"
 #include "fs_node.h"
+#include "stat.h"
 
 #define MAX_MOUNT_POINTS 64
 #define MAX_FILE_HANDLES 10
@@ -54,9 +55,10 @@ typedef struct {
     void *reserved;
 } file_handle_t;
 
-mount_point_t mount_points[MAX_MOUNT_POINTS];
-uint32_t mount_points_count;
-file_handle_t global_fh_table[MAX_FILE_HANDLES];
+extern mount_point_t mount_points[MAX_MOUNT_POINTS];
+extern uint32_t mount_points_count;
+extern file_handle_t global_fh_table[MAX_FILE_HANDLES];
+extern vfs_t vfs;
 
 void vfs_install();
 
@@ -87,5 +89,13 @@ int8_t kopen(uint32_t pid, const char *name, uint8_t mode);
 int32_t sys_read(int8_t fd, int32_t size, uchar_t *buff);
 
 int32_t kread(uint32_t pid, int8_t fd, uint32_t offset, int32_t size, uchar_t *buff);
+
+int32_t kwrite(uint32_t pid, int8_t fd, uint32_t offset, int32_t size, uchar_t *buff);
+
+int32_t sys_write(int8_t fd, int32_t size, uchar_t *buff);
+
+int sys_stat(const char *path, stat_t *stat);
+
+int sys_ls(const char *path, dirent_t *dirents, uint32_t count);
 
 #endif //W2_VFS_H

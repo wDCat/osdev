@@ -45,4 +45,5 @@ unsigned char ide_read(unsigned char channel, unsigned char reg);
 
 uint8_t ide_ata_access(uint8_t action, uint8_t drive, uint32_t lba, uint32_t block_count, uint8_t *buff);
 
+void ide_install();
 #endif //W2_IDE_H

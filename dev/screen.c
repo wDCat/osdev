@@ -19,7 +19,7 @@ inline unsigned char *calcPos(int x, int y) {
 
 void moveCsr(void) {
     unsigned temp;
-    temp = scrY * SCREEN_MAX_X + scrX;
+    temp = scrY * SCREEN_MAX_X + scrX + 1;
     outportb(0x3D4, 14);
     outportb(0x3D5, temp >> 8);
     outportb(0x3D4, 15);

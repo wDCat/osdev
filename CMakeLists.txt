@@ -3,6 +3,7 @@ project(W2)
 set(CMAKE_C_FLAGS "-fno-stack-protector -m32 -std=c99 -Wall -O0 -O -fstrength-reduce -fomit-frame-pointer -D__DCAT__ -finline-functions -c -nostdinc -fno-builtin")
 include_directories(/home/dcat/osdev/w2/include)
 include_directories(/home/dcat/osdev/w2/dev/include)
+include_directories(/home/dcat/osdev/w2/lib/include)
 include_directories(/home/dcat/osdev/w2/proc/include)
 include_directories(/home/dcat/osdev/w2/proc/elf/include)
 include_directories(/home/dcat/osdev/w2/fs/vfs/include)
@@ -16,14 +17,17 @@ FILE(GLOB MyCSources
         /home/dcat/osdev/w2/mutex.c
         /home/dcat/osdev/w2/str.c
         /home/dcat/osdev/w2/schedule.c
-        /home/dcat/osdev/w2/syscall.c
+        /home/dcat/osdev/w2/syscall_handler.c
+        /home/dcat/osdev/w2/little_test.c
         /home/dcat/osdev/w2/dev/io.c
         /home/dcat/osdev/w2/dev/screen.c
         /home/dcat/osdev/w2/dev/keyboard.c
         /home/dcat/osdev/w2/dev/blk_dev.c
         /home/dcat/osdev/w2/dev/ide.c
+        /home/dcat/osdev/w2/dev/vga.c
         /home/dcat/osdev/w2/dev/timer.c
         /home/dcat/osdev/w2/dev/serial.c
+        /home/dcat/osdev/w2/lib/syscall.c
         /home/dcat/osdev/w2/proc/exec.c
         /home/dcat/osdev/w2/proc/proc.c
         /home/dcat/osdev/w2/proc/elf/elfloader.c

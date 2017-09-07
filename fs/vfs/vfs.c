@@ -9,8 +9,12 @@
 #include <catmfs.h>
 #include <vfs.h>
 #include <catrfmt.h>
+#include <stat.h>
 #include "proc.h"
 
+mount_point_t mount_points[MAX_MOUNT_POINTS];
+uint32_t mount_points_count;
+file_handle_t global_fh_table[MAX_FILE_HANDLES];
 fs_node_t fs_root;
 vfs_t vfs;
 extern fs_t ext2_fs;
@@ -292,6 +296,57 @@ int32_t sys_read(int8_t fd, int32_t size, uchar_t *buff) {
     return ret;
 }
 
+int32_t kwrite(uint32_t pid, int8_t fd, uint32_t offset, int32_t size, uchar_t *buff) {
+    pcb_t *pcb = getpcb(pid);
+    file_handle_t *fh = &pcb->fh[fd];
+    if (!fh->present) {
+        deprintf("fd %x not present.", fd);
+        return -1;
+    }
+    if (fh->mp == 0) {
+        deprintf("[%x]mount point not found.", fd);
+        return -1;
+    }
+    int32_t ret = fh->mp->fs->write(&fh->node, fh->mp->fsp, offset, size, buff);
+
+    return ret;
+}
+
+int32_t sys_write(int8_t fd, int32_t size, uchar_t *buff) {
+    pcb_t *pcb = getpcb(getpid());
+    file_handle_t *fh = &pcb->fh[fd];
+    int32_t ret = kwrite(getpid(), fd, fh->offset, size, buff);
+    fh->offset += ret;
+    return ret;
+}
+
+int sys_stat(const char *path, stat_t *stat) {
+    CHK(vfs_cd(&vfs, path), "");
+    fs_node_t *n = &vfs.current;
+    stat->st_dev = 0;
+    stat->st_ino = n->inode;
+    stat->st_mode = n->flags;
+    stat->st_nlink = 1;
+    stat->st_uid = n->uid;
+    stat->st_gid = n->gid;
+    stat->st_rdev = 0;
+    stat->st_size = n->length;
+    stat->st_blksize = 0;
+    stat->st_blocks = 0;
+    stat->st_atime = 0;
+    stat->st_mtime = 0;
+    stat->st_ctime = 0;
+    return 0;
+    _err:
+    return -1;
+}
+
+int sys_ls(const char *path, dirent_t *dirents, uint32_t count) {
+    CHK(vfs_cd(&vfs, path), "");
+    return vfs_ls(&vfs, dirents, count);
+    _err:
+    return -1;
+}
 
 void mount_rootfs(uint32_t initrd) {
     vfs_init(&vfs);

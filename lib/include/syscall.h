@@ -1,12 +1,14 @@
 //
-// Created by dcat on 7/7/17.
+// Created by dcat on 9/7/17.
 //
 
 #ifndef W2_SYSCALL_H
 #define W2_SYSCALL_H
 
-#include "../ker/include/isrs.h"
-#include "../proc/elf/include/proc.h"
+#include "stdint.h"
+#include "uproc.h"
+#include "uvfs.h"
+#include "stat.h"
 
 #define _define_syscall0(fn, num) long syscall_##fn()
 #define _define_syscall1(fn, num, P1) long syscall_##fn(P1 p1)
@@ -65,8 +67,10 @@ _define_syscall1(close, 8, int8_t);
 
 _define_syscall3(read, 9, int8_t, int32_t, uchar_t*);
 
-void syscall_install();
+_define_syscall3(write, 10, int8_t, int32_t, uchar_t*);
 
-int syscall_handler(regs_t *r);
+_define_syscall2(stat, 11, const char*, stat_t*);
+
+_define_syscall3(ls, 12, const char*, dirent_t*, uint32_t);
 
 #endif //W2_SYSCALL_H
