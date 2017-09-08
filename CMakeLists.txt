@@ -19,7 +19,9 @@ FILE(GLOB MyCSources
         /home/dcat/osdev/w2/schedule.c
         /home/dcat/osdev/w2/syscall_handler.c
         /home/dcat/osdev/w2/little_test.c
+        /home/dcat/osdev/w2/dev/tty.c
         /home/dcat/osdev/w2/dev/io.c
+        /home/dcat/osdev/w2/dev/console.c
         /home/dcat/osdev/w2/dev/screen.c
         /home/dcat/osdev/w2/dev/keyboard.c
         /home/dcat/osdev/w2/dev/blk_dev.c

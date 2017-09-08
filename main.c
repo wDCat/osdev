@@ -15,6 +15,8 @@
 #include <syscall_handler.h>
 #include <blk_dev.h>
 #include <io.h>
+#include <console.h>
+#include <tty.h>
 
 uint32_t init_esp;
 #ifndef _BUILD_TIME
@@ -47,6 +49,8 @@ void install_all() {
     blk_dev_install();
     ide_install();
     vga_install();
+    console_install();
+    tty_install();
 }
 
 int move_kernel_stack(uint32_t start_addr, uint32_t size) {
@@ -78,7 +82,8 @@ int main(multiboot_info_t *mul_arg, uint32_t init_esp_arg) {
     putln_const("")
     putln_const("            DCat's Kernel")
     putln_const("")
-    putln_const("--------------------------------------------------------------------------------")
+    for (int x = 0; x < SCREEN_MAX_X; x++)
+        putc('-');
     putln_const("")
     dprintf("init esp:%x", init_esp);
     if (mul.mods_count <= 0) {

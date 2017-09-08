@@ -8,10 +8,13 @@
 #include "intdef.h"
 
 typedef struct {
+    uint32_t holdpid;
     uint8_t mutex;
 } mutex_lock_t;
 
 void mutex_init(mutex_lock_t *m);
+
+void mutex_lock(mutex_lock_t *m);
 
 void mutex_unlock(mutex_lock_t *m);
 

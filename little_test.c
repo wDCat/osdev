@@ -13,6 +13,7 @@
 #include <catrfmt_def.h>
 #include <io.h>
 #include <syscall.h>
+#include <tty.h>
 #include "ker/include/gdt.h"
 #include "ker/include/idt.h"
 #include "ker/include/system.h"
@@ -230,6 +231,18 @@ void ide_test() {
 
 }
 
-int little_test() {
+int little_test2() {
+    dprintf("hELLO dcAT");
+    char a[256];
+    strcpy(a, "Input >");
+    tty_write(&ttys[0], getpid(), 20, a);
+    memset(a, 0, 256);
+    tty_read(&ttys[0], getpid(), 10, a);
+    dprintf("read done:%s", a);
     for (;;);
+
+}
+
+int little_test() {
+    usermode();
 }

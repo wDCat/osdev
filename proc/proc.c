@@ -8,6 +8,8 @@
 #include <proc.h>
 #include "../memory/include/kmalloc.h"
 #include <exec.h>
+#include <schedule.h>
+#include <timer.h>
 
 extern void _gdt_flush();
 
@@ -20,10 +22,17 @@ uint32_t proc_count = 1;
 
 proc_queue_t *proc_avali_queue,
         *proc_ready_queue,
+        *proc_wait_queue,
         *proc_died_queue;
 
 pid_t getpid() {
     return current_pid;
+}
+
+/**For Debug...*/
+void setpid(pid_t pid) {
+    dprintf("proc %x set self pid to %x", current_pid, pid);
+    current_pid = pid;
 }
 
 pcb_t *getpcb(pid_t pid) {
@@ -45,7 +54,10 @@ void create_first_proc() {
 
 void idle() {
     dprintf("now idle.");
-    for (;;);
+    for (;;) {
+        do_schedule(NULL);
+        delay(5);
+    }
 }
 
 void create_idle_proc() {
@@ -73,6 +85,8 @@ void proc_install() {
     memset(proc_avali_queue, 0, 0x1000);
     proc_ready_queue = (proc_queue_t *) kmalloc_paging(0x1000, NULL);
     memset(proc_ready_queue, 0, 0x1000);
+    proc_wait_queue = (proc_queue_t *) kmalloc_paging(0x1000, NULL);
+    memset(proc_wait_queue, 0, 0x1000);
     proc_died_queue = (proc_queue_t *) kmalloc_paging(0x1000, NULL);
     memset(proc_died_queue, 0, 0x1000);
     //kernel proc(name:init pid:1)
@@ -134,6 +148,8 @@ proc_queue_t *find_pqueue_by_status(proc_status_t status) {
             return proc_died_queue;
         case STATUS_READY:
             return proc_ready_queue;
+        case STATUS_WAIT:
+            return proc_wait_queue;
         default:
             return 0;
     }
@@ -232,13 +248,15 @@ pid_t fork(regs_t *r) {
     if (fpid == 1) {
         create_user_stack(0xCB000000, 0x4000, &tss->ebp, &tss->esp, cpcb->page_dir);
         dprintf("[+] new user stack:[%x][%x]", tss->ebp, tss->esp);
-        kexec(cpid, "/init", 2, 0x24, 0x44, NULL);
-        tss->cs = 3 << 3 | 3;
+        //kexec(cpid, "/init", 2, 0x24, 0x44, NULL);
+        extern int little_test2();
+        tss->eip = (uint32_t) little_test2;
+        tss->cs = 1 << 3 | 0;
         tss->es =
         tss->ss =
         tss->ds =
         tss->fs =
-        tss->gs = 4 << 3 | 3;
+        tss->gs = 2 << 3 | 0;
     } else {
         tss->eip = r->eip;
         tss->ebp = r->ebp;

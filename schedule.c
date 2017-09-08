@@ -5,13 +5,14 @@
 #include "ker/include/system.h"
 #include <str.h>
 #include <proc.h>
+#include <keyboard.h>
 #include "schedule.h"
 
 extern void irq_remap();
 
 void do_schedule(regs_t *r) {
     extern bool proc_ready;
-    if (!getpcb(2)->present)return;
+    //if (!getpcb(2)->present)return;
     dprintf("schedule routine");
     //FIXME some place damaged the irq remap......
     irq_remap();
@@ -20,7 +21,7 @@ void do_schedule(regs_t *r) {
     //Min proc time slice schedule.
     uint32_t min_ts = (uint32_t) -1;
     pcb_t *choosed = 0;
-    dprintf("wait queue[%x]:", proc_ready_queue->count);
+    dprintf("ready queue[%x]:", proc_ready_queue->count);
     for (uint32_t x = 0, y = 0; y < 1023 && x < proc_ready_queue->count; y++) {
         if (proc_ready_queue->pcbs[y] == 0)continue;
         x++;
@@ -34,10 +35,12 @@ void do_schedule(regs_t *r) {
         if (cur_pcb->status != STATUS_RUN) {
             choosed = getpcb(0);//idle~
         } else {
+            dprintf("keep current");
             return;
         }
     if (choosed->pid != getpid() && cur_pcb->status == STATUS_RUN) {
-        save_proc_state(cur_pcb, r);
+        if (r != NULL)
+            save_proc_state(cur_pcb, r);
         set_proc_status(cur_pcb, STATUS_READY);
     }
     dprintf("choosed proc:%x", choosed->pid);

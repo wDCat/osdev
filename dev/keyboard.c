@@ -5,9 +5,50 @@
 #include <proc.h>
 #include "../ker/include/irqs.h"
 #include <str.h>
+#include <io.h>
+#include <tty.h>
 #include "keyboard.h"
 
-//FIXME No work too... :(
+uchar_t kbdus[128] =
+        {
+                0, 27, '1', '2', '3', '4', '5', '6', '7', '8',    /* 9 */
+                '9', '0', '-', '=', '\b',    /* Backspace */
+                '\t',            /* Tab */
+                'q', 'w', 'e', 'r',    /* 19 */
+                't', 'y', 'u', 'i', 'o', 'p', '[', ']', '\n',    /* Enter key */
+                0,            /* 29   - Control */
+                'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', ';',    /* 39 */
+                '\'', '`', 0,        /* Left shift */
+                '\\', 'z', 'x', 'c', 'v', 'b', 'n',            /* 49 */
+                'm', ',', '.', '/', 0,                /* Right shift */
+                '*',
+                0,    /* Alt */
+                ' ',    /* Space bar */
+                0,    /* Caps lock */
+                0,    /* 59 - F1 key ... > */
+                0, 0, 0, 0, 0, 0, 0, 0,
+                0,    /* < ... F10 */
+                0,    /* 69 - Num lock*/
+                0,    /* Scroll Lock */
+                0,    /* Home key */
+                0,    /* Up Arrow */
+                0,    /* Page Up */
+                '-',
+                0,    /* Left Arrow */
+                0,
+                0,    /* Right Arrow */
+                '+',
+                0,    /* 79 - End key*/
+                0,    /* Down Arrow */
+                0,    /* Page Down */
+                0,    /* Insert Key */
+                0,    /* Delete Key */
+                0, 0, 0,
+                0,    /* F11 Key */
+                0,    /* F12 Key */
+                0,    /* All other keys are undefined */
+        };
+
 void keyboard_handler(struct regs *r) {
 
     //putln("A BIGGGGGG MASK");
@@ -18,46 +59,10 @@ void keyboard_handler(struct regs *r) {
     if (scancode & 0x80) {
         //Control
     } else {
-        //No work:
-        putc(kbdus[scancode]);
-        //No work v2:
-        /*
-        for (int x = 0; x < 0xFF; x++) {
-            if (x == scancode) {
-                putint(x);
-                if (x == 2) {
-                    putc(kbdus[x]);//Output right value
-                } else {
-                    putc(kbdus[x]);//Output holy shit code.
-                }
-
-                break;
-            }
-        }*/
-        //For screen's pause
+        //putc(kbdus[scancode]);
+        tty_kb_handler(scancode);
         on_keyboard_event(scancode);
-        /*
-        if (scancode < 10) {
-            putint(scancode - 1);
-        } else {
-            switch (scancode) {
-                case 10:
-                    putint(9);
-                    break;
-                case 11:
-                    putint(0);
-                    break;
-                case 14:
-                    //putc('\b');
-                    screenClear();
-                    break;
-                case 28:
-                    putc('\n');
-                    break;
-                default:
-                    putc('*');
-            }
-        }*/
+
     }
 }
 

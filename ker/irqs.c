@@ -2,6 +2,7 @@
 // Created by dcat on 3/12/17.
 //
 
+#include <io.h>
 #include "include/irqs.h"
 
 void irq_remap(void) {

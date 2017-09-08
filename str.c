@@ -224,6 +224,12 @@ uint strformatw(void (*writer)(void *extern_data, char c), void *extern_data, co
                     writer(extern_data, c2[x]);
             }
                 break;
+            case 'c': {
+                pos++;
+                char n = va_arg(args, char);
+                writer(extern_data, n);
+            }
+                break;
             default:
                 continue;
         }

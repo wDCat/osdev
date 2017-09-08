@@ -3,7 +3,7 @@
 //
 #include <str.h>
 #include "ker/include/idt.h"
-#include "proc/elf/include/proc.h"
+#include "proc.h"
 #include "syscall_handler.h"
 #include "timer.h"
 

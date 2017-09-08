@@ -6,7 +6,7 @@
 #define W2_SYSCALL_H
 
 #include "../ker/include/isrs.h"
-#include "../proc/elf/include/proc.h"
+#include "proc.h"
 
 void syscall_install();
 
