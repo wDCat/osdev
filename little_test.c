@@ -232,13 +232,42 @@ void ide_test() {
 }
 
 int little_test2() {
-    dprintf("hELLO dcAT");
+    tty_create_fstype();
+    sys_write(1, 20, "STDOUT TEST");
+    /*
+    vfs_mount(&vfs, "/tty0", &ttyfs, 0);
+    vfs_mount(&vfs, "/tty1", &ttyfs, 1);
+    int fd = sys_open("/tty0", 0);
+    int fd2 = sys_open("/tty1", 0);
+    ASSERT(fd >= 0 && fd2 > 0);
     char a[256];
-    strcpy(a, "Input >");
-    tty_write(&ttys[0], getpid(), 20, a);
-    memset(a, 0, 256);
-    tty_read(&ttys[0], getpid(), 10, a);
-    dprintf("read done:%s", a);
+    sys_write(fd, 20, "TTY0\n\n\n\n");
+    sys_write(fd2, 20, "TTY1\n\n\n\n");
+    while (true) {
+        tty_fg_switch(0);
+        sys_write(fd, 20, "Input >");
+        memset(a, 0, 256);
+        sys_read(fd, 256, a);
+        dprintf("read done[tty0]:%s", a);
+        sys_write(fd, strlen(a), a);
+        sys_write(fd, 1, "\n");
+        tty_fg_switch(1);
+        sys_write(fd2, 20, "Input >");
+        sys_read(fd2, 256, a);
+        dprintf("read done[tty1]:%s", a);
+        sys_write(fd2, strlen(a), a);
+        sys_write(fd2, 1, "\n");
+    }*/
+    /*
+    dprintf("hELLO dcAT");
+
+    while (true) {
+        strcpy(a, "Input >");
+        tty_write(&ttys[0], getpid(), 20, a);
+        memset(a, 0, 256);
+        tty_read(&ttys[0], getpid(), 50, a);
+        dprintf("read done:%s", a);
+    }*/
     for (;;);
 
 }

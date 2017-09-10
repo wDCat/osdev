@@ -10,7 +10,7 @@
 #define SCREEN_MEMORY_BASE 0xB8000
 #define BLACK (0x20 | (0x0F << 8))
 #define SCREEN_MAX_X 90
-#define SCREEN_MAX_Y 60
+#define SCREEN_MAX_Y 28
 #define COLOR_BLACK 0x0
 #define COLOR_WHITE 0xF
 #define COLOR_RED 0x4

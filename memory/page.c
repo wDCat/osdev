@@ -140,6 +140,7 @@ void paging_install() {
     memset(kernel_dir->tables, 0, sizeof(page_table_t *) * 1024);
     kernel_dir->physical_addr = (uint32_t) kernel_dir->table_physical_addr;
     uint32_t kernel_area = heap_placement_addr;
+
     dprintf("pag %x -> %x", KHEAP_START, KHEAP_START + KHEAP_SIZE + 0x1000);
     if (kernel_area < SCREEN_MEMORY_BASE + (SCREEN_MAX_X * SCREEN_MAX_Y) / 2) {
         kernel_area = SCREEN_MEMORY_BASE + (SCREEN_MAX_X * SCREEN_MAX_Y) / 2;

@@ -98,4 +98,6 @@ int sys_stat(const char *path, stat_t *stat);
 
 int sys_ls(const char *path, dirent_t *dirents, uint32_t count);
 
+void kclose_all(uint32_t pid);
+
 #endif //W2_VFS_H

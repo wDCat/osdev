@@ -22,4 +22,6 @@ void console_puts(console_t *con, const uchar_t *str);
 
 void console_putns(console_t *con, const uchar_t *str, int32_t len);
 
+void console_switch(console_t *con);
+
 #endif //W2_CONSOLE_H

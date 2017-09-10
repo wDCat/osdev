@@ -55,7 +55,8 @@ void create_first_proc() {
 void idle() {
     dprintf("now idle.");
     for (;;) {
-        do_schedule(NULL);
+        extern void irq_remap();
+        irq_remap();
         delay(5);
     }
 }
@@ -155,6 +156,10 @@ proc_queue_t *find_pqueue_by_status(proc_status_t status) {
     }
 }
 
+inline proc_status_t get_proc_status(pcb_t *pcb) {
+    return pcb->status;
+}
+
 void set_proc_status(pcb_t *pcb, proc_status_t new_status) {
     cli();
     if (pcb->status == new_status || pcb->pid <= 1)return;
@@ -229,7 +234,7 @@ pid_t fork(regs_t *r) {
     cpid = find_free_pcb();
     extern tss_entry_t tss_entry;
     if (cpid == 0) PANIC("Out of PCB///");
-    dprintf("%x try to fork.child %x\n", fpid, cpid);
+    dprintf("%x try to fork.child %x", fpid, cpid);
     pcb_t *fpcb = getpcb(fpid);
     pcb_t *cpcb = getpcb(cpid);
     proc_count++;
@@ -247,16 +252,16 @@ pid_t fork(regs_t *r) {
     tss->edi = r->edi;
     if (fpid == 1) {
         create_user_stack(0xCB000000, 0x4000, &tss->ebp, &tss->esp, cpcb->page_dir);
-        dprintf("[+] new user stack:[%x][%x]", tss->ebp, tss->esp);
-        //kexec(cpid, "/init", 2, 0x24, 0x44, NULL);
-        extern int little_test2();
-        tss->eip = (uint32_t) little_test2;
-        tss->cs = 1 << 3 | 0;
+        dprintf("new user stack:[%x][%x]", tss->ebp, tss->esp);
+        kexec(cpid, "/init", 2, 0x24, 0x44, NULL);
+        //extern int little_test2();
+        //tss->eip = (uint32_t) little_test2;
+        tss->cs = 3 << 3 | 3;
         tss->es =
         tss->ss =
         tss->ds =
         tss->fs =
-        tss->gs = 2 << 3 | 0;
+        tss->gs = 4 << 3 | 3;
     } else {
         tss->eip = r->eip;
         tss->ebp = r->ebp;
@@ -278,6 +283,8 @@ pid_t fork(regs_t *r) {
     create_ldt(cpcb);
     tss->esp0 = (uint32_t) (cpcb->reserved_page + 0x990);
     tss->ldt = 0;
+    //Copy open file table...
+    memcpy(cpcb->fh, fpcb->fh, sizeof(fpcb->fh));
     save_proc_state(fpcb, r);
     set_proc_status(fpcb, STATUS_READY);
     switch_to_proc(cpcb);

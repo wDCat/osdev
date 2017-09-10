@@ -55,7 +55,7 @@ void keyboard_handler(struct regs *r) {
     int scancode;
     scancode = inportb(0x60);
     scancode = scancode & 0xFF;
-    dprintf("key down:%x", scancode);
+    //dprintf("key down:%x", scancode);
     if (scancode & 0x80) {
         //Control
     } else {

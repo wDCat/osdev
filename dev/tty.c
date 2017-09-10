@@ -8,14 +8,19 @@
 #include <schedule.h>
 #include <mutex.h>
 #include <keyboard.h>
+#include <vfs.h>
 
 tty_t ttys[TTY_MAX_COUNT];
 uint8_t cur_tty_id;
+fs_t ttyfs;
 
 void tty_install() {
     memset(ttys, 0, sizeof(tty_t) * TTY_MAX_COUNT);
     for (int x = 0; x < TTY_MAX_COUNT; x++) {
-        ttys[x].console = console_alloc(&ttys[x]);
+        ttys[x].console = console_alloc();
+        if (ttys[x].console == NULL) {
+            PANIC("fail to alloc console for tty%s", x);
+        }
         ttys[x].read = (tty_queue_t *) kmalloc(sizeof(tty_queue_t));
         memset(ttys[x].read, 0, sizeof(tty_queue_t));
         ttys[x].write = (tty_queue_t *) kmalloc(sizeof(tty_queue_t));
@@ -62,6 +67,9 @@ inline bool tty_queue_getc(tty_queue_t *queue, uchar_t *c_out) {
     queue->head++;
     if (queue->head >= TTY_BUFF_SIZE)
         queue->head = 0;
+    if (tty_queue_isempty(queue)) {
+        queue->inited = false;
+    }
     return true;
 }
 
@@ -72,21 +80,54 @@ void tty_empty_wait(tty_queue_t *queue, pid_t pid) {
     empty = tty_queue_isempty(queue);
     mutex_unlock(&queue->mutex);
     if (empty) {
+        mutex_lock(&queue->mutex);
+        for (int x = queue->proc_wait_num, lmask = false; x <= TTY_MAX_WAIT_PROC; x++) {
+            if (x == TTY_MAX_WAIT_PROC) {
+                if (lmask) {
+                    deprintf("Out of tty wait queue!");
+                    return;
+                }
+                lmask = true;
+                x = 0;
+            }
+            if (queue->proc_wait[x] == 0) {
+                queue->proc_wait[x] = pid;
+                break;
+            }
+        }
+        mutex_unlock(&queue->mutex);
         set_proc_status(getpcb(pid), STATUS_WAIT);
         do_schedule(NULL);
     }
 }
 
 void tty_full_wait(tty_queue_t *queue, pid_t pid) {
+    TODO;
     while (true) {
         bool empty;
         mutex_lock(&queue->mutex);
         empty = tty_queue_isempty(queue);
         mutex_unlock(&queue->mutex);
         if (empty) {
+            mutex_lock(&queue->mutex);
+            for (int x = queue->proc_wait_num, lmask = false; x <= TTY_MAX_WAIT_PROC; x++) {
+                if (x == TTY_MAX_WAIT_PROC) {
+                    if (lmask) {
+                        deprintf("Out of tty wait queue!");
+                        return;
+                    }
+                    lmask = true;
+                    x = 0;
+                }
+                if (queue->proc_wait[x] == 0) {
+                    queue->proc_wait[x] = pid;
+                    break;
+                }
+            }
+            mutex_unlock(&queue->mutex);
             set_proc_status(getpcb(pid), STATUS_WAIT);
             do_schedule(NULL);
-        } else return;
+        }
     }
 }
 
@@ -110,14 +151,15 @@ int32_t tty_read(tty_t *tty, pid_t pid, int32_t size, uchar_t *buff) {
 
 int32_t tty_write(tty_t *tty, pid_t pid, int32_t size, uchar_t *buff) {
     tty_queue_t *queue = tty->write;
+    //tty_full_wait(queue, pid);
     mutex_lock(&queue->mutex);
+    ASSERT(tty->console);
     console_putns(tty->console, buff, size);
     mutex_unlock(&queue->mutex);
 }
 
 int32_t tty_cook(tty_t *tty) {
     dprintf("now cook it");
-
     tty_queue_t *source = tty->kinput, *target = tty->read;
     mutex_lock(&source->mutex);
     mutex_lock(&target->mutex);
@@ -129,9 +171,23 @@ int32_t tty_cook(tty_t *tty) {
         tty_queue_putc(target, c);
         count++;
     }
+    pid_t pid_to_wake = 0;
+    for (int x = target->proc_wait_num; x < TTY_MAX_WAIT_PROC; x++) {
+        pid_t tpid = target->proc_wait[x];
+        target->proc_wait[x] = 0;
+        if (get_proc_status(getpcb(tpid)) != STATUS_WAIT) {
+            deprintf("Proc %x already wake up....", tpid);
+        } else {
+            pid_to_wake = tpid;
+            break;
+        }
+    }
     mutex_unlock(&target->mutex);
     mutex_unlock(&source->mutex);
-    set_proc_status(getpcb(2), STATUS_READY);
+    if (pid_to_wake != 0) {
+        set_proc_status(getpcb(pid_to_wake), STATUS_READY);
+        do_schedule(NULL);
+    }
     return count;
 }
 
@@ -150,3 +206,43 @@ void tty_kb_handler(int code) {
     }
 }
 
+int32_t tty_fs_node_read(fs_node_t *node, __fs_special_t *fsp_, uint32_t offset, uint32_t size, uint8_t *buff) {
+    uint8_t ttyid = (uint8_t) node->inode;
+    if (ttyid > TTY_MAX_COUNT) {
+        deprintf("tty not exist:%x", ttyid);
+        return -1;
+    }
+    return tty_read(&ttys[ttyid], getpid(), size, buff);
+}
+
+int32_t tty_fs_node_write(fs_node_t *node, __fs_special_t *fsp_, uint32_t offset, uint32_t size, uint8_t *buff) {
+    uint8_t ttyid = (uint8_t) node->inode;
+    if (ttyid > TTY_MAX_COUNT) {
+        deprintf("tty not exist:%x", ttyid);
+        return 1;
+    }
+    dprintf("write tty:%x", ttyid);
+    return tty_write(&ttys[ttyid], getpid(), size, buff);
+}
+
+__fs_special_t *tty_fs_node_mount(int ttyid, fs_node_t *node) {
+    node->inode = (uint32_t) ttyid;
+    return ttys;
+}
+
+void tty_fg_switch(uint8_t ttyid) {
+    if (ttyid > TTY_MAX_COUNT) {
+        deprintf("tty not exist:%x", ttyid);
+        return;
+    }
+    cur_tty_id = ttyid;
+    console_switch(ttys[cur_tty_id].console);
+}
+
+void tty_create_fstype() {
+    memset(&ttyfs, 0, sizeof(fs_t));
+    strcpy(ttyfs.name, "TTY_TEST");
+    ttyfs.mount = (mount_type_t) tty_fs_node_mount;
+    ttyfs.read = tty_fs_node_read;
+    ttyfs.write = tty_fs_node_write;
+}

@@ -5,6 +5,7 @@
 #include <str.h>
 #include <schedule.h>
 #include <proc.h>
+#include <io.h>
 #include "timer.h"
 #include "../ker/include/irqs.h"
 
@@ -26,7 +27,8 @@ void timer_handler(struct regs *r) {
 }
 
 void delay(unsigned long sec) {
-    dprintf("proc %x delay %ds.", getpid(), sec);
+    if (getpid() != 0)
+        dprintf("proc %x delay %ds.", getpid(), sec);
     uint32_t tm;
     get_time_count(&tm);
     uint32_t target_timer_count = tm + sec * 18;

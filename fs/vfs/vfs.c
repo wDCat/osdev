@@ -10,6 +10,7 @@
 #include <vfs.h>
 #include <catrfmt.h>
 #include <stat.h>
+#include <tty.h>
 #include "proc.h"
 
 mount_point_t mount_points[MAX_MOUNT_POINTS];
@@ -23,16 +24,16 @@ extern blk_dev_t dev;
 
 void stdio_install() {
     pcb_t *pcb = getpcb(1);
-    pcb->fh[0].present = 1;
-    pcb->fh[1].present = 1;
-    pcb->fh[2].present = 1;
+    kclose_all(1);
+    ASSERT(sys_open("/dev/tty0", 0) == 0);//STDIN
+    ASSERT(sys_open("/dev/tty0", 0) == 1);//STDOUT
+    ASSERT(sys_open("/dev/tty0", 0) == 2);//STDERR
 }
 
 void vfs_install() {
     memset(mount_points, 0, sizeof(mount_point_t) * MAX_MOUNT_POINTS);
     mount_points_count = 0;
     memset(global_fh_table, 0, sizeof(file_handle_t) * MAX_FILE_HANDLES);
-    stdio_install();
 }
 
 void vfs_init(vfs_t *vfs) {
@@ -254,6 +255,16 @@ int8_t kopen(uint32_t pid, const char *name, uint8_t mode) {
     return fd;
 }
 
+void kclose_all(uint32_t pid) {
+    pcb_t *pcb = getpcb(pid);
+    for (int8_t x = 0; x < MAX_FILE_HANDLES; x++) {
+        if (pcb->fh[x].present) {
+            pcb->fh[x].present = 0;
+            break;
+        }
+    }
+}
+
 int8_t sys_open(const char *name, uint8_t mode) {
     return kopen(getpid(), name, mode);
 }
@@ -352,6 +363,7 @@ void mount_rootfs(uint32_t initrd) {
     vfs_init(&vfs);
     ext2_create_fstype();
     catmfs_create_fstype();
+    tty_create_fstype();
     CHK(vfs_mount(&vfs, "/", &catmfs, NULL), "");
     CHK(vfs_cd(&vfs, "/"), "");
     mount_point_t *mp;
@@ -360,6 +372,17 @@ void mount_rootfs(uint32_t initrd) {
     CHK(vfs_cd(&vfs, "/"), "");
     CHK(vfs_mkdir(&vfs, "data"), "");
     CHK(vfs_mount(&vfs, "/data/", &ext2_fs, &disk1), "");
+    CHK(vfs_cd(&vfs, "/"), "");
+    CHK(vfs_mkdir(&vfs, "dev"), "");
+    CHK(vfs_cd(&vfs, "/dev"), "");
+    for (int x = 0; x < TTY_MAX_COUNT; x++) {
+        char ttyfn[20];
+        strformat(ttyfn, "tty%d", x);
+        CHK(vfs_touch(&vfs, ttyfn), "");
+        strformat(ttyfn, "/dev/tty%d", x);
+        vfs_mount(&vfs, ttyfn, &ttyfs, x);
+    }
+    stdio_install();
     dprintf("rootfs mounted.");
     return;
     _err:

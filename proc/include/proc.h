@@ -87,4 +87,6 @@ void proc_exit(uint32_t ret);
 
 void setpid(pid_t pid);
 
+proc_status_t get_proc_status(pcb_t *pcb);
+
 #endif //W2_PROC_H
