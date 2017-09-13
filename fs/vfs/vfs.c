@@ -332,7 +332,7 @@ int32_t sys_write(int8_t fd, int32_t size, uchar_t *buff) {
 }
 
 int sys_stat(const char *path, stat_t *stat) {
-    CHK(vfs_cd(&vfs, path), "");
+    CHK(vfs_cd(&vfs, path), "No such file or directory.");
     fs_node_t *n = &vfs.current;
     stat->st_dev = 0;
     stat->st_ino = n->inode;

@@ -31,7 +31,6 @@ pid_t getpid() {
 
 /**For Debug...*/
 void setpid(pid_t pid) {
-    dprintf("proc %x set self pid to %x", current_pid, pid);
     current_pid = pid;
 }
 
@@ -105,7 +104,9 @@ pid_t find_free_pcb() {
 
 
 void proc_exit(uint32_t ret) {
-    set_proc_status(getpcb(getpid()), STATUS_DIED);
+    pcb_t *pcb = getpcb(getpid());
+    set_proc_status(pcb, STATUS_DIED);
+    pcb->exit_val = ret;
     dprintf("[+] proc %x exited with ret:%x", getpid(), ret);
     for (;;);
 }
@@ -161,8 +162,10 @@ inline proc_status_t get_proc_status(pcb_t *pcb) {
 }
 
 void set_proc_status(pcb_t *pcb, proc_status_t new_status) {
+    ASSERT(pcb > 0x100);//silly
     cli();
     if (pcb->status == new_status || pcb->pid <= 1)return;
+    dprintf("Proc %x status %x ==> %x", pcb->pid, pcb->status, new_status);
     proc_queue_t *old = find_pqueue_by_status(pcb->status);
     proc_queue_t *ns = find_pqueue_by_status(new_status);
 
@@ -205,12 +208,14 @@ void switch_to_proc(pcb_t *pcb) {
     ASSERT(pcb->present && (pcb->pid > 1 || pcb->pid == 0));
     if (pcb->pid == current_pid)return;
     cli();
+    if (pcb->pid > MAX_PROC_COUNT) PANIC("Bad PID:%x pcb:%x", pcb->pid, pcb);
     set_proc_status(pcb, STATUS_RUN);
     set_active_user_tss(&pcb->tss);
     set_active_user_ldt(pcb->ldt_table, pcb->ldt_table_count);
     _gdt_flush();
     dprintf("switch to task %x[PC:%x]", pcb->pid, pcb->tss.eip);
     current_pid = pcb->pid;
+    current_dir = pcb->page_dir;
     sti();
     //k_delay(1);//cause bug...
     struct {

@@ -96,6 +96,8 @@ int32_t get_continuous_free_frame(uint32_t count);
 
 uint32_t alloc_continuous_frame(uint32_t count, page_directory_t *dir);
 
+page_directory_t *get_current_page_directory();
+
 void flush_TLB();
 
 #endif //W2_PAGE_H

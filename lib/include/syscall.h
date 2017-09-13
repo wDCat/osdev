@@ -73,4 +73,8 @@ _define_syscall2(stat, 11, const char*, stat_t*);
 
 _define_syscall3(ls, 12, const char*, dirent_t*, uint32_t);
 
+_define_syscall2(exec, 13, const char*, int);
+
+_define_syscall3(waitpid, 14, pid_t, int*, int);
+
 #endif //W2_SYSCALL_H

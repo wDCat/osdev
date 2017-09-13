@@ -39,7 +39,8 @@ bool elf_load(pid_t pid, int8_t fd, uint32_t *entry_point) {
         goto _err;
     }
     for (int x = 0; x < ehdr.e_shnum; x++) {
-        dprintf("Section %x addr:%x size:%x offset:%x", x, shdr->sh_addr, shdr->sh_size, shdr->sh_offset);
+        dprintf("Section %x addr:%x size:%x offset:%x type:%x", x, shdr->sh_addr, shdr->sh_size, shdr->sh_offset,
+                shdr->sh_type);
         if (shdr->sh_addr) {
             for (uint32_t y = 0; y < shdr->sh_size; y += 0x1000) {
                 alloc_frame(get_page(shdr->sh_addr + x, true, pcb->page_dir), false, false);

@@ -170,6 +170,12 @@ void paging_install() {
     kernel_pheap = pheap_create(KPHEAP_START, KPHEAP_SIZE);
 }
 
+page_directory_t *get_current_page_directory() {
+    __asm__ __volatile__("mov %cr3,%eax;"
+            "sub $0x1000,%eax;"
+            "ret;");
+}
+
 void switch_page_directory(page_directory_t *dir) {
     current_dir = dir;
     __asm__ __volatile__("mov %0, %%cr3"::"r"(dir->physical_addr));

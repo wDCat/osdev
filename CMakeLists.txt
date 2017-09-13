@@ -16,7 +16,6 @@ FILE(GLOB MyCSources
         /home/dcat/osdev/w2/main.c
         /home/dcat/osdev/w2/mutex.c
         /home/dcat/osdev/w2/str.c
-        /home/dcat/osdev/w2/schedule.c
         /home/dcat/osdev/w2/syscall_handler.c
         /home/dcat/osdev/w2/little_test.c
         /home/dcat/osdev/w2/dev/tty.c
@@ -30,7 +29,9 @@ FILE(GLOB MyCSources
         /home/dcat/osdev/w2/dev/timer.c
         /home/dcat/osdev/w2/dev/serial.c
         /home/dcat/osdev/w2/lib/syscall.c
+        /home/dcat/osdev/w2/proc/schedule.c
         /home/dcat/osdev/w2/proc/exec.c
+        /home/dcat/osdev/w2/proc/wait.c
         /home/dcat/osdev/w2/proc/proc.c
         /home/dcat/osdev/w2/proc/elf/elfloader.c
         /home/dcat/osdev/w2/fs/vfs/vfs.c

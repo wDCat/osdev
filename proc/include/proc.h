@@ -35,11 +35,11 @@ __asm__ __volatile__("mov %0, %%esp" : : "r" (esp));\
 }
 
 typedef enum proc_status {
-    STATUS_NEW,
-    STATUS_RUN,
-    STATUS_READY,
-    STATUS_WAIT,
-    STATUS_DIED
+    STATUS_NEW = 0x0,
+    STATUS_RUN = 0x1,
+    STATUS_READY = 0x2,
+    STATUS_WAIT = 0x3,
+    STATUS_DIED = 0x4
 } proc_status_t;
 typedef uint32_t pid_t;
 typedef struct {
@@ -56,6 +56,7 @@ typedef struct {
     ldt_limit_entry_t *ldt_table;
     uint8_t ldt_table_count;
     uint32_t reserved_page;
+    uint8_t exit_val;
     vfs_t vfs;
     file_handle_t fh[MAX_FILE_HANDLES];
 } pcb_t;

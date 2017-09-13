@@ -5,9 +5,11 @@
 #include <proc.h>
 #include <str.h>
 #include <elfloader.h>
+#include <schedule.h>
 #include "exec.h"
 
 int kexec(pid_t pid, const char *path, int argc, ...) {
+    dprintf("%x try to exec %s", path);
     pcb_t *pcb = getpcb(pid);
     if (!pcb->present) {
         deprintf("process %x not exist.", pid);
@@ -20,7 +22,7 @@ int kexec(pid_t pid, const char *path, int argc, ...) {
     }
     page_directory_t *orig_pd = current_dir;
     if (current_dir != pcb->page_dir) {
-        dprintf("switch to proc's pd.");
+        dprintf("switch to proc's pd:%x orig:%x", pcb->page_dir, orig_pd);
         switch_page_directory(pcb->page_dir);
     }
     uint32_t eip;
@@ -43,11 +45,21 @@ int kexec(pid_t pid, const char *path, int argc, ...) {
     esp -= 1;
     pcb->tss.esp = (uint32_t) esp;
     if (current_dir != orig_pd) {
-        dprintf("switch back pd/");
+        dprintf("switch back pd:%x", orig_pd);
         switch_page_directory(orig_pd);
     }
     dprintf("kexec done.");
+    if (getpid() != 1) {
+        dprintf("debug loop");
+        //LOOP();
+    }
+    do_schedule_rejmp(NULL);
     return 0;
     _err:
     return 1;
+}
+
+//FIXME args pass
+int sys_exec(const char *path, int argc, ...) {
+    return kexec(getpid(), path, argc);
 }

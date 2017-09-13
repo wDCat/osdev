@@ -2,6 +2,8 @@
 // Created by dcat on 7/7/17.
 //
 #include <str.h>
+#include <exec.h>
+#include <wait.h>
 #include "ker/include/idt.h"
 #include "proc.h"
 #include "syscall_handler.h"
@@ -46,7 +48,9 @@ uint32_t syscalls_table[] = {
         &sys_read,
         &sys_write,
         &sys_stat,
-        &sys_ls
+        &sys_ls,
+        &sys_exec,
+        &sys_waitpid
 };
 uint32_t syscalls_count = sizeof(syscalls_table) / sizeof(uint32_t);
 

@@ -234,6 +234,8 @@ void ide_test() {
 int little_test2() {
     tty_create_fstype();
     sys_write(1, 20, "STDOUT TEST");
+    kexec(getpid(), "/init", 2, 0x24, 0x44, NULL);
+    PANIC("Why me executed?>")
     /*
     vfs_mount(&vfs, "/tty0", &ttyfs, 0);
     vfs_mount(&vfs, "/tty1", &ttyfs, 1);
@@ -268,7 +270,6 @@ int little_test2() {
         tty_read(&ttys[0], getpid(), 50, a);
         dprintf("read done:%s", a);
     }*/
-    for (;;);
 
 }
 

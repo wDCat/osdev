@@ -90,6 +90,7 @@ int main(multiboot_info_t *mul_arg, uint32_t init_esp_arg) {
         PANIC("module not found..")
     }
     sti();
+    //putf("kp:%x", get_current_page_directory());
     mount_rootfs(initrd_start);
     move_kernel_stack(0xBB0000, 0x10000);
     PANIC("Hey!I'm here!");
