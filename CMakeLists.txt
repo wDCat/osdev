@@ -29,6 +29,8 @@ FILE(GLOB MyCSources
         /home/dcat/osdev/w2/dev/timer.c
         /home/dcat/osdev/w2/dev/serial.c
         /home/dcat/osdev/w2/lib/syscall.c
+        /home/dcat/osdev/w2/proc/exit.c
+        /home/dcat/osdev/w2/proc/signal.c
         /home/dcat/osdev/w2/proc/schedule.c
         /home/dcat/osdev/w2/proc/exec.c
         /home/dcat/osdev/w2/proc/wait.c

@@ -103,13 +103,7 @@ pid_t find_free_pcb() {
 }
 
 
-void proc_exit(uint32_t ret) {
-    pcb_t *pcb = getpcb(getpid());
-    set_proc_status(pcb, STATUS_DIED);
-    pcb->exit_val = ret;
-    dprintf("[+] proc %x exited with ret:%x", getpid(), ret);
-    for (;;);
-}
+
 
 void create_user_stack(uint32_t end_addr, uint32_t size, uint32_t *new_ebp, uint32_t *new_esp, page_directory_t *dir) {
     for (uint32_t p = end_addr - size; p < end_addr; p += 0x1000) {
@@ -288,6 +282,16 @@ pid_t fork(regs_t *r) {
     create_ldt(cpcb);
     tss->esp0 = (uint32_t) (cpcb->reserved_page + 0x990);
     tss->ldt = 0;
+    cpcb->fpcb = fpcb;
+    if (fpcb->cpcb) {
+        pcb_t *pp = fpcb->cpcb;
+        while (true) {
+            if (pp->next_pcb == NULL) {
+                pp->next_pcb = cpcb;
+                break;
+            } else pp = pp->next_pcb;
+        }
+    } else fpcb->cpcb = cpcb;
     //Copy open file table...
     memcpy(cpcb->fh, fpcb->fh, sizeof(fpcb->fh));
     save_proc_state(fpcb, r);

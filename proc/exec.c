@@ -9,7 +9,7 @@
 #include "exec.h"
 
 int kexec(pid_t pid, const char *path, int argc, ...) {
-    dprintf("%x try to exec %s", path);
+    dprintf("%x try to exec %s", pid, path);
     pcb_t *pcb = getpcb(pid);
     if (!pcb->present) {
         deprintf("process %x not exist.", pid);

@@ -22,6 +22,7 @@ pid_t sys_waitpid(pid_t pid, int *status, int options) {
         *status |= (tpcb->exit_val & 0xFF) << 8;
         return pid;
     }
+    set_proc_status(getpcb(getpid()), STATUS_WAIT);
     do_schedule(NULL);
     goto loop;
 }

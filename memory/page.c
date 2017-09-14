@@ -8,6 +8,7 @@
 #include "include/contious_heap.h"
 #include "include/page.h"
 #include <str.h>
+#include <page.h>
 #include "include/page.h"
 
 extern heap_t *create_heap(uint32_t start_addr, uint32_t end_addr, uint32_t max_addr, page_directory_t *dir);
@@ -276,6 +277,32 @@ page_table_t *clone_page_table(page_table_t *src, uint32_t *phy_out, uint32_t nu
         }
     }
     return target;
+}
+
+int free_page_table(page_table_t *src) {
+    for (int x = 0; x < 1024; x++) {
+        if (src->pages[x].frame) {
+            free_frame(&src->pages[x]);
+        }
+    }
+    return 0;
+}
+
+int free_page_directory(page_directory_t *src) {
+    int count = 0;
+    for (int x = 0; x < 1024; x++) {
+        if (src->tables[x]) {
+            if (src->tables[x] != kernel_dir->tables[x]) {
+                count++;
+                if (free_page_table(src->tables[x])) {
+                    deprintf("fail to free page table. pd:%x index:%x", src, x);
+                    return 1;
+                }
+            }
+        }
+    }
+    dprintf("free %x page table(s).", count);
+    return 0;
 }
 
 page_directory_t *clone_page_directory(page_directory_t *src) {

@@ -5,6 +5,7 @@
 #include "page.h"
 #include <str.h>
 #include <schedule.h>
+#include <signal.h>
 #include "include/isrs.h"
 #include "include/idt.h"
 #include "include/system.h"
@@ -72,11 +73,9 @@ void fault_handler(struct regs *r) {
         dump_regs(r);
         if (umoude_con) {
             dprintf("Proc %x cause NO.%x fault.Kill it.PC:%x", getpid(), r->int_no, r->eip);
-            set_proc_status(getpcb(getpid()), STATUS_DIED);
-            if (getpid() == 1) {PANIC("Abort!"); }
-            else { do_schedule(r); }
-            for (;;);
-            return;
+            send_sig(getpcb(getpid()), SIGSEGV);
+            if (getpid() == 1) PANIC("Abort!");
+            do_schedule(NULL);
         }
         for (;;);
     }

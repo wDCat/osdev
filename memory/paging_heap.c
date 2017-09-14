@@ -63,7 +63,8 @@ uint32_t *pheap_alloc(paging_heap_t *heap, uint32_t size) {
     BIT_SET(endbitptr[endbitindex / 8], endbitindex % 8);
     result = heap->start_addr + 0x1000 + curbit * 0x1000;
     heap->current = heap->start_addr + 0x1000 + curbit * 0x1000 + size;
-    return result;
+    dprintf("allocated %x size %x", result, size);
+    return (uint32_t *) result;
     out_of_heap:
     PANIC("Out of pheap.")
     return 0;
@@ -82,6 +83,7 @@ void pheap_free(paging_heap_t *heap, uint32_t pointer) {
         BIT_CLEAR(bitptr[x / 8], x % 8);
         if (BIT_GET(endbitptr[x / 8], x % 8)) {
             BIT_CLEAR(endbitptr[x / 8], x % 8);
+            dprintf("free %x size %x", pointer, (uint32_t) heap->start_addr + 0x1000 + x * 0x1000 - pointer + 0x1000);
             //putf_const("[+]End Addr:%x\n", heap->start_addr + 0x1000 + x * 0x1000);
             break;
         }

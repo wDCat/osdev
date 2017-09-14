@@ -46,7 +46,7 @@ typedef struct {
     uint32_t base;
     uint32_t limit;
 } ldt_limit_entry_t;
-typedef struct {
+typedef struct pcb_struct {
     bool present;
     proc_status_t status;
     pid_t pid;
@@ -56,15 +56,22 @@ typedef struct {
     ldt_limit_entry_t *ldt_table;
     uint8_t ldt_table_count;
     uint32_t reserved_page;
-    uint8_t exit_val;
+    uint32_t exit_val;
+    uint32_t signal_handler[25];
+    uint32_t blocked;
+    uint32_t signal;
     vfs_t vfs;
+    struct pcb_struct *fpcb;
+    struct pcb_struct *cpcb;
+    //same group proc linked list
+    struct pcb_struct *next_pcb;
     file_handle_t fh[MAX_FILE_HANDLES];
 } pcb_t;
 typedef struct {
     uint32_t count;
     pcb_t *pcbs[1023];
 } proc_queue_t;
-extern proc_queue_t *proc_avali_queue, *proc_ready_queue;
+extern proc_queue_t *proc_avali_queue, *proc_ready_queue, *proc_wait_queue;
 
 pid_t getpid();
 
@@ -83,8 +90,6 @@ void save_proc_state(pcb_t *pcb, regs_t *r);
 void switch_to_proc(pcb_t *pcb);
 
 void set_proc_status(pcb_t *pcb, proc_status_t new_status);
-
-void proc_exit(uint32_t ret);
 
 void setpid(pid_t pid);
 

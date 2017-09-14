@@ -4,6 +4,8 @@
 #include <str.h>
 #include <exec.h>
 #include <wait.h>
+#include <signal.h>
+#include <exit.h>
 #include "ker/include/idt.h"
 #include "proc.h"
 #include "syscall_handler.h"
@@ -42,7 +44,7 @@ uint32_t syscalls_table[] = {
         &fork_s,
         &getpid,
         &hello_switcher,
-        &proc_exit,
+        &sys_exit,
         &sys_open,
         &sys_close,
         &sys_read,
@@ -50,7 +52,8 @@ uint32_t syscalls_table[] = {
         &sys_stat,
         &sys_ls,
         &sys_exec,
-        &sys_waitpid
+        &sys_waitpid,
+        &sys_kill
 };
 uint32_t syscalls_count = sizeof(syscalls_table) / sizeof(uint32_t);
 
@@ -71,6 +74,8 @@ int syscall_handler(regs_t *r) {
     syscall_fun_t fun = (syscall_fun_t) syscalls_table[r->eax];
     //A better implement?
     uint32_t ret = fun(r->ebx, r->ecx, r->edx, r->esi, r->edi, r);
+    //handle signal~
+    do_signal(r);
     r->eax = ret;
     return 0;
 }
