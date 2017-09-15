@@ -49,13 +49,14 @@ int kexec(pid_t pid, const char *path, int argc, ...) {
         switch_page_directory(orig_pd);
     }
     dprintf("kexec done.");
-    if (getpid() != 1) {
-        dprintf("debug loop");
-        //LOOP();
-    }
     do_schedule_rejmp(NULL);
     return 0;
     _err:
+    if (current_dir != orig_pd && orig_pd != 0) {
+        dprintf("switch back pd:%x", orig_pd);
+        switch_page_directory(orig_pd);
+    }
+    dprintf("kexec failed.");
     return 1;
 }
 

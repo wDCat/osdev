@@ -56,11 +56,12 @@ typedef struct pcb_struct {
     ldt_limit_entry_t *ldt_table;
     uint8_t ldt_table_count;
     uint32_t reserved_page;
-    uint32_t exit_val;
+    int32_t exit_val;
     uint32_t signal_handler[25];
     uint32_t blocked;
     uint32_t signal;
     vfs_t vfs;
+    uint8_t hold_proc;//Can this pcb be free?
     struct pcb_struct *fpcb;
     struct pcb_struct *cpcb;
     //same group proc linked list

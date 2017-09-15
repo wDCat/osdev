@@ -34,21 +34,6 @@ uint32_t get_frame_status(uint32_t frame_addr) {
 }
 
 
-uint32_t page_to_bit(page_t *p) {
-    uint32_t r = 0;
-    /*
-    r |= p->present;
-    r |= p->rw << 1;
-    r |= p->user << 2;
-    r |= p->write_through << 3;
-    r |= p->cache_disabled << 4;
-    r |= p->accessed << 5;
-    r |= p->page_size << 7;
-    r |= p->ignored << 8;
-    r |= p->frame << 11;*/
-    return r;
-}
-
 int32_t get_free_frame() {
     for (uint32_t x = 0; x < frame_max_count; x++) {
         if (frame_status[x] == FRAME_STATUS_FREE) {
@@ -129,7 +114,13 @@ void free_frame(page_t *page) {
     }
 }
 
+bool installed = false;
 void paging_install() {
+    if (installed) {
+        deprintf("paging already installed,but paging_install called again!");
+        return;
+    }
+    installed = true;
     uint32_t mem_end_page = 0x1000000;
     frame_max_count = mem_end_page / 0x1000;
     dprintf("frame max count:%x", frame_max_count);
@@ -280,11 +271,14 @@ page_table_t *clone_page_table(page_table_t *src, uint32_t *phy_out, uint32_t nu
 }
 
 int free_page_table(page_table_t *src) {
+    int count = 0;
     for (int x = 0; x < 1024; x++) {
         if (src->pages[x].frame) {
+            count++;
             free_frame(&src->pages[x]);
         }
     }
+    dprintf("free %x frames.", count);
     return 0;
 }
 
@@ -294,13 +288,16 @@ int free_page_directory(page_directory_t *src) {
         if (src->tables[x]) {
             if (src->tables[x] != kernel_dir->tables[x]) {
                 count++;
+                dprintf("free space %x-%x", x * 1024 * 0x1000, (x + 1) * 1024 * 0x1000);
                 if (free_page_table(src->tables[x])) {
                     deprintf("fail to free page table. pd:%x index:%x", src, x);
                     return 1;
                 }
+                kfree(src->tables[x]);
             }
         }
     }
+    kfree(src);
     dprintf("free %x page table(s).", count);
     return 0;
 }

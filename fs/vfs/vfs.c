@@ -60,7 +60,7 @@ int vfs_find_mount_point(vfs_t *vfs, const char *path, mount_point_t **mp_out, c
         if (mp_out)
             *mp_out = mp;
         if (relatively_path)
-            if (maxpathlen >= strlen(path))
+            if (maxpathlen > strlen(path))
                 *relatively_path = 0;
             else
                 *relatively_path = (char *) (path + maxpathlen);
@@ -89,7 +89,8 @@ int vfs_get_node(vfs_t *vfs, const char *path, fs_node_t *node) {
     }
     if (tlen == 1 && path[0] == '/') {
         dprintf("cd to root");
-        vfs_cpynode(node, &mp->root);
+        if (node)
+            vfs_cpynode(node, &mp->root);
         return 0;
     }
     vfs_cpynode(&cur, &mp->root);
@@ -102,7 +103,7 @@ int vfs_get_node(vfs_t *vfs, const char *path, fs_node_t *node) {
                 len = (int) (p - &rpath[x]);
                 memcpy(name, &rpath[x], len);
                 name[len] = '\0';
-            } else if (x + 1 < slen) {
+            } else if (x < slen) {
                 len = slen - x + 1;
                 memcpy(name, &rpath[x], len);
                 name[len] = '\0';
@@ -117,7 +118,8 @@ int vfs_get_node(vfs_t *vfs, const char *path, fs_node_t *node) {
             x += len + 1;
         }
     }
-    vfs_cpynode(node, &cur);
+    if (node)
+        vfs_cpynode(node, &cur);
     return 0;
 }
 
@@ -329,6 +331,11 @@ int32_t sys_write(int8_t fd, int32_t size, uchar_t *buff) {
     int32_t ret = kwrite(getpid(), fd, fh->offset, size, buff);
     fh->offset += ret;
     return ret;
+}
+
+int sys_access(const char *path, int mode) {
+    pcb_t *pcb = getpcb(getpid());
+    return -vfs_get_node(&pcb->vfs, path, NULL);
 }
 
 int sys_stat(const char *path, stat_t *stat) {

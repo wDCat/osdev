@@ -8,8 +8,8 @@
 #include "system.h"
 #include "proc.h"
 
-void do_exit(pcb_t *pcb, uint32_t ret);
+void do_exit(pcb_t *pcb, int32_t ret);
 
-void sys_exit(uint32_t ret);
+void sys_exit(int32_t ret);
 
 #endif //W2_EXIT_H

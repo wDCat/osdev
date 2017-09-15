@@ -2,7 +2,7 @@
 // Created by dcat on 3/11/17.
 //
 
-#include "include/str.h"
+#include "str.h"
 
 uint strlen(const char *str) {
     int retval;

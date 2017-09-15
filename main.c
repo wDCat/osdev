@@ -79,12 +79,11 @@ int main(multiboot_info_t *mul_arg, uint32_t init_esp_arg) {
     //MUL HEADER LOST AFTER INSTALL!!!
     install_all();
     screen_clear();
-    putln_const("")
-    putln_const("            DCat's Kernel")
-    putln_const("")
+    tty_write(&ttys[0], 1, 50, "\n"
+            "            DCat's Kernel"
+            "\n\n");
     for (int x = 0; x < SCREEN_MAX_X; x++)
-        putc('-');
-    putln_const("")
+        tty_write(&ttys[0], 1, 1, "-");
     dprintf("init esp:%x", init_esp);
     if (mul.mods_count <= 0) {
         PANIC("module not found..")

@@ -36,3 +36,5 @@ _impl_syscall2(exec, 13, const char*, int);
 _impl_syscall3(waitpid, 14, pid_t, int*, int);
 
 _impl_syscall2(kill, 15, pid_t, int);
+
+_impl_syscall2(access, 16, const char*, int);

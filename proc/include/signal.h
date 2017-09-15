@@ -44,4 +44,6 @@ void send_sig(pcb_t *pcb, int sig);
 
 int sys_kill(pid_t pid, int sig);
 
+void signal_print_proc(pcb_t *pcb);
+
 #endif //W2_SIGNAL_H

@@ -103,8 +103,6 @@ pid_t find_free_pcb() {
 }
 
 
-
-
 void create_user_stack(uint32_t end_addr, uint32_t size, uint32_t *new_ebp, uint32_t *new_esp, page_directory_t *dir) {
     for (uint32_t p = end_addr - size; p < end_addr; p += 0x1000) {
         alloc_frame(get_page(p, true, dir), false, true);
@@ -210,7 +208,6 @@ void switch_to_proc(pcb_t *pcb) {
     dprintf("switch to task %x[PC:%x]", pcb->pid, pcb->tss.eip);
     current_pid = pcb->pid;
     current_dir = pcb->page_dir;
-    sti();
     //k_delay(1);//cause bug...
     struct {
         uint32_t a;
@@ -226,8 +223,43 @@ void create_ldt(pcb_t *pcb) {
     pcb->ldt_table[0].limit = 0xFFFFFFF;
 }
 
+void clean_pcb_table() {
+    dprintf("PCB Table clean routine...");
+    uint32_t procc = proc_count;
+    for (pid_t x = 2; x < procc; x++) {
+        pcb_t *pcb = getpcb(x);
+        if (get_proc_status(pcb) == STATUS_DIED && pcb->hold_proc == 0) {
+            if (pcb->fpcb) {
+                ASSERT(pcb->fpcb->cpcb);
+                pcb_t *pp = pcb->fpcb->cpcb;
+                if (pp->pid == pcb->pid) {
+                    pcb->fpcb->cpcb = pcb->next_pcb;
+                } else {
+                    bool found = false;
+                    while (pp->next_pcb != 0) {
+                        if (pp->next_pcb->pid == pcb->pid) {
+                            pp->next_pcb = pcb->next_pcb;
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found) PANIC("proc %s ix %x 's child,but it not exist in it's father's cpcb");
+
+                }
+            }
+            memset(pcb, 0, sizeof(pcb_t));
+            proc_count--;
+        }
+    }
+
+    dprintf("remove %x trash proc.", procc - proc_count);
+}
+
 pid_t fork(regs_t *r) {
     cli();
+    if (proc_count % 10 == 0) {
+        clean_pcb_table();
+    }
     pid_t fpid = getpid();
     pid_t cpid;
     cpid = find_free_pcb();

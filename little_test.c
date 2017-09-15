@@ -18,7 +18,7 @@
 #include "ker/include/idt.h"
 #include "ker/include/system.h"
 #include "screen.h"
-#include "include/str.h"
+#include "str.h"
 #include "timer.h"
 #include "keyboard.h"
 #include "memory/include/page.h"
@@ -275,4 +275,10 @@ int little_test2() {
 
 int little_test() {
     usermode();
+    for (int x = 0;; x++) {
+        dprintf("test time:%x", x);
+        uint32_t *a = kmalloc_paging(0x1000, NULL);
+        kfree(a);
+    }
+    //
 }

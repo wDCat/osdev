@@ -38,7 +38,7 @@ uint32_t catrfmt_read_inner(catrfmt_obj_t *fs_obj, uint32_t offset, uint32_t siz
     catrfmt_t *fs = fs_obj->fs;
     uint32_t saddr = fs->data_addr + fs_obj->offset + offset;
     dprintf("Reading %s data:%x offset:%x", fs_obj->name, fs->data_addr, saddr);
-    int ret = 0;
+    uint32_t ret = 0;
     if (offset >= fs_obj->length) {
         return ret;
     } else if (offset + size > fs_obj->length) {

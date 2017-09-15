@@ -6,8 +6,9 @@
 #define W2_STR_H
 
 #include "va.h"
-#include "../ker/include/system.h"
+#include "intdef.h"
 
+#define STR(x) (x)
 uint strlen(const char *str);
 
 int strstr(const char *str, const char *substr);
@@ -27,5 +28,9 @@ bool strcmp(const char *s1, const char *s2);
 char *strfmt_insspace(char *out, int tok_pos, int tok_len, int buff_len);
 
 uint strformatw(void (*writer)(void *extern_data, char c), void *extern_data, const char *fmt, ...);
+
+uint itohexs(const int num, char *out);
+
+uint itos(const int num, char *c2);
 
 #endif //W2_STR_H

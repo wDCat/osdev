@@ -6,6 +6,7 @@
 #include <str.h>
 #include <proc.h>
 #include <keyboard.h>
+#include <signal.h>
 #include "schedule.h"
 
 extern void irq_remap();
@@ -30,7 +31,7 @@ void do_schedule(regs_t *r) {
         if (pcb == 0)continue;
         x++;
         dprintf("[%x]", pcb->pid);
-        if (pcb->signal & ~pcb->status) {
+        if (pcb->signal & ~pcb->blocked) {
             dprintf("%x wake up by signal.", getpid());
             set_proc_status(pcb, STATUS_READY);
         }
@@ -57,7 +58,7 @@ void do_schedule(regs_t *r) {
         if (cur_pcb->status == STATUS_RUN)
             set_proc_status(cur_pcb, STATUS_READY);
         if (r != NULL) {
-            save_proc_state(cur_pcb, r);
+            //save_proc_state(cur_pcb, r);
         }
         dprintf("choosed proc:%x", choosed->pid);
     }

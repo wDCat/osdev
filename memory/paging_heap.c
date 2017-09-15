@@ -17,6 +17,19 @@ paging_heap_t *pheap_create(uint32_t start_addr, uint32_t size) {
     return heap;
 }
 
+void pheap_print_sum(paging_heap_t *heap) {
+    int used = 0, free = 0;
+    uint8_t *bitptr = (uint8_t *) heap->start_addr;
+    for (int x = 0; x < heap->size / 0x1000; x++) {
+        if (BIT_GET(bitptr[x / 8], x % 8)) {
+            used++;
+        } else {
+            free++;
+        }
+    }
+    dprintf("Heap Free:%d Used:%d", free, used);
+}
+
 uint32_t *pheap_alloc(paging_heap_t *heap, uint32_t size) {
     ASSERT(heap);
     if (size & 0xFFF) {
@@ -64,8 +77,10 @@ uint32_t *pheap_alloc(paging_heap_t *heap, uint32_t size) {
     result = heap->start_addr + 0x1000 + curbit * 0x1000;
     heap->current = heap->start_addr + 0x1000 + curbit * 0x1000 + size;
     dprintf("allocated %x size %x", result, size);
+    pheap_print_sum(heap);
     return (uint32_t *) result;
     out_of_heap:
+    pheap_print_sum(heap);
     PANIC("Out of pheap.")
     return 0;
 }
@@ -88,4 +103,5 @@ void pheap_free(paging_heap_t *heap, uint32_t pointer) {
             break;
         }
     }
+    pheap_print_sum(heap);
 }

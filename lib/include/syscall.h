@@ -79,4 +79,6 @@ _define_syscall3(waitpid, 14, pid_t, int*, int);
 
 _define_syscall2(kill, 15, pid_t, int);
 
+_define_syscall2(access, 16, const char*, int);
+
 #endif //W2_SYSCALL_H

@@ -6,6 +6,8 @@
 #define W2_UVFS_H
 
 #include "stdint.h"
+//Test
+#define  F_OK 0x0
 
 typedef struct dirent {
     uint32_t node;

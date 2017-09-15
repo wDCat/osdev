@@ -16,6 +16,7 @@ bool elf_load(pid_t pid, int8_t fd, uint32_t *entry_point) {
     dprintf("try to load elf pid:%x fd:%x", pid, fd);
     pcb_t *pcb = getpcb(pid);
     elf_header_t ehdr;
+    uint32_t shdr_ptr = 0;
     if (kread(pid, fd, 0, sizeof(elf_header_t), &ehdr) != sizeof(elf_header_t)) {
         deprintf("cannot read elf header.");
         goto _err;
@@ -32,7 +33,7 @@ bool elf_load(pid_t pid, int8_t fd, uint32_t *entry_point) {
         goto _err;
     }
     uint32_t shdrsize = ehdr.e_shentsize * ehdr.e_shnum;
-    uint32_t shdr_ptr = kmalloc_paging(shdrsize, NULL);
+    shdr_ptr = kmalloc_paging(shdrsize, NULL);
     elf_section_t *shdr = (elf_section_t *) shdr_ptr;
     if (kread(pid, fd, ehdr.e_shoff, shdrsize, shdr) != shdrsize) {
         deprintf("cannot read section info.");
@@ -42,8 +43,8 @@ bool elf_load(pid_t pid, int8_t fd, uint32_t *entry_point) {
         dprintf("Section %x addr:%x size:%x offset:%x type:%x", x, shdr->sh_addr, shdr->sh_size, shdr->sh_offset,
                 shdr->sh_type);
         if (shdr->sh_addr) {
-            for (uint32_t y = 0; y < shdr->sh_size; y += 0x1000) {
-                alloc_frame(get_page(shdr->sh_addr + x, true, pcb->page_dir), false, false);
+            for (uint32_t y = 0; y < shdr->sh_size + 0x1000; y += 0x1000) {
+                alloc_frame(get_page(shdr->sh_addr + y, true, pcb->page_dir), false, false);
             }
             if (shdr->sh_type == SHT_NOBITS) {
                 memset(shdr->sh_addr, 0, shdr->sh_size);

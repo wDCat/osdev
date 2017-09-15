@@ -75,10 +75,14 @@ void fault_handler(struct regs *r) {
             dprintf("Proc %x cause NO.%x fault.Kill it.PC:%x", getpid(), r->int_no, r->eip);
             send_sig(getpcb(getpid()), SIGSEGV);
             if (getpid() == 1) PANIC("Abort!");
+            //handle signal~
+            do_signal(r);
             do_schedule(NULL);
         }
         for (;;);
     }
+    //handle signal~
+    do_signal(r);
 }
 
 void isrs_install() {

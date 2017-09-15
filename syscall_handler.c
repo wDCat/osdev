@@ -53,7 +53,8 @@ uint32_t syscalls_table[] = {
         &sys_ls,
         &sys_exec,
         &sys_waitpid,
-        &sys_kill
+        &sys_kill,
+        &sys_access
 };
 uint32_t syscalls_count = sizeof(syscalls_table) / sizeof(uint32_t);
 
@@ -74,8 +75,6 @@ int syscall_handler(regs_t *r) {
     syscall_fun_t fun = (syscall_fun_t) syscalls_table[r->eax];
     //A better implement?
     uint32_t ret = fun(r->ebx, r->ecx, r->edx, r->esi, r->edi, r);
-    //handle signal~
-    do_signal(r);
     r->eax = ret;
     return 0;
 }

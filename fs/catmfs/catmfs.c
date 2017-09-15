@@ -118,7 +118,7 @@ int catmfs_fs_node_finddir(fs_node_t *node, __fs_special_t *fsp_, const char *na
         char *np = (char *) ((uint32_t) dir + 9);
         memcpy(sname, np, dir->name_len);
         sname[dir->name_len] = 0;
-
+        dprintf("sname:%s name:%s", sname, name);
         if (strcmp(sname, name)) {
             catmfs_get_fs_node(dir->inode, result_out);
             return 0;
@@ -152,7 +152,7 @@ int32_t catmfs_fs_node_read(fs_node_t *node, __fs_special_t *fsp_, uint32_t offs
         deprintf("not a catmfs node[%x][%x].", inode, inode->magic);
         return 1;
     }
-    if (inode->reserved != 0) {
+    if (inode->type == FS_FILE && inode->reserved != 0) {
         dprintf("a catrfmt file,redirect it.");
         return catrfmt_read(inode->reserved, offset, size, buff);
     }
@@ -203,7 +203,7 @@ int32_t catmfs_fs_node_write(fs_node_t *node, __fs_special_t *fsp_, uint32_t off
         deprintf("not a catmfs node[%x][%x].", inode, inode->magic);
         return 1;
     }
-    if (inode->reserved != 0) {
+    if (inode->type == FS_FILE && inode->reserved != 0) {
         dprintf("a catrfmt file,redirect it.");
         return catrfmt_write(inode->reserved, offset, size, buff);
     }

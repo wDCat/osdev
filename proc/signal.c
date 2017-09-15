@@ -5,7 +5,21 @@
 
 #include <proc.h>
 #include <str.h>
+#include <exit.h>
 #include "signal.h"
+
+void signal_print_proc(pcb_t *pcb) {
+    dprintf("signals:---------------");
+    for (int x = 0; x < 32; x++) {
+        if (BIT_GET(pcb->signal, x)) {
+            if (BIT_GET(pcb->blocked, x)) {
+                dprintf("%d blocked.");
+            } else {
+                dprintf("%d", x + 1);
+            }
+        }
+    }
+}
 
 int do_signal_inner(int signal) {
     pcb_t *pcb = getpcb(getpid());
@@ -22,7 +36,7 @@ int do_signal_inner(int signal) {
                 case SIGSTOP:
                 case SIGABRT:
                     dprintf("kill proc %x", getpid());
-                    set_proc_status(pcb, STATUS_DIED);
+                    do_exit(pcb, -1);
                     break;
             }
             break;

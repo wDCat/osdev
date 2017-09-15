@@ -8,6 +8,7 @@
 #include "system.h"
 #include "fs_node.h"
 #include "stat.h"
+#include "uvfs.h"
 
 #define MAX_MOUNT_POINTS 64
 #define MAX_FILE_HANDLES 10
@@ -99,5 +100,7 @@ int sys_stat(const char *path, stat_t *stat);
 int sys_ls(const char *path, dirent_t *dirents, uint32_t count);
 
 void kclose_all(uint32_t pid);
+
+int sys_access(const char *path, int mode);
 
 #endif //W2_VFS_H
