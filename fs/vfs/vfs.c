@@ -417,9 +417,9 @@ void mount_rootfs(uint32_t initrd) {
     CHK(catmfs_fs_node_load_catrfmt(&vfs.current_dir, mp->fsp, initrd), "");
     CHK(vfs_cd(&vfs, "/"), "");
     CHK(vfs_mkdir(&vfs, "data"), "");
-    CHK(vfs_mount(&vfs, "/data", &ext2_fs, &disk1), "");
+    CHK(vfs_mount(&vfs, "/data/", &ext2_fs, &disk1), "");
     CHK(vfs_mkdir(&vfs, "proc"), "");
-    CHK(vfs_mount(&vfs, "/proc", &procfs, NULL), "");
+    CHK(vfs_mount(&vfs, "/proc/", &procfs, NULL), "");
     CHK(vfs_cd(&vfs, "/"), "");
     CHK(vfs_mkdir(&vfs, "dev"), "");
     CHK(vfs_cd(&vfs, "/dev"), "");

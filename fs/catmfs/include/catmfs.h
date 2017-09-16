@@ -47,4 +47,24 @@ int catmfs_fs_node_load_catrfmt(fs_node_t *node, __fs_special_t *fsp_, uint32_t 
 
 void catmfs_create_fstype();
 
+catmfs_inode_t *catmfs_alloc_inode();
+
+int catmfs_make(catmfs_special_t *fsp, catmfs_inode_t *inode, uint8_t type, char *name, uint32_t catrfmt_inode);
+
+int catmfs_fs_node_make(fs_node_t *node, __fs_special_t *fsp_, uint8_t type, char *name);
+
+int32_t catmfs_fs_node_readdir(fs_node_t *node, __fs_special_t *fsp_, uint32_t count, struct dirent *result);
+
+int catmfs_fs_node_finddir(fs_node_t *node, __fs_special_t *fsp_, const char *name, fs_node_t *result_out);
+
+int catmfs_get_fs_node(uint32_t inode_id, fs_node_t *node);
+
+int32_t catmfs_fs_node_read(fs_node_t *node, __fs_special_t *fsp_, uint32_t offset, uint32_t size, uint8_t *buff);
+
+int32_t catmfs_fs_node_write(fs_node_t *node, __fs_special_t *fsp_, uint32_t offset, uint32_t size, uint8_t *buff);
+
+int catmfs_fs_node_rm(fs_node_t *node, __fs_special_t *fsp_);
+
+__fs_special_t *catmfs_fs_node_mount(void *dev, fs_node_t *node);
+
 #endif //W2_CATMFS_H

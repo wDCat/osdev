@@ -5,6 +5,7 @@
 
 # User-specific stuff:
 .idea/**/workspace.xml
+.idea/workspace.xml
 .idea/**/tasks.xml
 .idea/dictionaries
 
@@ -66,3 +67,4 @@ a.out
 build_all.makefile
 *.jar
 *.class
+build/.idea/inspectionProfiles/
