@@ -8,52 +8,54 @@ include_directories(/home/dcat/osdev/w2/proc/include)
 include_directories(/home/dcat/osdev/w2/proc/elf/include)
 include_directories(/home/dcat/osdev/w2/fs/vfs/include)
 include_directories(/home/dcat/osdev/w2/fs/ext2/include)
+include_directories(/home/dcat/osdev/w2/fs/procfs/include)
 include_directories(/home/dcat/osdev/w2/fs/catmfs/include)
 include_directories(/home/dcat/osdev/w2/memory/include)
 include_directories(/home/dcat/osdev/w2/ker/include)
-FILE(GLOB MyCSources
-        /home/dcat/osdev/w2/fs_node.c
-        /home/dcat/osdev/w2/main.c
-        /home/dcat/osdev/w2/mutex.c
-        /home/dcat/osdev/w2/syscall_handler.c
-        /home/dcat/osdev/w2/little_test.c
-        /home/dcat/osdev/w2/dev/tty.c
-        /home/dcat/osdev/w2/dev/io.c
-        /home/dcat/osdev/w2/dev/console.c
-        /home/dcat/osdev/w2/dev/screen.c
-        /home/dcat/osdev/w2/dev/keyboard.c
-        /home/dcat/osdev/w2/dev/blk_dev.c
-        /home/dcat/osdev/w2/dev/ide.c
-        /home/dcat/osdev/w2/dev/vga.c
-        /home/dcat/osdev/w2/dev/timer.c
-        /home/dcat/osdev/w2/dev/serial.c
-        /home/dcat/osdev/w2/lib/file.c
-        /home/dcat/osdev/w2/lib/str.c
-        /home/dcat/osdev/w2/lib/print.c
-        /home/dcat/osdev/w2/lib/syscall.c
-        /home/dcat/osdev/w2/proc/exit.c
-        /home/dcat/osdev/w2/proc/signal.c
-        /home/dcat/osdev/w2/proc/schedule.c
-        /home/dcat/osdev/w2/proc/exec.c
-        /home/dcat/osdev/w2/proc/wait.c
-        /home/dcat/osdev/w2/proc/proc.c
-        /home/dcat/osdev/w2/proc/elf/elfloader.c
-        /home/dcat/osdev/w2/fs/vfs/vfs.c
-        /home/dcat/osdev/w2/fs/ext2/ext2.c
-        /home/dcat/osdev/w2/fs/catmfs/catrfmt.c
-        /home/dcat/osdev/w2/fs/catmfs/catmfs.c
-        /home/dcat/osdev/w2/memory/mem.c
-        /home/dcat/osdev/w2/memory/contious_heap.c
-        /home/dcat/osdev/w2/memory/page.c
-        /home/dcat/osdev/w2/memory/heap_array_list.c
-        /home/dcat/osdev/w2/memory/kmalloc.c
-        /home/dcat/osdev/w2/memory/linkedlist.c
-        /home/dcat/osdev/w2/memory/paging_heap.c
-        /home/dcat/osdev/w2/ker/irqs.c
-        /home/dcat/osdev/w2/ker/gdt.c
-        /home/dcat/osdev/w2/ker/idt.c
-        /home/dcat/osdev/w2/ker/system.c
-        /home/dcat/osdev/w2/ker/isrs.c
-        /home/dcat/osdev/w2/ker/tss.c
-        )
+FILE(GLOB MyCSources 
+/home/dcat/osdev/w2/fs_node.c
+/home/dcat/osdev/w2/main.c
+/home/dcat/osdev/w2/mutex.c
+/home/dcat/osdev/w2/syscall_handler.c
+/home/dcat/osdev/w2/little_test.c
+/home/dcat/osdev/w2/dev/tty.c
+/home/dcat/osdev/w2/dev/io.c
+/home/dcat/osdev/w2/dev/console.c
+/home/dcat/osdev/w2/dev/screen.c
+/home/dcat/osdev/w2/dev/keyboard.c
+/home/dcat/osdev/w2/dev/blk_dev.c
+/home/dcat/osdev/w2/dev/ide.c
+/home/dcat/osdev/w2/dev/vga.c
+/home/dcat/osdev/w2/dev/timer.c
+/home/dcat/osdev/w2/dev/serial.c
+/home/dcat/osdev/w2/lib/file.c
+/home/dcat/osdev/w2/lib/str.c
+/home/dcat/osdev/w2/lib/print.c
+/home/dcat/osdev/w2/lib/syscall.c
+/home/dcat/osdev/w2/proc/exit.c
+/home/dcat/osdev/w2/proc/signal.c
+/home/dcat/osdev/w2/proc/schedule.c
+/home/dcat/osdev/w2/proc/exec.c
+/home/dcat/osdev/w2/proc/wait.c
+/home/dcat/osdev/w2/proc/proc.c
+/home/dcat/osdev/w2/proc/elf/elfloader.c
+/home/dcat/osdev/w2/fs/vfs/vfs.c
+/home/dcat/osdev/w2/fs/ext2/ext2.c
+/home/dcat/osdev/w2/fs/procfs/procfs.c
+/home/dcat/osdev/w2/fs/catmfs/catrfmt.c
+/home/dcat/osdev/w2/fs/catmfs/catmfs.c
+/home/dcat/osdev/w2/memory/mem.c
+/home/dcat/osdev/w2/memory/contious_heap.c
+/home/dcat/osdev/w2/memory/page.c
+/home/dcat/osdev/w2/memory/heap_array_list.c
+/home/dcat/osdev/w2/memory/kmalloc.c
+/home/dcat/osdev/w2/memory/linkedlist.c
+/home/dcat/osdev/w2/memory/paging_heap.c
+/home/dcat/osdev/w2/ker/irqs.c
+/home/dcat/osdev/w2/ker/gdt.c
+/home/dcat/osdev/w2/ker/idt.c
+/home/dcat/osdev/w2/ker/system.c
+/home/dcat/osdev/w2/ker/isrs.c
+/home/dcat/osdev/w2/ker/tss.c
+)
 ADD_EXECUTABLE(MyExecutable ${MyCSources})

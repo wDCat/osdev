@@ -85,6 +85,9 @@ void console_putc(console_t *con, const uchar_t c) {
             con->y += 1;
             console_scroll(con);
             break;
+        case '\t':
+            con->x += 4;
+            break;
         default:
             data = (uint8_t) (c & 0xFF);
             *(where) = data;

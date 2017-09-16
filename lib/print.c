@@ -11,10 +11,7 @@
 #include "file.h"
 
 void fprintf(FILE *fp, const char *fmt, ...) {
-    int8_t fd;
-    if (fp < 3)
-        fd = (int8_t) fp;
-    else fd = fp->fd;
+    int8_t fd = fp->fd;
     va_list args;
     va_start(args, fmt);
     int pos = 0;

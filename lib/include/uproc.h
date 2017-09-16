@@ -8,6 +8,6 @@
 #include "stdint.h"
 
 #define K_USER
-typedef uint32_t pid_t;
+typedef uint16_t pid_t;
 #undef K_USER
 #endif //W2_UPROC_H

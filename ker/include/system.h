@@ -84,6 +84,15 @@ void dprint_(const char *str);
 #define dprintf(str, args...) ({\
 strformatw(serial_write, COM1,"[D][%s] " str "\n",__func__,##args);\
 })
+#define dprintf_begin(str, args...)({\
+strformatw(serial_write, COM1,"[D][%s] " str ,__func__,##args);\
+})
+#define dprintf_cont(str, args...)({\
+strformatw(serial_write, COM1,str,##args);\
+})
+#define dprintf_end()({\
+strformatw(serial_write, COM1,"\n");\
+})
 #define deprintf(str, args...) ({\
 strformatw(serial_write, COM1,"[ERROR][%s] " str "\n",__func__,##args);\
 })

@@ -25,29 +25,30 @@ void do_schedule(regs_t *r) {
     uint32_t min_ts = (uint32_t) -1;
     pcb_t *choosed = 0;
 
-    dprintf("wait queue[%x]:", proc_wait_queue->count);
+    dprintf_begin("wait queue[%x]:", proc_wait_queue->count);
     for (uint32_t x = 0, y = 0; y < 1023 && x < proc_wait_queue->count; y++) {
         pcb_t *pcb = proc_wait_queue->pcbs[y];
         if (pcb == 0)continue;
         x++;
-        dprintf("[%x]", pcb->pid);
+        dprintf_cont("[%x]", pcb->pid);
         if (pcb->signal & ~pcb->blocked) {
-            dprintf("%x wake up by signal.", getpid());
+            dprintf_cont("[%x wake up by signal]", getpid());
             set_proc_status(pcb, STATUS_READY);
         }
-
     }
-    dprintf("ready queue[%x]:", proc_ready_queue->count);
+    dprintf_end();
+    dprintf_begin("ready queue[%x]:", proc_ready_queue->count);
     for (uint32_t x = 0, y = 0; y < 1023 && x < proc_ready_queue->count; y++) {
         if (proc_ready_queue->pcbs[y] == 0)continue;
         x++;
-        dprintf("[%x]", proc_ready_queue->pcbs[y]->pid);
+        dprintf_cont("[%x]", proc_ready_queue->pcbs[y]->pid);
         if (proc_ready_queue->pcbs[y]->pid == getpid())continue;
         if (proc_ready_queue->pcbs[y]->time_slice < min_ts) {
             choosed = proc_ready_queue->pcbs[y];
             min_ts = choosed->time_slice;
         }
     }
+    dprintf_end();
     if (choosed == 0)
         if (cur_pcb->status != STATUS_RUN) {
             choosed = getpcb(0);//idle~

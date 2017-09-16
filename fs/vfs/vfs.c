@@ -11,6 +11,7 @@
 #include <catrfmt.h>
 #include <stat.h>
 #include <tty.h>
+#include <procfs.h>
 #include "proc.h"
 
 mount_point_t mount_points[MAX_MOUNT_POINTS];
@@ -110,6 +111,10 @@ int vfs_get_node(vfs_t *vfs, const char *path, fs_node_t *node) {
             } else break;
             dprintf("cd fn:%s", name);
             fs_node_t tmp;
+            if (mp->fs->readdir == 0) {
+                deprintf("fs operator not implemented");
+                return 1;
+            }
             if (mp->fs->finddir(&cur, mp->fsp, name, &tmp)) {
                 dprintf("obj not found:%s", name);
                 return 1;
@@ -166,6 +171,10 @@ int32_t vfs_ls(vfs_t *vfs, dirent_t *dirs, uint32_t max_count) {
         dprintf("mount point not found:%s", vfs->path);
         return 1;
     }
+    if (mp->fs->readdir == 0) {
+        deprintf("fs operator not implemented");
+        return -1;
+    }
     return mp->fs->readdir(&vfs->current_dir, mp->fsp, max_count, dirs);
 
 }
@@ -176,6 +185,10 @@ int vfs_make(vfs_t *vfs, uint8_t type, const char *name) {
     if (vfs_find_mount_point(vfs, vfs->path, &mp, &rpath)) {
         dprintf("mount point not found:%s", vfs->path);
         return 1;
+    }
+    if (mp->fs->make == 0) {
+        deprintf("fs operator not implemented");
+        return -1;
     }
     return mp->fs->make(&vfs->current_dir, mp->fsp, type, name);
 }
@@ -199,6 +212,10 @@ int32_t vfs_read(vfs_t *vfs, uint32_t offset, uint32_t size, uchar_t *buff) {
         deprintf("try to read a directory or something else:%s", vfs->path);
         return -1;
     }
+    if (mp->fs->read == 0) {
+        deprintf("fs operator not implemented");
+        return -1;
+    }
     return mp->fs->read(&vfs->current, mp->fsp, offset, size, buff);
 }
 
@@ -211,6 +228,10 @@ int32_t vfs_write(vfs_t *vfs, uint32_t offset, uint32_t size, uchar_t *buff) {
     }
     if (vfs->current.flags != FS_FILE) {
         deprintf("try to write a directory or something else:%s", vfs->path);
+        return -1;
+    }
+    if (mp->fs->write == 0) {
+        deprintf("fs operator not implemented");
         return -1;
     }
     return mp->fs->write(&vfs->current, mp->fsp, offset, size, buff);
@@ -359,6 +380,23 @@ int sys_stat(const char *path, stat_t *stat) {
     return -1;
 }
 
+int sys_chdir(const char *path) {
+    pcb_t *pcb = getpcb(getpid());
+    CHK(vfs_cd(&pcb->vfs, path), "");
+    strcpy(pcb->dir, path);
+    return 0;
+    _err:
+    return -1;
+}
+
+char *sys_getcwd(char *buff, int len) {
+    pcb_t *pcb = getpcb(getpid());
+    if (strlen(pcb->dir) > len)
+        return NULL;
+    strcpy(buff, pcb->dir);
+    return buff;
+}
+
 int sys_ls(const char *path, dirent_t *dirents, uint32_t count) {
     CHK(vfs_cd(&vfs, path), "");
     return vfs_ls(&vfs, dirents, count);
@@ -371,6 +409,7 @@ void mount_rootfs(uint32_t initrd) {
     ext2_create_fstype();
     catmfs_create_fstype();
     tty_create_fstype();
+    procfs_create_type();
     CHK(vfs_mount(&vfs, "/", &catmfs, NULL), "");
     CHK(vfs_cd(&vfs, "/"), "");
     mount_point_t *mp;
@@ -378,7 +417,9 @@ void mount_rootfs(uint32_t initrd) {
     CHK(catmfs_fs_node_load_catrfmt(&vfs.current_dir, mp->fsp, initrd), "");
     CHK(vfs_cd(&vfs, "/"), "");
     CHK(vfs_mkdir(&vfs, "data"), "");
-    CHK(vfs_mount(&vfs, "/data/", &ext2_fs, &disk1), "");
+    CHK(vfs_mount(&vfs, "/data", &ext2_fs, &disk1), "");
+    CHK(vfs_mkdir(&vfs, "proc"), "");
+    CHK(vfs_mount(&vfs, "/proc", &procfs, NULL), "");
     CHK(vfs_cd(&vfs, "/"), "");
     CHK(vfs_mkdir(&vfs, "dev"), "");
     CHK(vfs_cd(&vfs, "/dev"), "");

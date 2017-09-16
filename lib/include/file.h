@@ -10,7 +10,5 @@
 typedef struct {
     int8_t fd;
 } FILE;
-#define stdin 0
-#define stdout 1
-#define stderr 2
+extern FILE *stdin, *stdout, *stderr;
 #endif //W2_FILE_H

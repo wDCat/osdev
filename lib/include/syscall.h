@@ -81,4 +81,8 @@ _define_syscall2(kill, 15, pid_t, int);
 
 _define_syscall2(access, 16, const char*, int);
 
+_define_syscall1(chdir, 17, const char*);
+
+_define_syscall2(getcwd, 18, char*, int);
+
 #endif //W2_SYSCALL_H

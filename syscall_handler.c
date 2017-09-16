@@ -54,7 +54,9 @@ uint32_t syscalls_table[] = {
         &sys_exec,
         &sys_waitpid,
         &sys_kill,
-        &sys_access
+        &sys_access,
+        &sys_chdir,
+        &sys_getcwd
 };
 uint32_t syscalls_count = sizeof(syscalls_table) / sizeof(uint32_t);
 

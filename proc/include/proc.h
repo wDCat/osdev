@@ -10,7 +10,7 @@
 #include "tss.h"
 #include "vfs.h"
 
-#define MAX_PROC_COUNT 256
+#define MAX_PROC_COUNT 64
 /*"pop %eax;" \
    "or $0x200,%eax;" \
     "pushl %eax;" \*/
@@ -41,7 +41,7 @@ typedef enum proc_status {
     STATUS_WAIT = 0x3,
     STATUS_DIED = 0x4
 } proc_status_t;
-typedef uint32_t pid_t;
+typedef uint16_t pid_t;
 typedef struct {
     uint32_t base;
     uint32_t limit;
@@ -61,6 +61,7 @@ typedef struct pcb_struct {
     uint32_t blocked;
     uint32_t signal;
     vfs_t vfs;
+    char dir[256];
     uint8_t hold_proc;//Can this pcb be free?
     struct pcb_struct *fpcb;
     struct pcb_struct *cpcb;

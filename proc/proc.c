@@ -45,6 +45,7 @@ void create_first_proc() {
     init_pcb->status = STATUS_RUN;
     init_pcb->pid = 1;
     init_pcb->page_dir = kernel_dir;
+    strcpy(init_pcb->dir, "/");
     extern tss_entry_t tss_entry;
     memcpy(&init_pcb->tss, &tss_entry, sizeof(tss_entry_t));
     //init_pcb->tss = &tss_entry;
@@ -305,6 +306,7 @@ pid_t fork(regs_t *r) {
         tss->gs = r->gs;
     }
     dprintf("proc cs[%x] es[%x]", r->cs, r->es);
+    strcpy(cpcb->dir, fpcb->dir);
     tss->eflags = r->eflags | 0x200;
     tss->ss0 = 0x10;
     cpcb->reserved_page = (uint32_t) (kmalloc_paging(0x1000, NULL));

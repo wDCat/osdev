@@ -22,7 +22,9 @@ typedef int (*make_type_t)(struct fs_node *, __fs_special_t *fsp, uint8_t type, 
 
 typedef int (*rm_type_t)(struct fs_node *, __fs_special_t *fsp);
 
-typedef struct {
+typedef int (*seek_type_t)(struct fs_node *, __fs_special_t *fsp, uint32_t offset);
+
+typedef struct fs__ {
     char name[256];
     mount_type_t mount;
     read_type_t read;
@@ -34,6 +36,7 @@ typedef struct {
     readdir_type_t readdir;
     finddir_type_t finddir;
     rm_type_t rm;
+    seek_type_t seek;
 } fs_t;
 typedef struct {
     char path[256];
@@ -102,5 +105,9 @@ int sys_ls(const char *path, dirent_t *dirents, uint32_t count);
 void kclose_all(uint32_t pid);
 
 int sys_access(const char *path, int mode);
+
+int sys_chdir(const char *path);
+
+char *sys_getcwd(char *buff, int len);
 
 #endif //W2_VFS_H
