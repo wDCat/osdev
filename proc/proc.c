@@ -10,6 +10,7 @@
 #include <exec.h>
 #include <schedule.h>
 #include <timer.h>
+#include <procfs.h>
 
 extern void _gdt_flush();
 
@@ -249,6 +250,9 @@ void clean_pcb_table() {
                 }
             }
             memset(pcb, 0, sizeof(pcb_t));
+            if (procfs_remove_proc(x)) {
+                PANIC("Error happened when remove %d from /proc", x);
+            }
             proc_count--;
         }
     }
@@ -285,7 +289,11 @@ pid_t fork(regs_t *r) {
     if (fpid == 1) {
         create_user_stack(0xCB000000, 0x4000, &tss->ebp, &tss->esp, cpcb->page_dir);
         dprintf("new user stack:[%x][%x]", tss->ebp, tss->esp);
-        kexec(cpid, "/init", 2, 0x24, 0x44, NULL);
+        char neko[256], neko2[256];
+        strcpy(neko, "Hello");
+        strcpy(neko2, "DCat");
+        char *args[2] = {neko, neko2};
+        kexec(cpid, "/init", 2, args);
         //extern int little_test2();
         //tss->eip = (uint32_t) little_test2;
         tss->cs = 3 << 3 | 3;
@@ -330,6 +338,7 @@ pid_t fork(regs_t *r) {
     memcpy(cpcb->fh, fpcb->fh, sizeof(fpcb->fh));
     save_proc_state(fpcb, r);
     set_proc_status(fpcb, STATUS_READY);
+    procfs_insert_proc(cpid);
     switch_to_proc(cpcb);
     return cpid;
 }
@@ -377,29 +386,4 @@ copy_current_stack(uint32_t start_addr, uint32_t size, uint32_t *new_ebp, uint32
     if (new_esp)
         *new_esp = new_stack_pointer;
     dprintf("all done.now ret.");
-}
-
-void enter_ring3(uint32_t start_addr) {
-    __asm__ __volatile__(
-    "cli;"
-            "mov $0x23,%ax;"
-            "mov %ax,%ds;"
-            "mov %ax,%es;"
-            "mov %ax,%fs;"
-            "mov %ax,%gs;"
-            "mov %esp,%eax;"
-            "push $0x23;"
-            "push %eax;"
-            "pushf;"
-            "pop %eax;"
-            "or $0x200,%eax;"/*自动开中断*/
-            "pushl %eax;"
-            "push $0x1B;"
-            "push $1f;"
-            "iret;"
-            "1:");
-    /*
-    if (start_addr)
-        ((void (*)()) start_addr)();*/
-
 }

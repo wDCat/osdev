@@ -8,7 +8,7 @@
 #include <schedule.h>
 #include "exec.h"
 
-int kexec(pid_t pid, const char *path, int argc, ...) {
+int kexec(pid_t pid, const char *path, int argc, char **argv) {
     dprintf("%x try to exec %s", pid, path);
     pcb_t *pcb = getpcb(pid);
     if (!pcb->present) {
@@ -31,23 +31,48 @@ int kexec(pid_t pid, const char *path, int argc, ...) {
         goto _err;
     }
     pcb->tss.eip = eip;
+    uint8_t *espptr = (uint8_t *) pcb->tss.esp;
+    uint32_t *esp;
     dprintf("elf load done.new PC:%x", eip);
-    uint32_t *esp = (uint32_t *) pcb->tss.esp - argc;
-    va_list args;
-    va_start(args, argc);
-    for (int x = 0; x < argc; x++) {
-        esp += 1;
-        *esp = va_arg(args, uint32_t);
-        dprintf("push arg %x to %x", *esp, esp);
+    strcpy(pcb->cmdline, path);
+    if (argv) {
+        //push **argv
+        for (int x = argc - 1; x >= 0; x--) {
+            dprintf("arg:%x", argv[x]);
+            char *str = argv[x];
+            int len = strlen(str);
+            espptr -= len;
+            espptr -= (uint32_t) espptr % 4;
+            argv[x] = (char *) espptr;
+            strcat(pcb->cmdline, " ");
+            strcat(pcb->cmdline, str);
+            dprintf("copy str %s to %x", str, espptr);
+            strcpy(espptr, str);
+
+        }
+
+        //push *argv
+        esp = (uint32_t *) espptr - argc - 1;
+        for (int x = 0; x < argc; x++) {
+            esp += 1;
+            *esp = (uint32_t) argv[x];
+            dprintf("push arg %x to %x", *esp, esp);
+        }
+        esp -= argc;
     }
-    esp -= argc;
+    //push argv
+    *esp = (uint32_t) (esp + 1);
+    esp -= 1;
+    //push argc
     *esp = (uint32_t) argc;
     esp -= 1;
     pcb->tss.esp = (uint32_t) esp;
+
     if (current_dir != orig_pd) {
         dprintf("switch back pd:%x", orig_pd);
         switch_page_directory(orig_pd);
     }
+    strcpy(pcb->name, path);
     dprintf("kexec done.");
     do_schedule_rejmp(NULL);
     return 0;
@@ -60,7 +85,7 @@ int kexec(pid_t pid, const char *path, int argc, ...) {
     return 1;
 }
 
-//FIXME args pass
-int sys_exec(const char *path, int argc, ...) {
-    return kexec(getpid(), path, argc);
+
+int sys_exec(const char *path, int argc, char **argv) {
+    return kexec(getpid(), path, argc, argv);
 }

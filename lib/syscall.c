@@ -31,7 +31,7 @@ _impl_syscall2(stat, 11, const char*, stat_t*);
 
 _impl_syscall3(ls, 12, const char*, dirent_t*, uint32_t);
 
-_impl_syscall2(exec, 13, const char*, int);
+_impl_syscall3(exec, 13, const char*, int, char**);
 
 _impl_syscall3(waitpid, 14, pid_t, int*, int);
 

@@ -22,27 +22,29 @@ uint32_t init_esp;
 #ifndef _BUILD_TIME
 #define _BUILD_TIME 00
 #endif
+uint32_t initrd_start, initrd_end;
 
 extern void little_test();
 
 extern void vga_install();
 
 void int_assert() {
-    ASSERT(sizeof(uint8_t) == 1);
-    ASSERT(sizeof(uint16_t) == 2);
-    ASSERT(sizeof(uint32_t) == 4);
+    //Gone~
 }
 
-void install_all() {
+void install_step0() {
     int_assert();
     serial_install();
     gdt_install();
     idt_install();
     isrs_install();
     irq_install();
+    paging_install();
+}
+
+void install_step1() {
     timer_install();
     keyboard_install();
-    paging_install();
     syscall_install();
     proc_install();
     vfs_install();
@@ -53,8 +55,32 @@ void install_all() {
     tty_install();
 }
 
+int kernel_init() {
+    install_step1();
+    mount_rootfs(initrd_start);
+    screen_clear();
+    tty_write(&ttys[0], 1, 50, "\n"
+            "            DCat's Kernel"
+            "\n\n");
+
+    for (int x = 0; x < SCREEN_MAX_X; x++)
+        tty_write(&ttys[0], 1, 1, "-");
+    little_test();
+    PANIC("Hey!I'm here!");
+    for (;;);
+}
+
+int load_initrd(multiboot_info_t *mul) {
+    if (mul->mods_count <= 0) PANIC("initrd module not found..")
+    initrd_start = *((uint32_t *) mul->mods_addr);
+    initrd_end = *(uint32_t *) (mul->mods_addr + 4);
+    heap_placement_addr = initrd_end;
+    dprintf("initrd: start:%x end:%x", initrd_start, initrd_end);
+}
+
 int move_kernel_stack(uint32_t start_addr, uint32_t size) {
     //proc 1
+    heap_placement_addr = initrd_end;
     uint32_t ebp, esp;
     for (int32_t x = size; x >= 0; x -= 0x1000) {
         page_t *page = get_page(start_addr - x, true, kernel_dir);
@@ -63,34 +89,20 @@ int move_kernel_stack(uint32_t start_addr, uint32_t size) {
     }
     ebp = 0xBB0000 - 0x4;
     esp = 0xBB0000 - 0x8;
-    dprintf("kernel stack:ebp:%x esp:%x", ebp, esp);
+    dprintf("new kernel stack:ebp:%x esp:%x", ebp, esp);
+    uint32_t old_esp;
+    __asm__ __volatile__("mov %%esp,%0;":"=r"(old_esp));
+    dprintf("init esp:%x current:%x used:%x", init_esp, old_esp, init_esp - old_esp);
+    if (init_esp - old_esp > 1024) PANIC("Some code are covered by kernel init stack.");
     change_stack(ebp, esp);
-    __asm__ __volatile__("jmp %0;"::"m"(little_test));
+    __asm__ __volatile__("jmp %0;"::"m"(kernel_init));
 }
 
 int main(multiboot_info_t *mul_arg, uint32_t init_esp_arg) {
     init_esp = init_esp_arg;
-    multiboot_info_t mul;
-    uint32_t initrd_start = *((uint32_t *) mul_arg->mods_addr);
-    uint32_t initrd_end = *(uint32_t *) (mul_arg->mods_addr + 4);
-    heap_placement_addr = initrd_end;
-    //mul may lost....
-    memcpy(&mul, mul_arg, sizeof(multiboot_info_t));
-    //MUL HEADER LOST AFTER INSTALL!!!
-    install_all();
-    screen_clear();
-    tty_write(&ttys[0], 1, 50, "\n"
-            "            DCat's Kernel"
-            "\n\n");
-    for (int x = 0; x < SCREEN_MAX_X; x++)
-        tty_write(&ttys[0], 1, 1, "-");
-    dprintf("init esp:%x", init_esp);
-    if (mul.mods_count <= 0) {
-        PANIC("module not found..")
-    }
-    sti();
-    //putf("kp:%x", get_current_page_directory());
-    mount_rootfs(initrd_start);
+    dprintf("multiboot info table:%x", mul_arg);
+    load_initrd(mul_arg);
+    install_step0();
     move_kernel_stack(0xBB0000, 0x10000);
     PANIC("Hey!I'm here!");
 }

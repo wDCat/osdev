@@ -13,7 +13,7 @@ paging_heap_t *kernel_pheap = 0;
 uint32_t heap_placement_addr;
 
 void kmalloc_install() {
-    heap_placement_addr = (uint32_t) &end;
+    //heap_placement_addr = (uint32_t) &end;
     //putint(heap_placement_addr);
 }
 
@@ -26,8 +26,9 @@ uint32_t kmalloc_paging(uint32_t sz, uint32_t *phys) {
         dprintf("allocated space:%x", r);
         return r;
     } else {
-        dprintf("heap not present.");
-        return kmalloc_internal(sz, true, phys, NULL);
+        uint32_t ret = kmalloc_internal(sz, true, phys, NULL);
+        dprintf("heap not present.call kmalloc instead,ret:%x", ret);
+        return ret;
     }
 }
 

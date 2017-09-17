@@ -115,6 +115,7 @@ void free_frame(page_t *page) {
 }
 
 bool installed = false;
+
 void paging_install() {
     if (installed) {
         deprintf("paging already installed,but paging_install called again!");
@@ -133,10 +134,10 @@ void paging_install() {
     kernel_dir->physical_addr = (uint32_t) kernel_dir->table_physical_addr;
     uint32_t kernel_area = heap_placement_addr;
 
-    dprintf("pag %x -> %x", KHEAP_START, KHEAP_START + KHEAP_SIZE + 0x1000);
     if (kernel_area < SCREEN_MEMORY_BASE + (SCREEN_MAX_X * SCREEN_MAX_Y) / 2) {
         kernel_area = SCREEN_MEMORY_BASE + (SCREEN_MAX_X * SCREEN_MAX_Y) / 2;
     }
+    dprintf("kheap paging %x -> %x", KHEAP_START, KHEAP_START + KHEAP_SIZE + 0x1000);
     for (uint32_t i = KHEAP_START; i < KHEAP_START + KHEAP_SIZE + 0x1000; i += 0x1000) {
         get_page(i, true, kernel_dir);
     }
@@ -144,7 +145,7 @@ void paging_install() {
         get_page(i, true, kernel_dir);
     }
     //多分配10个页
-    dprintf("pag %x -> %x\n", 0, kernel_area + 0x30000);
+    dprintf("kernel paging %x -> %x\n", 0, kernel_area + 0x30000);
     for (uint32_t i = 0; i < kernel_area + 0x30000; i += 0x1000) {
         alloc_frame(get_page(i, true, kernel_dir), true, false);
     }
@@ -183,6 +184,7 @@ page_t *get_page(uint32_t addr, int make, page_directory_t *dir) {
         uint32_t phyaddr;
         //Use a empty page instead.
         //dir->tables[table_idx] = (page_table_t *) kmalloc_internal(sizeof(page_table_t), true, &phyaddr, kernel_heap);
+        dprintf("alloc page table for %x-%x", table_idx * 1024 * 0x1000, (table_idx + 1) * 1024 * 0x1000);
         dir->tables[table_idx] = (page_table_t *) kmalloc_paging(sizeof(page_table_t), &phyaddr);
         memset(dir->tables[table_idx], 0, sizeof(page_table_t));
         dir->table_physical_addr[table_idx] = phyaddr | 0x7;

@@ -68,8 +68,6 @@ void vfs_install();
 
 void mount_rootfs(uint32_t initrd);
 
-int load_initrd(uint32_t initrd);
-
 void vfs_init(vfs_t *vfs);
 
 int vfs_cd(vfs_t *vfs, const char *path);

@@ -62,6 +62,8 @@ typedef struct pcb_struct {
     uint32_t signal;
     vfs_t vfs;
     char dir[256];
+    char name[256];
+    char cmdline[512];
     uint8_t hold_proc;//Can this pcb be free?
     struct pcb_struct *fpcb;
     struct pcb_struct *cpcb;

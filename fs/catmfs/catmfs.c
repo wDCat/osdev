@@ -3,7 +3,7 @@
 //
 
 
-#include "../../memory/include/kmalloc.h"
+#include "kmalloc.h"
 #include <catmfs.h>
 #include <str.h>
 #include <vfs.h>
@@ -78,16 +78,18 @@ int32_t catmfs_fs_node_readdir(fs_node_t *node, __fs_special_t *fsp_, uint32_t c
     int x = 0;
     for (; x < count; x++) {
         catmfs_dir_t *dir = (catmfs_dir_t *) raw;
-        if (dir->inode == 0 && x--)break;
-        if (dir->name_len > 255) {
-            deprintf("Bad namelen:%x", dir->name_len);
+        if (dir->inode == 0) {
+            x--;
+            break;
+        }
+        if (dir->name_len > 255 || dir->len < 9) {
+            deprintf("Bad item! namelen:%x len:%x", dir->name_len, dir->len);
             return -1;
         }
         char *np = (char *) ((uint32_t) dir + 9);
         memcpy(result[x].name, np, dir->name_len);
         result[x].name[dir->name_len] = '\0';
-        //putf_const("[catmfs_fs_node_readdir] offset:%x len:%x ", dir, dir->len);
-        //putf_const("fn:%s\n", result[x].name);
+        dprintf("offset:%x len:%x fn:%s", dir, dir->len, result[x].name);
         result[x].type = dir->type;
         result[x].name_len = dir->name_len;
         result[x].node = dir->inode;
@@ -110,9 +112,12 @@ int catmfs_fs_node_finddir(fs_node_t *node, __fs_special_t *fsp_, const char *na
     for (int x = 0;; x++) {
         char sname[256];
         catmfs_dir_t *dir = (catmfs_dir_t *) raw;
-        if (dir->inode == 0)break;
-        if (dir->name_len > 255) {
-            dprintf("Bad namelen:%x", dir->name_len);
+        if (dir->inode == 0) {
+            x--;
+            break;
+        }
+        if (dir->name_len > 255 || dir->len < 9) {
+            deprintf("Bad item! namelen:%x len:%x", dir->name_len, dir->len);
             return -1;
         }
         char *np = (char *) ((uint32_t) dir + 9);
@@ -211,7 +216,7 @@ int32_t catmfs_fs_node_write(fs_node_t *node, __fs_special_t *fsp_, uint32_t off
     uint32_t off = 0, les = size, blkno = 0;
     uint32_t fblksize = fsp->page_size - sizeof(catmfs_inode_t);
     uint32_t pblksize = fsp->page_size - sizeof(catmfs_blk_t);
-    putf_const("fblksize:%x pblksize:%x", fblksize, pblksize);
+    dprintf("fblksize:%x pblksize:%x", fblksize, pblksize);
     dprintf("inode:%x begin:%x", inode, raw);
     if (offset < fblksize) {
         uint32_t s = MIN(fblksize - offset, les);
