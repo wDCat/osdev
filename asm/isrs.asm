@@ -2,7 +2,7 @@
 %macro ISR 2 ; arg1: isr id; arg2 has error code
     global _isr%1
     _isr%1:
-    %if %2
+    %if !%2
         push byte 0
     %endif
     push byte %1

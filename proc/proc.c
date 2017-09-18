@@ -277,6 +277,12 @@ pid_t fork(regs_t *r) {
     cpcb->present = true;
     cpcb->pid = cpid;
     cpcb->page_dir = clone_page_directory(fpcb->page_dir);
+    cpcb->reserved_page = (uint32_t) (kmalloc_paging(0x1000, NULL));
+    memset(cpcb->reserved_page, 0, 0x1000);
+    cpcb->spages = (struct spage_info *) cpcb->reserved_page;
+    //Copy open file table...
+    memcpy(cpcb->fh, fpcb->fh, sizeof(fpcb->fh));
+    memset(cpcb->spages, 0, 0x1000);
     tss_entry_t *tss = &cpcb->tss;
     memcpy(tss, &fpcb->tss, sizeof(tss_entry_t));
     tss->cr3 = cpcb->page_dir->physical_addr;
@@ -317,11 +323,9 @@ pid_t fork(regs_t *r) {
     strcpy(cpcb->dir, fpcb->dir);
     tss->eflags = r->eflags | 0x200;
     tss->ss0 = 0x10;
-    cpcb->reserved_page = (uint32_t) (kmalloc_paging(0x1000, NULL));
-    memset(cpcb->reserved_page, 0, 0x1000);
-    cpcb->ldt_table = (ldt_limit_entry_t *) cpcb->reserved_page;
-    cpcb->ldt_table_count = 0;
-    create_ldt(cpcb);
+    //cpcb->ldt_table = (ldt_limit_entry_t *) cpcb->reserved_page;
+    //cpcb->ldt_table_count = 0;
+    //create_ldt(cpcb);
     tss->esp0 = (uint32_t) (cpcb->reserved_page + 0x990);
     tss->ldt = 0;
     cpcb->fpcb = fpcb;
@@ -334,8 +338,6 @@ pid_t fork(regs_t *r) {
             } else pp = pp->next_pcb;
         }
     } else fpcb->cpcb = cpcb;
-    //Copy open file table...
-    memcpy(cpcb->fh, fpcb->fh, sizeof(fpcb->fh));
     save_proc_state(fpcb, r);
     set_proc_status(fpcb, STATUS_READY);
     procfs_insert_proc(cpid);

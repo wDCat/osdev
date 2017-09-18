@@ -151,6 +151,7 @@ int catmfs_get_fs_node(uint32_t inode_id, fs_node_t *node) {
 }
 
 int32_t catmfs_fs_node_read(fs_node_t *node, __fs_special_t *fsp_, uint32_t offset, uint32_t size, uint8_t *buff) {
+    dprintf("read %x", node->inode);
     catmfs_inode_t *inode = (catmfs_inode_t *) node->inode;
     catmfs_special_t *fsp = fsp_;
     if (inode->magic != CATMFS_MAGIC) {

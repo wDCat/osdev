@@ -284,6 +284,11 @@ int free_page_table(page_table_t *src) {
     return 0;
 }
 
+bool is_kernel_space(page_directory_t *dir, uint32_t addr) {
+    uint32_t table_idx = addr / 0x1000 / 1024;
+    return dir->tables[table_idx] == kernel_dir->tables[table_idx];
+}
+
 int free_page_directory(page_directory_t *src) {
     int count = 0;
     for (int x = 0; x < 1024; x++) {

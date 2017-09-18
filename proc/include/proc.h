@@ -56,6 +56,8 @@ typedef struct pcb_struct {
     ldt_limit_entry_t *ldt_table;
     uint8_t ldt_table_count;
     uint32_t reserved_page;
+    struct spage_info *spages;
+    uint8_t spages_count;
     int32_t exit_val;
     uint32_t signal_handler[25];
     uint32_t blocked;

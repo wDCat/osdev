@@ -5,7 +5,14 @@
 [BITS 32]
 global start
 start:
-    jmp stublet
+    mov esp, _sys_stack
+    extern main
+    ;for stack start addr
+    push esp
+    ;for multiboot_header
+    push ebx
+    call main
+    hlt
 
 ; This part MUST be 4byte aligned, so we solve that issue using 'ALIGN 4'
 ALIGN 4
@@ -32,18 +39,6 @@ mboot:
     dd end
     dd start
 
-; This is an endless loop here. Make a note of this: Later on, we
-; will insert an 'extern _main', followed by 'call _main', right
-; before the 'jmp $'.
-stublet:
-    mov esp, _sys_stack
-    extern main
-    ;for stack start addr
-    push esp
-    ;for multiboot_header
-    push ebx
-    call main
-    hlt
 
 global _gdt_flush     ; Allows the C code to link to this
 extern gp            ; Says that '_gp' is in another file

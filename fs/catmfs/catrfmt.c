@@ -45,7 +45,7 @@ uint32_t catrfmt_read_inner(catrfmt_obj_t *fs_obj, uint32_t offset, uint32_t siz
         ret = (uint32_t) memcpy(buff, saddr, fs_obj->length - offset);
     } else
         ret = (uint32_t) memcpy(buff, saddr, size);
-    dprintf("ret:%x", ret);
+    dprintf("ret:%x expect:%x", ret, size);
     return ret;
 }
 

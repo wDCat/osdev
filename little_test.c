@@ -274,6 +274,7 @@ int little_test2() {
 }
 
 int little_test() {
+    //Cause page fault
     usermode();
     for (int x = 0;; x++) {
         dprintf("test time:%x", x);

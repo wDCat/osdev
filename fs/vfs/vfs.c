@@ -278,7 +278,7 @@ int8_t kopen(uint32_t pid, const char *name, uint8_t mode) {
     fh->present = 1;
     fh->mode = mode;
     fh->mp = mp;
-    dprintf("proc %x open %s fd:%x", getpid(), path, fd);
+    dprintf("proc %x open %s fd:%x", pid, path, fd);
     return fd;
 }
 
@@ -321,8 +321,11 @@ int32_t kread(uint32_t pid, int8_t fd, uint32_t offset, int32_t size, uchar_t *b
         deprintf("[%x]mount point not found.", fd);
         return -1;
     }
+    if (fh->mp->fs->read == 0) {
+        deprintf("fs operator is not implemented.");
+        return -1;
+    }
     int32_t ret = fh->mp->fs->read(&fh->node, fh->mp->fsp, offset, size, buff);
-
     return ret;
 }
 

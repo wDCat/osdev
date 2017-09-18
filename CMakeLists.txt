@@ -35,6 +35,7 @@ FILE(GLOB MyCSources
 /home/dcat/osdev/w2/proc/exit.c
 /home/dcat/osdev/w2/proc/signal.c
 /home/dcat/osdev/w2/proc/schedule.c
+/home/dcat/osdev/w2/proc/swap.c
 /home/dcat/osdev/w2/proc/exec.c
 /home/dcat/osdev/w2/proc/wait.c
 /home/dcat/osdev/w2/proc/proc.c

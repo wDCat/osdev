@@ -6,8 +6,9 @@
 #include <str.h>
 #include <schedule.h>
 #include <signal.h>
-#include "include/isrs.h"
-#include "include/idt.h"
+#include <swap.h>
+#include "isrs.h"
+#include "idt.h"
 #include "include/system.h"
 #include "intdef.h"
 #include "syscall_handler.h"
@@ -25,7 +26,7 @@ void dump_regs(regs_t *r) {
 void fault_handler(struct regs *r) {
     cli();
     int a = 0;
-    bool umoude_con = false;
+    bool umoude_con = false, no_kill = false;
     //TODO:move kernel stack before disable paging:(
     switch (r->int_no) {
         case 0: puterr_const("[-] Division by zero fault.");
@@ -51,10 +52,14 @@ void fault_handler(struct regs *r) {
             umoude_con = true;
             break;
         case 0xE: {
-            //disable_paging();//
-            puterr_const("[-] Page Fault.Paging has been disabled.");
-            umoude_con = true;
-            page_fault_handler(r);
+            if (swap_handle_page_fault(r)) {
+                puterr_const("[-] Page Fault.Paging has been disabled.");
+                umoude_con = true;
+                page_fault_handler(r);
+            } else {
+                no_kill = true;
+                //do_schedule_rejmp(NULL);
+            }
         }
             break;
         case 0x60: {
@@ -69,7 +74,7 @@ void fault_handler(struct regs *r) {
         }
             break;
     }
-    if (r->int_no <= 18) {
+    if (r->int_no <= 18 && !no_kill) {
         dump_regs(r);
         if (umoude_con) {
             dprintf("Proc %x cause NO.%x fault.Kill it.PC:%x", getpid(), r->int_no, r->eip);

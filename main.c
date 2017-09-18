@@ -76,11 +76,10 @@ int load_initrd(multiboot_info_t *mul) {
     initrd_end = *(uint32_t *) (mul->mods_addr + 4);
     heap_placement_addr = initrd_end;
     dprintf("initrd: start:%x end:%x", initrd_start, initrd_end);
+    ASSERTM(initrd_start < 0x01000000, "Bad initrd addr.!!");
 }
 
 int move_kernel_stack(uint32_t start_addr, uint32_t size) {
-    //proc 1
-    heap_placement_addr = initrd_end;
     uint32_t ebp, esp;
     for (int32_t x = size; x >= 0; x -= 0x1000) {
         page_t *page = get_page(start_addr - x, true, kernel_dir);
@@ -100,7 +99,7 @@ int move_kernel_stack(uint32_t start_addr, uint32_t size) {
 
 int main(multiboot_info_t *mul_arg, uint32_t init_esp_arg) {
     init_esp = init_esp_arg;
-    dprintf("multiboot info table:%x", mul_arg);
+    dprintf("multiboot info table:%x init_esp:%x", mul_arg, init_esp_arg);
     load_initrd(mul_arg);
     install_step0();
     move_kernel_stack(0xBB0000, 0x10000);
