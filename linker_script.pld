@@ -1,33 +1,34 @@
-#ifndef __keep_symbol__
-OUTPUT_FORMAT("binary")
-#endif
+//#ifndef __keep_symbol__
+////OUTPUT_FORMAT("binary")
+//#endif
+OUTPUT_FORMAT("elf32-i386")
 ENTRY(start)
 phys = 0x00100000;
 SECTIONS
 {
-    .boot 0x00100000 : {
+    . = phys;
+    .boot :
+    {
         *(.mboot)
-        . = ALIGN(2048);
+        . = ALIGN(4096);
     }
     .text :
     {
         code = .;
         *(.text)
-        . = ALIGN(2048);
+        . = ALIGN(4096);
     }
     .data :{
         *(.data)
         *(.rodata)
-        . = ALIGN(2048);
+        . = ALIGN(4096);
     }
     .bss :
     {
         bss = .;
         *(.bss)
-        . = ALIGN(2048);
+        . = ALIGN(4096);
     }
-    initrd = .;
-
     end = .;
 
 }

@@ -6,7 +6,7 @@
 #include <str.h>
 #include <schedule.h>
 #include <signal.h>
-#include <swap.h>
+#include "../proc/swap/include/swap.h"
 #include "isrs.h"
 #include "idt.h"
 #include "include/system.h"
@@ -30,6 +30,7 @@ void fault_handler(struct regs *r) {
     //TODO:move kernel stack before disable paging:(
     switch (r->int_no) {
         case 0: puterr_const("[-] Division by zero fault.");
+            umoude_con = true;
             break;
         case 1: puterr_const("[-] Debug exception.");
             break;
@@ -40,7 +41,8 @@ void fault_handler(struct regs *r) {
             puterr_const("[-] Double Fault.");
         }
             break;
-        case 6: puterr_const("[-] Invalid Opcode")
+        case 6: puterr_const("[-] Invalid Opcode");
+            umoude_con = true;
             break;
         case 0xA: puterr_const("");
             putf_const("[-] Invalid TSS");

@@ -6,6 +6,7 @@ include_directories(/home/dcat/osdev/w2/dev/include)
 include_directories(/home/dcat/osdev/w2/lib/include)
 include_directories(/home/dcat/osdev/w2/proc/include)
 include_directories(/home/dcat/osdev/w2/proc/elf/include)
+include_directories(/home/dcat/osdev/w2/proc/swap/include)
 include_directories(/home/dcat/osdev/w2/fs/vfs/include)
 include_directories(/home/dcat/osdev/w2/fs/ext2/include)
 include_directories(/home/dcat/osdev/w2/fs/procfs/include)
@@ -35,11 +36,12 @@ FILE(GLOB MyCSources
 /home/dcat/osdev/w2/proc/exit.c
 /home/dcat/osdev/w2/proc/signal.c
 /home/dcat/osdev/w2/proc/schedule.c
-/home/dcat/osdev/w2/proc/swap.c
 /home/dcat/osdev/w2/proc/exec.c
 /home/dcat/osdev/w2/proc/wait.c
 /home/dcat/osdev/w2/proc/proc.c
 /home/dcat/osdev/w2/proc/elf/elfloader.c
+/home/dcat/osdev/w2/proc/swap/swap_disk.c
+/home/dcat/osdev/w2/proc/swap/swap.c
 /home/dcat/osdev/w2/fs/vfs/vfs.c
 /home/dcat/osdev/w2/fs/ext2/ext2.c
 /home/dcat/osdev/w2/fs/procfs/procfs.c

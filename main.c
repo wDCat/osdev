@@ -17,6 +17,7 @@
 #include <io.h>
 #include <console.h>
 #include <tty.h>
+#include <swap.h>
 
 uint32_t init_esp;
 #ifndef _BUILD_TIME
@@ -53,10 +54,12 @@ void install_step1() {
     vga_install();
     console_install();
     tty_install();
+    swap_install();
 }
 
 int kernel_init() {
     install_step1();
+    setpid(1);
     mount_rootfs(initrd_start);
     screen_clear();
     tty_write(&ttys[0], 1, 50, "\n"
@@ -97,7 +100,8 @@ int move_kernel_stack(uint32_t start_addr, uint32_t size) {
     __asm__ __volatile__("jmp %0;"::"m"(kernel_init));
 }
 
-int main(multiboot_info_t *mul_arg, uint32_t init_esp_arg) {
+int main(uint32_t magic, multiboot_info_t *mul_arg, uint32_t init_esp_arg) {
+    ASSERT(magic == 0x2BADB002);
     init_esp = init_esp_arg;
     dprintf("multiboot info table:%x init_esp:%x", mul_arg, init_esp_arg);
     load_initrd(mul_arg);

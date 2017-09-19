@@ -3,26 +3,18 @@
 ; perhaps setting up the GDT and segments. Please note that interrupts
 ; are disabled at this point: More on interrupts later!
 [BITS 32]
-global start
-start:
-    mov esp, _sys_stack
-    extern main
-    ;for stack start addr
-    push esp
-    ;for multiboot_header
-    push ebx
-    call main
-    hlt
 
 ; This part MUST be 4byte aligned, so we solve that issue using 'ALIGN 4'
+    jmp $
 ALIGN 4
 mboot:
     ; Multiboot macros to make a few lines later more readable
     MULTIBOOT_PAGE_ALIGN	equ 1<<0
     MULTIBOOT_MEMORY_INFO	equ 1<<1
+    MULTIBOOT_GRAPH         equ 1<<2
     MULTIBOOT_AOUT_KLUDGE	equ 1<<16
     MULTIBOOT_HEADER_MAGIC	equ 0x1BADB002
-    MULTIBOOT_HEADER_FLAGS	equ MULTIBOOT_PAGE_ALIGN | MULTIBOOT_MEMORY_INFO | MULTIBOOT_AOUT_KLUDGE
+    MULTIBOOT_HEADER_FLAGS	equ MULTIBOOT_PAGE_ALIGN | MULTIBOOT_MEMORY_INFO | MULTIBOOT_AOUT_KLUDGE | MULTIBOOT_GRAPH
     MULTIBOOT_CHECKSUM	equ -(MULTIBOOT_HEADER_MAGIC + MULTIBOOT_HEADER_FLAGS)
     EXTERN code, bss, end
 
@@ -38,7 +30,23 @@ mboot:
     dd bss
     dd end
     dd start
-
+    dd 1
+    ;Unused
+    dd 320
+    dd 200
+    dd 8
+global start
+start:
+    mov esp, _sys_stack
+    extern main
+    ;for stack start addr
+    push esp
+    ;for multiboot_header
+    push ebx
+    ;for magic
+    push eax
+    call main
+    hlt
 
 global _gdt_flush     ; Allows the C code to link to this
 extern gp            ; Says that '_gp' is in another file

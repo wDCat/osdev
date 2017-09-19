@@ -45,7 +45,7 @@ int kexec(pid_t pid, const char *path, int argc, char **argv) {
             espptr -= (uint32_t) espptr % 4;
             argv[x] = (char *) espptr;
             strcat(pcb->cmdline, " ");
-            strcat(pcb->cmdline, str);
+            strcat(pcb->cmdline, argv[argc - x - 1]);
             dprintf("copy str %s to %x", str, espptr);
             strcpy(espptr, str);
 
@@ -74,7 +74,7 @@ int kexec(pid_t pid, const char *path, int argc, char **argv) {
     }
     strcpy(pcb->name, path);
     dprintf("kexec done.");
-    do_schedule_rejmp(NULL);
+    proc_rejmp(pcb);
     return 0;
     _err:
     if (current_dir != orig_pd && orig_pd != 0) {

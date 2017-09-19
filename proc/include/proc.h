@@ -62,6 +62,7 @@ typedef struct pcb_struct {
     uint32_t signal_handler[25];
     uint32_t blocked;
     uint32_t signal;
+    bool rejmp;
     vfs_t vfs;
     char dir[256];
     char name[256];

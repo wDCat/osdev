@@ -200,7 +200,10 @@ inline void set_active_user_ldt(ldt_limit_entry_t *ldt_table, uint8_t ldt_table_
 
 void switch_to_proc(pcb_t *pcb) {
     ASSERT(pcb->present && (pcb->pid > 1 || pcb->pid == 0));
-    if (pcb->pid == current_pid)return;
+    if (pcb->pid == current_pid) {
+        if (!pcb->rejmp)return;
+        pcb->rejmp = false;
+    }
     cli();
     if (pcb->pid > MAX_PROC_COUNT) PANIC("Bad PID:%x pcb:%x", pcb->pid, pcb);
     set_proc_status(pcb, STATUS_RUN);
@@ -323,9 +326,6 @@ pid_t fork(regs_t *r) {
     strcpy(cpcb->dir, fpcb->dir);
     tss->eflags = r->eflags | 0x200;
     tss->ss0 = 0x10;
-    //cpcb->ldt_table = (ldt_limit_entry_t *) cpcb->reserved_page;
-    //cpcb->ldt_table_count = 0;
-    //create_ldt(cpcb);
     tss->esp0 = (uint32_t) (cpcb->reserved_page + 0x990);
     tss->ldt = 0;
     cpcb->fpcb = fpcb;

@@ -14,6 +14,8 @@
 #include <io.h>
 #include <syscall.h>
 #include <tty.h>
+#include <swap_disk.h>
+#include <swap.h>
 #include "ker/include/gdt.h"
 #include "ker/include/idt.h"
 #include "ker/include/system.h"
@@ -231,50 +233,14 @@ void ide_test() {
 
 }
 
-int little_test2() {
-    tty_create_fstype();
-    sys_write(1, 20, "STDOUT TEST");
-    //kexec(getpid(), "/init", 2, 0x24, 0x44, NULL);
-    PANIC("Why me executed?>")
-    /*
-    vfs_mount(&vfs, "/tty0", &ttyfs, 0);
-    vfs_mount(&vfs, "/tty1", &ttyfs, 1);
-    int fd = sys_open("/tty0", 0);
-    int fd2 = sys_open("/tty1", 0);
-    ASSERT(fd >= 0 && fd2 > 0);
-    char a[256];
-    sys_write(fd, 20, "TTY0\n\n\n\n");
-    sys_write(fd2, 20, "TTY1\n\n\n\n");
-    while (true) {
-        tty_fg_switch(0);
-        sys_write(fd, 20, "Input >");
-        memset(a, 0, 256);
-        sys_read(fd, 256, a);
-        dprintf("read done[tty0]:%s", a);
-        sys_write(fd, strlen(a), a);
-        sys_write(fd, 1, "\n");
-        tty_fg_switch(1);
-        sys_write(fd2, 20, "Input >");
-        sys_read(fd2, 256, a);
-        dprintf("read done[tty1]:%s", a);
-        sys_write(fd2, strlen(a), a);
-        sys_write(fd2, 1, "\n");
-    }*/
-    /*
-    dprintf("hELLO dcAT");
-
-    while (true) {
-        strcpy(a, "Input >");
-        tty_write(&ttys[0], getpid(), 20, a);
-        memset(a, 0, 256);
-        tty_read(&ttys[0], getpid(), 50, a);
-        dprintf("read done:%s", a);
-    }*/
-
-}
 
 int little_test() {
-    //Cause page fault
+    extern swap_disk_t sdisk;
+    uint32_t apage = kmalloc_paging(0x1000, NULL);
+    memset(apage, 0x22, 0x1000);
+    swap_out(getpcb(getpid()), apage);
+    char buff[256];
+    dprintf("test done//");
     usermode();
     for (int x = 0;; x++) {
         dprintf("test time:%x", x);

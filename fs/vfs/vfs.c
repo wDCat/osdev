@@ -179,6 +179,7 @@ int32_t vfs_ls(vfs_t *vfs, dirent_t *dirs, uint32_t max_count) {
         deprintf("fs operator not implemented");
         return -1;
     }
+    dprintf("ls %s calling %x", vfs->path, mp->fs->readdir);
     return mp->fs->readdir(&vfs->current_dir, mp->fsp, max_count, dirs);
 
 }
@@ -438,6 +439,21 @@ void mount_rootfs(uint32_t initrd) {
         vfs_mount(&vfs, ttyfn, &ttyfs, x);
     }
     stdio_install();
+    dprintf("little test about ext2...");
+    CHK(vfs_cd(&vfs, "/data/"), "");
+    dirent_t *dirs = (dirent_t *) kmalloc_paging(0x2000, NULL);
+    int count = vfs_ls(&vfs, dirs, 200);
+    putf("[vfs]there are %x files in / [%x]\n", count, vfs.current.inode);
+    for (int x = 0; x < count; x++) {
+        putf("[file]%s type:%x inode:%x\n", dirs[x].name, dirs[x].type, dirs[x].node);
+    }
+    memset(dirs, 0, 0x2000);
+    count = sys_ls("/data", dirs, 20);
+    putf("[vfs]there are %x files in / [%x]\n", count, vfs.current.inode);
+    for (int x = 0; x < count; x++) {
+        putf("[file]%s type:%x inode:%x\n", dirs[x].name, dirs[x].type, dirs[x].node);
+    }
+    kfree(dirs);
     dprintf("rootfs mounted.");
     return;
     _err:

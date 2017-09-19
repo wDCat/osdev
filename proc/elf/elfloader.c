@@ -8,7 +8,7 @@
 #include <str.h>
 #include <elf.h>
 #include <proc.h>
-#include <swap.h>
+#include "../swap/include/swap.h"
 #include <page.h>
 #include "elfloader.h"
 

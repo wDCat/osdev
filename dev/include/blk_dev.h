@@ -16,7 +16,7 @@ typedef struct {
     blk_dev_section_read read;
     blk_dev_section_write write;
 } blk_dev_t;
-extern blk_dev_t disk1;
+extern blk_dev_t disk1, swap_disk;
 
 void blk_dev_install();
 

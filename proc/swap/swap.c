@@ -3,10 +3,20 @@
 //
 
 #include <str.h>
-#include <swap.h>
+#include "include/swap.h"
 #include <vfs.h>
 #include <signal.h>
 #include <page.h>
+#include <blk_dev.h>
+#include <swap_disk.h>
+
+
+swap_disk_t sdisk;
+
+void swap_install() {
+    memset(&sdisk, 0, sizeof(sdisk));
+    swap_disk_init(&sdisk, &swap_disk, 20);
+}
 
 spage_info_t *swap_find_empty(pcb_t *pcb) {
     //dprintf("pcb:%x", pcb);
@@ -57,6 +67,37 @@ int swap_insert_pload_page(pcb_t *pcb, uint32_t addr, int8_t fd,
     return 0;
 }
 
+int swap_out(pcb_t *pcb, uint32_t addr) {
+    dprintf("swap out page %x pid:%x", addr, pcb->pid);
+    spage_info_t *info = swap_find_empty(pcb);
+    if (!info) {
+        deprintf("Too much spage");
+        PANIC("debug")
+        return 1;
+    }
+    page_t *page = get_page(addr, false, pcb->page_dir);
+    if (!page) {
+        deprintf("try to swap out a non-exist page:%x pid:%x", addr, pcb->pid);
+        return 1;
+    }
+    if (is_kernel_space(pcb->page_dir, addr)) {
+        deprintf("try to swap out a kernel page:%x pid:%x", addr, pcb->pid);
+        return 1;
+    }
+    uint32_t id = swap_disk_put(&sdisk, pcb, addr);
+    if (id == 0) {
+        deprintf("cannot write page");
+        return 1;
+    }
+    info->type = SPAGE_TYPE_SOUT;
+    info->addr = addr;
+    info->offset = id;
+    info->size = 0x1000;
+    free_frame(page);
+    page->present = 0;
+    return 0;
+}
+
 int swap_in(pcb_t *pcb, spage_info_t *info) {
     if (getpid() != pcb->pid) {
         TODO;//swap page table.
@@ -70,7 +111,6 @@ int swap_in(pcb_t *pcb, spage_info_t *info) {
             page_t *page = get_page(pageno, true, pcb->page_dir);
             ASSERT(page);
             alloc_frame(page, false, true);
-            dprintf("now readin...");
             uint8_t *ptr = (uint8_t *) (info->addr + info->in_offset);
             int32_t rsize = kread(pcb->pid, info->fd, info->offset, info->size, ptr);
 
@@ -121,8 +161,9 @@ int swap_handle_page_fault(regs_t *r) {
             }
         }
     }
-    if (found) {
+    if (found)
         dprintf("dump eip:%x %x", pcb->tss.eip, r->eip);
-    }
+    else
+        deprintf("no suitable page found!");
     return !found;
 }

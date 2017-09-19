@@ -14,7 +14,7 @@
 #define SPAGE_TYPE_PLOAD 0x4
 #define SPAGE_TYPE_EMPTY 0x8
 #define SPAGE_MARK_IN (1<<5)
-typedef struct spage_info{
+typedef struct spage_info {
     uint32_t addr;
     uint8_t type;
     int8_t fd;
@@ -23,10 +23,14 @@ typedef struct spage_info{
     uint32_t size;
 } spage_info_t;
 
+int swap_out(pcb_t *pcb, uint32_t addr);
+
 int swap_insert_pload_page(pcb_t *pcb, uint32_t addr, int8_t fd, uint32_t offset, uint32_t in_offset, uint32_t size);
 
 int swap_handle_page_fault(regs_t *r);
 
 int swap_insert_empty_page(pcb_t *pcb, uint32_t addr);
+
+void swap_install();
 
 #endif //W2_SWAP_H

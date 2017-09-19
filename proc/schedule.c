@@ -49,13 +49,9 @@ void do_schedule(regs_t *r) {
         }
     }
     dprintf_end();
-    if (choosed == 0)
-        if (cur_pcb->status != STATUS_RUN) {
-            choosed = getpcb(0);//idle~
-        } else {
-            return;
-        }
-    if (choosed->pid != getpid()) {
+    if (choosed == 0 && cur_pcb->status != STATUS_RUN)
+        choosed = getpcb(0);//idle~
+    if (choosed != 0 && choosed->pid != getpid()) {
         if (cur_pcb->status == STATUS_RUN)
             set_proc_status(cur_pcb, STATUS_READY);
         if (r != NULL) {
@@ -67,8 +63,19 @@ void do_schedule(regs_t *r) {
 }
 
 void do_schedule_rejmp(regs_t *r) {
-    dprintf("%x rejmp.new pc:%x", getpid(), getpcb(getpid())->tss.eip);
+    pcb_t *pcb = getpcb(getpid());
+    dprintf("%x schedle_rejmp.new pc:%x", pcb->pid, pcb->tss.eip);
     set_proc_status(getpcb(getpid()), STATUS_READY);
     setpid(0);
     do_schedule(r);
 }
+
+void proc_rejmp(pcb_t *pcb) {
+    if (getpid() == pcb->pid) {
+        do_schedule_rejmp(NULL);
+        return;
+    }
+    dprintf("%x rejmp.new pc:%x", pcb->pid, pcb->tss.eip);
+    pcb->rejmp = true;
+}
+

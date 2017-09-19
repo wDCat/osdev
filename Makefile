@@ -54,7 +54,7 @@ bochs:
 debug:
 	bochs -q -f ../bochsrc_debug.txt
 qemu:
-	qemu-system-i386 -serial stdio -hda ../bgrub.img -hdb ../disk.img -m 16 -k en-us -sdl  -s -d guest_errors,pcall,cpu_reset -no-reboot
+	qemu-system-i386 -serial stdio -hda ../bgrub.img -hdb ../disk.img -hdc ../swap.img -m 16 -k en-us -sdl  -s -d guest_errors,pcall,cpu_reset -no-reboot -vga std
 run:
 	qemu-system-i386 -hda ../bgrub.img -fdb ../disk.img -m 16 -k en-us -sdl  -s
 clean:

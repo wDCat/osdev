@@ -9,6 +9,7 @@
 #include "include/page.h"
 #include <str.h>
 #include <page.h>
+#include <proc.h>
 #include "include/page.h"
 
 extern heap_t *create_heap(uint32_t start_addr, uint32_t end_addr, uint32_t max_addr, page_directory_t *dir);
@@ -22,14 +23,20 @@ page_directory_t *kernel_dir;
 void set_frame_status(uint32_t frame_addr, uint32_t status) {
     uint32_t frame_no = frame_addr / 0x1000;//4k=0x1000
     ASSERT(frame_status != NULL);
-    ASSERT(frame_max_count > frame_no);
+    if (frame_max_count <= frame_no) {
+        deprintf("Bad frame_no:%x", frame_no);
+        PANIC("");
+    }
     frame_status[frame_no] = status;
 }
 
 uint32_t get_frame_status(uint32_t frame_addr) {
     uint32_t frame_no = frame_addr / 0x1000;//4k=0x1000
     ASSERT(frame_status != NULL);
-    ASSERT(frame_max_count > frame_no);
+    if (frame_max_count <= frame_no) {
+        deprintf("Bad frame_no:%x", frame_no);
+        PANIC("");
+    }
     return frame_status[frame_no];
 }
 
@@ -114,11 +121,13 @@ void free_frame(page_t *page) {
     }
 }
 
-bool installed = false;
+
+static bool installed = false;
 
 void paging_install() {
     if (installed) {
-        deprintf("paging already installed,but paging_install called again!");
+        deprintf("paging already installed,but paging_install called again!install addr:%x", &installed);
+        PANIC("");
         return;
     }
     installed = true;
@@ -276,6 +285,7 @@ int free_page_table(page_table_t *src) {
     int count = 0;
     for (int x = 0; x < 1024; x++) {
         if (src->pages[x].frame) {
+            dprintf("freeing frame:%x", src->pages[x].frame);
             count++;
             free_frame(&src->pages[x]);
         }
