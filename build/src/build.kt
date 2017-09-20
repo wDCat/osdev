@@ -39,7 +39,7 @@ fun prettyOutputName(path: String): String {
     var result = path
     if (result.startsWith(ROOT))
         result = path.substring(ROOT.length + 1)
-    return result.replace("[/?]".toRegex(), "_").replace("c$|asm$".toRegex(), "o")
+    return result.replace("[/?]".toRegex(), "_").replace("c$|asm$|s$".toRegex(), "o")
 }
 
 class ExecResult(val exitCode: Int, val output: String)
@@ -112,7 +112,7 @@ fun main(args: Array<String>) {
         dirStack.pop().listFiles().forEach {
             val fn = it.name
             if (!fn.startsWith(".") && !fn.toLowerCase().contains("cmake"))
-                if (fn.endsWith(".c") && !fn.contains("linker_script"))
+                if ((fn.endsWith(".c")||fn.endsWith(".s")) && !fn.contains("linker_script"))
                     cFiles.add(it.absolutePath)
                 else if (fn.endsWith(".i.asm"))
                     asmFiles.add(it.absolutePath)

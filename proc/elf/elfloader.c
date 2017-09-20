@@ -57,25 +57,34 @@ bool elf_load(pid_t pid, int8_t fd, uint32_t *entry_point) {
                         uint32_t size = MIN(shdr->sh_size - y, 0x1000 - (y == 0 ? inoff : 0));
                         uint8_t *sec = (uint8_t *) kmalloc_paging(size, NULL);
                         if (kread(pid, fd, shdr->sh_offset, size, sec) != size) {
-                            deprintf("cannot read section:%x.I/O error.", x);
+                            deprintf("cannot read section:%x:x.I/O error.", x, y);
                             goto _err;
                         }
                         memcpy(shdr->sh_addr, sec, size);
                         kfree(sec);
                     }
                 } else {
-                    if (shdr->sh_type == SHT_NOBITS)
+                    /**load the begin and the end of each section
+                     * late load other space
+                     * */
+                    if (shdr->sh_type == SHT_NOBITS) {
+                        alloc_frame(page, false, false);
                         swap_insert_empty_page(pcb, pno + y);
-                    else {
+                    } else {
                         if (y == 0) {
-                            swap_insert_pload_page(pcb, pno, fd, shdr->sh_offset, inoff,
-                                                   MIN(shdr->sh_size, 0x1000 - inoff));
+                            alloc_frame(page, false, false);
+                            uint32_t size = MIN(shdr->sh_size, 0x1000 - inoff);
+                            if (kread(pid, fd, shdr->sh_offset, size, shdr->sh_addr) != size) {
+                                deprintf("cannot read section:%x:%x.I/O error.", x, y);
+                                goto _err;
+                            }
                         } else if (y == shdr->sh_size - les && les) {
-                            swap_insert_pload_page(pcb, pno + y, fd, shdr->sh_offset - inoff + y, 0,
-                                                   les);
+                            if (kread(pid, fd, shdr->sh_offset, les, pno + y) != les) {
+                                deprintf("cannot read section:%x:%x.I/O error.", x, y);
+                                goto _err;
+                            }
                         } else {
-                            swap_insert_pload_page(pcb, pno + y, fd, shdr->sh_offset - inoff + y, 0,
-                                                   0x1000);
+                            swap_insert_pload_page(pcb, pno + y, fd, shdr->sh_offset - inoff + y);
                         }
                     }
                 }

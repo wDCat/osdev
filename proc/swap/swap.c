@@ -43,13 +43,8 @@ int swap_insert_empty_page(pcb_t *pcb, uint32_t addr) {
 }
 
 int swap_insert_pload_page(pcb_t *pcb, uint32_t addr, int8_t fd,
-                           uint32_t offset, uint32_t in_offset,
-                           uint32_t size) {
-    dprintf("pload:addr:%x off:%x inoff:%x size:%x", addr, offset, in_offset, size);
-    /*
-    page_t *page = get_page(addr, true, pcb->page_dir);
-    free_frame(page);
-    page->present = 0;*/
+                           uint32_t offset) {
+    dprintf("pload:addr:%x off:%x inoff:0 size:0x1000", addr, offset);
     spage_info_t *info = swap_find_empty(pcb);
     if (!info) {
         deprintf("Too much spage");
@@ -61,8 +56,6 @@ int swap_insert_pload_page(pcb_t *pcb, uint32_t addr, int8_t fd,
     info->addr = addr;
     info->fd = fd;
     info->offset = offset;
-    info->in_offset = in_offset;
-    info->size = size;
     pcb->spages_count++;
     return 0;
 }
@@ -92,7 +85,6 @@ int swap_out(pcb_t *pcb, uint32_t addr) {
     info->type = SPAGE_TYPE_SOUT;
     info->addr = addr;
     info->offset = id;
-    info->size = 0x1000;
     free_frame(page);
     page->present = 0;
     return 0;
@@ -105,6 +97,8 @@ int swap_in(pcb_t *pcb, spage_info_t *info) {
     dprintf("swap in page %x", info->addr);
     switch (info->type) {
         case SPAGE_TYPE_PLOAD: {
+            TODO;
+            /*
             uint32_t pageno = info->addr - info->addr % 0x1000;
             dprintf("offset:%x inoff:%x size:%x write to:%x", info->offset, info->in_offset, info->size,
                     info->addr + info->in_offset);
@@ -119,7 +113,7 @@ int swap_in(pcb_t *pcb, spage_info_t *info) {
                 send_sig(pcb, SIGABRT);
                 return 1;
             }
-            return 0;
+            return 0;*/
         }
             break;
         case SPAGE_TYPE_SOUT: {

@@ -24,18 +24,23 @@ catmfs_inode_t *catmfs_alloc_inode() {
     return inode;
 }
 
-int catmfs_make(catmfs_special_t *fsp, catmfs_inode_t *inode, uint8_t type, char *name, uint32_t catrfmt_inode) {
+int catmfs_make(catmfs_special_t *fsp, catmfs_inode_t *inode, uint8_t type, char *name, uint32_t reserved2) {
     if (inode->magic != CATMFS_MAGIC) {
         deprintf("not a catmfs node[%x][%x].", inode, inode->magic);
         return 1;
     }
-    catmfs_inode_t *ninode = catmfs_alloc_inode();
-    ninode->type = type;
-    ninode->size = type == FS_DIRECTORY ? 1024 : 0;
-    ninode->reserved = 0;
-    ninode->finode = inode;
-    if (type == FS_FILE && catrfmt_inode != 0)
-        ninode->reserved = catrfmt_inode;
+    catmfs_inode_t *ninode;
+    if (type == FS_DIRECTORY && reserved2 != 0) {
+        ninode = (catmfs_inode_t *) reserved2;
+    } else {
+        ninode = catmfs_alloc_inode();
+        ninode->type = type;
+        ninode->size = type == FS_DIRECTORY ? 1024 : 0;
+        ninode->reserved = 0;
+        ninode->finode = inode;
+        if (type == FS_FILE && reserved2 != 0)
+            ninode->reserved = reserved2;
+    }
     uint8_t *raw = (uint8_t *) ((uint32_t) inode + sizeof(catmfs_inode_t));
     while (true) {
         catmfs_dir_t *dir = (catmfs_dir_t *) raw;
@@ -50,6 +55,10 @@ int catmfs_make(catmfs_special_t *fsp, catmfs_inode_t *inode, uint8_t type, char
             char *np = (char *) ((uint32_t) dir + 9);
             memcpy(np, name, len);
             inode->reserved++;
+            if (type == FS_DIRECTORY && reserved2 == 0) {
+                CHK(catmfs_make(fsp, ninode, FS_DIRECTORY, ".", ninode), "");
+                CHK(catmfs_make(fsp, ninode, FS_DIRECTORY, "..", inode), "");
+            }
             return 0;
         }
         raw = (uint8_t *) ((uint32_t) raw + dir->len);
@@ -58,6 +67,9 @@ int catmfs_make(catmfs_special_t *fsp, catmfs_inode_t *inode, uint8_t type, char
             return 1;
         }
     }
+    _err:
+    deprintf("make failed.unexpected exception..");
+    return 1;
 }
 
 int catmfs_fs_node_make(fs_node_t *node, __fs_special_t *fsp_, uint8_t type, char *name) {
@@ -272,7 +284,7 @@ int catmfs_fs_node_rm(fs_node_t *node, __fs_special_t *fsp_) {
         deprintf("not a catmfs node[%x][%x].", inode, inode->magic);
         return 1;
     }
-    if (inode->type == FS_DIRECTORY && inode->reserved != 0) {
+    if (inode->type == FS_DIRECTORY && inode->reserved != 2) {
         deprintf("cannot remove a not empty dir:%x child_c:%x", inode, inode->reserved);
         catmfs_set_errno(fsp, CATMFS_ERR_NO_EMPTY_DIR);
         return 1;

@@ -101,6 +101,7 @@ int move_kernel_stack(uint32_t start_addr, uint32_t size) {
 }
 
 int main(uint32_t magic, multiboot_info_t *mul_arg, uint32_t init_esp_arg) {
+
     ASSERT(magic == 0x2BADB002);
     init_esp = init_esp_arg;
     dprintf("multiboot info table:%x init_esp:%x", mul_arg, init_esp_arg);

@@ -71,11 +71,11 @@ extern uint32_t init_esp;
 
 /* MAIN.C */
 
-extern inline const char *itoa(int i, char result[]);
+const char *itoa(int i, char result[]);
 
-extern void k_delay(uint32_t time);
+void k_delay(uint32_t time);
 
-extern uint32_t get_eip();
+uint32_t get_eip();
 
 
 //debug print

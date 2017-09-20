@@ -19,13 +19,13 @@ typedef struct spage_info {
     uint8_t type;
     int8_t fd;
     uint32_t offset;
-    uint32_t in_offset;
-    uint32_t size;
+    //uint32_t in_offset; = 0
+    //uint32_t size; = PAGE_SIZE
 } spage_info_t;
 
 int swap_out(pcb_t *pcb, uint32_t addr);
 
-int swap_insert_pload_page(pcb_t *pcb, uint32_t addr, int8_t fd, uint32_t offset, uint32_t in_offset, uint32_t size);
+int swap_insert_pload_page(pcb_t *pcb, uint32_t addr, int8_t fd, uint32_t offset);
 
 int swap_handle_page_fault(regs_t *r);
 

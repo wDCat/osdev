@@ -1,0 +1,1 @@
+qemu-system-i386 -serial stdio -hda ../bgrub.img -hdb ../disk.img -m 16 -k en-us -sdl  -s -d guest_errors,pcall,cpu_reset -no-reboot
