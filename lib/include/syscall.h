@@ -85,4 +85,6 @@ _define_syscall1(chdir, 17, const char*);
 
 _define_syscall2(getcwd, 18, char*, int);
 
+_define_syscall3(lseek, 19, int8_t, off_t, int);
+
 #endif //W2_SYSCALL_H

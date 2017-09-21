@@ -54,10 +54,10 @@ FILE(GLOB MyCSources
 /home/dcat/osdev/w2/memory/kmalloc.c
 /home/dcat/osdev/w2/memory/linkedlist.c
 /home/dcat/osdev/w2/memory/paging_heap.c
+/home/dcat/osdev/w2/asm/boot.s
 /home/dcat/osdev/w2/asm/syscall.s
 /home/dcat/osdev/w2/asm/page.s
 /home/dcat/osdev/w2/asm/isrs.s
-/home/dcat/osdev/w2/asm/multiboot.s
 /home/dcat/osdev/w2/asm/irqs.s
 /home/dcat/osdev/w2/ker/irqs.c
 /home/dcat/osdev/w2/ker/gdt.c

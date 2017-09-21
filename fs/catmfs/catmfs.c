@@ -162,7 +162,8 @@ int catmfs_get_fs_node(uint32_t inode_id, fs_node_t *node) {
 
 }
 
-int32_t catmfs_fs_node_read(fs_node_t *node, __fs_special_t *fsp_, uint32_t offset, uint32_t size, uint8_t *buff) {
+int32_t catmfs_fs_node_read(fs_node_t *node, __fs_special_t *fsp_, uint32_t size, uint8_t *buff) {
+    uint32_t offset = node->offset;
     dprintf("read %x", node->inode);
     catmfs_inode_t *inode = (catmfs_inode_t *) node->inode;
     catmfs_special_t *fsp = fsp_;
@@ -214,8 +215,9 @@ int32_t catmfs_fs_node_read(fs_node_t *node, __fs_special_t *fsp_, uint32_t offs
     return size - les;
 }
 
-int32_t catmfs_fs_node_write(fs_node_t *node, __fs_special_t *fsp_, uint32_t offset, uint32_t size, uint8_t *buff) {
+int32_t catmfs_fs_node_write(fs_node_t *node, __fs_special_t *fsp_, uint32_t size, uint8_t *buff) {
     catmfs_inode_t *inode = (catmfs_inode_t *) node->inode;
+    uint32_t offset = node->offset;
     catmfs_special_t *fsp = fsp_;
     if (inode->magic != CATMFS_MAGIC) {
         deprintf("not a catmfs node[%x][%x].", inode, inode->magic);
@@ -365,6 +367,11 @@ int catmfs_fs_node_load_catrfmt(fs_node_t *node, __fs_special_t *fsp_, uint32_t 
     return 1;
 }
 
+int catmfs_fs_node_lseek(fs_node_t *node, __fs_special_t *fsp_, uint32_t offset) {
+    node->offset = offset;
+    return 0;
+}
+
 __fs_special_t *catmfs_fs_node_mount(void *dev, fs_node_t *node) {
     catmfs_special_t *fsp = (catmfs_special_t *) kmalloc(sizeof(catmfs_special_t));
     catmfs_inode_t *root = catmfs_alloc_inode();
@@ -392,4 +399,5 @@ void catmfs_create_fstype() {
     catmfs.read = catmfs_fs_node_read;
     catmfs.write = catmfs_fs_node_write;
     catmfs.rm = catmfs_fs_node_rm;
+    catmfs.lseek = catmfs_fs_node_lseek;
 }

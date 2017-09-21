@@ -36,7 +36,8 @@ int procfs_insert_proc(pid_t pid) {
                 .id=x,
                 .pid=pid
         };
-        if (catmfs_fs_node_write(&item_node, psp.catfsp, 0, sizeof(snode), &snode) != sizeof(snode)) {
+        catmfs_fs_node_lseek(&item_node, psp.catfsp, 0);
+        if (catmfs_fs_node_write(&item_node, psp.catfsp, sizeof(snode), &snode) != sizeof(snode)) {
             PANIC("fail to write file...");
         }
     }
@@ -71,10 +72,12 @@ int procfs_insert_item(const char *fn, procfs_precall_t precall) {
     procfs_items_count++;
 }
 
-int32_t procfs_fs_node_read(fs_node_t *node, __fs_special_t *fsp_, uint32_t offset, uint32_t size, uint8_t *buff) {
+int32_t procfs_fs_node_read(fs_node_t *node, __fs_special_t *fsp_, uint32_t size, uint8_t *buff) {
+    uint32_t offset = node->offset;
     __fs_special_t *catfsp = ((procfs_special_t *) fsp_)->catfsp;
     procfs_snode_t snode;
-    if (catmfs_fs_node_read(node, catfsp, 0, sizeof(snode), &snode) != sizeof(snode)) {
+    catmfs_fs_node_lseek(node, catfsp, 0);
+    if (catmfs_fs_node_read(node, catfsp, sizeof(snode), &snode) != sizeof(snode)) {
         deprintf("Fail to read snode");
         return -1;
     }
@@ -82,10 +85,11 @@ int32_t procfs_fs_node_read(fs_node_t *node, __fs_special_t *fsp_, uint32_t offs
         dprintf("calling precall:%x for %s", procfs_items[snode.id].precall, procfs_items[snode.id].fn);
         procfs_items[snode.id].precall(node, catfsp, &snode);
     }
-    return catmfs_fs_node_read(node, catfsp, sizeof(snode) + offset, size, buff);
+    catmfs_fs_node_lseek(node, catfsp, sizeof(snode) + offset);
+    return catmfs_fs_node_read(node, catfsp, size, buff);
 }
 
-int32_t procfs_fs_node_write(fs_node_t *node, __fs_special_t *fsp_, uint32_t offset, uint32_t size, uint8_t *buff) {
+int32_t procfs_fs_node_write(fs_node_t *node, __fs_special_t *fsp_, uint32_t size, uint8_t *buff) {
     return -1;
 }
 
@@ -122,22 +126,18 @@ int procfs_item_status(fs_node_t *node, __fs_special_t *fsp_, procfs_snode_t *sn
         case STATUS_DIED:
             status = "DIED";
     }
-    int off = sizeof(procfs_snode_t);
-    strformat(buff, "Name:\t%s\n", pcb->name);
-    catmfs_fs_node_write(node, fsp_, off, strlen(buff), buff);
-    off += strlen(buff);
-    strformat(buff, "Status:\t%s\n", status);
-    catmfs_fs_node_write(node, fsp_, off, strlen(buff), buff);
-    off += strlen(buff);
-    strformat(buff, "Pid:\t%x\n", snode->pid);
-    catmfs_fs_node_write(node, fsp_, off, strlen(buff), buff);
+    catmfs_fs_node_lseek(node, fsp_, sizeof(procfs_snode_t));
+    strformat(buff, "Name:\t%s\n"
+            "Status:\t%s\n"
+            "Pid:\t%x\n", pcb->name, status, snode->pid);
+    catmfs_fs_node_write(node, fsp_, strlen(buff), buff);
     return 0;
 }
 
 int procfs_item_cmdline(fs_node_t *node, __fs_special_t *fsp_, procfs_snode_t *snode) {
     pcb_t *pcb = getpcb(snode->pid);
-    int off = sizeof(procfs_snode_t);
-    catmfs_fs_node_write(node, fsp_, off, strlen(pcb->cmdline), pcb->cmdline);
+    catmfs_fs_node_lseek(node, fsp_, sizeof(procfs_snode_t));
+    catmfs_fs_node_write(node, fsp_, strlen(pcb->cmdline), pcb->cmdline);
     return 0;
 }
 

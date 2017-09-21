@@ -8,7 +8,9 @@
 #include "va.h"
 #include "intdef.h"
 
+#define sprintf(out, fmt, arg...) strformat(out,fmt,##arg)
 #define STR(x) (x)
+
 uint strlen(const char *str);
 
 int strstr(const char *str, const char *substr);

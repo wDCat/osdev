@@ -3,6 +3,7 @@
 //
 
 
+#include <vfs.h>
 #include "syscall.h"
 
 _impl_syscall0(helloworld, 0);
@@ -42,3 +43,5 @@ _impl_syscall2(access, 16, const char*, int);
 _impl_syscall1(chdir, 17, const char*);
 
 _impl_syscall2(getcwd, 18, char*, int);
+
+_impl_syscall3(lseek, 19, int8_t, off_t, int);

@@ -59,12 +59,14 @@ int catmfs_fs_node_finddir(fs_node_t *node, __fs_special_t *fsp_, const char *na
 
 int catmfs_get_fs_node(uint32_t inode_id, fs_node_t *node);
 
-int32_t catmfs_fs_node_read(fs_node_t *node, __fs_special_t *fsp_, uint32_t offset, uint32_t size, uint8_t *buff);
+int32_t catmfs_fs_node_read(fs_node_t *node, __fs_special_t *fsp_, uint32_t size, uint8_t *buff);
 
-int32_t catmfs_fs_node_write(fs_node_t *node, __fs_special_t *fsp_, uint32_t offset, uint32_t size, uint8_t *buff);
+int32_t catmfs_fs_node_write(fs_node_t *node, __fs_special_t *fsp_, uint32_t size, uint8_t *buff);
 
 int catmfs_fs_node_rm(fs_node_t *node, __fs_special_t *fsp_);
 
 __fs_special_t *catmfs_fs_node_mount(void *dev, fs_node_t *node);
+
+int catmfs_fs_node_lseek(fs_node_t *node, __fs_special_t *fsp_, uint32_t offset);
 
 #endif //W2_CATMFS_H

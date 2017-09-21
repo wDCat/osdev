@@ -206,7 +206,7 @@ inline int vfs_touch(vfs_t *vfs, const char *name) {
     return vfs_make(vfs, FS_FILE, name);
 }
 
-int32_t vfs_read(vfs_t *vfs, uint32_t offset, uint32_t size, uchar_t *buff) {
+int32_t vfs_read(vfs_t *vfs, uint32_t size, uchar_t *buff) {
     mount_point_t *mp;
     char *rpath;
     if (vfs_find_mount_point(vfs, vfs->path, &mp, &rpath)) {
@@ -221,10 +221,10 @@ int32_t vfs_read(vfs_t *vfs, uint32_t offset, uint32_t size, uchar_t *buff) {
         deprintf("fs operator not implemented");
         return -1;
     }
-    return mp->fs->read(&vfs->current, mp->fsp, offset, size, buff);
+    return mp->fs->read(&vfs->current, mp->fsp, size, buff);
 }
 
-int32_t vfs_write(vfs_t *vfs, uint32_t offset, uint32_t size, uchar_t *buff) {
+int32_t vfs_write(vfs_t *vfs, uint32_t size, uchar_t *buff) {
     mount_point_t *mp;
     char *rpath;
     if (vfs_find_mount_point(vfs, vfs->path, &mp, &rpath)) {
@@ -239,7 +239,7 @@ int32_t vfs_write(vfs_t *vfs, uint32_t offset, uint32_t size, uchar_t *buff) {
         deprintf("fs operator not implemented");
         return -1;
     }
-    return mp->fs->write(&vfs->current, mp->fsp, offset, size, buff);
+    return mp->fs->write(&vfs->current, mp->fsp, size, buff);
 }
 
 int vfs_rm(vfs_t *vfs) {
@@ -252,9 +252,78 @@ int vfs_rm(vfs_t *vfs) {
     return mp->fs->rm(&vfs->current, mp->fsp);
 }
 
+int vfs_pretty_path(const char *path, char *out) {
+    int off = 0;
+    if (out != NULL && path != out) {
+        strcpy(out, path);
+    } else {
+        out = (char *) path;
+    }
+    while (true) {
+        if (off > strlen(out))break;
+        char *o = strchr(&out[off], '/');
+        if (o == NULL)break;
+        int ol = (int) (o - out - off);
+        //dprintf("ol:%d", ol);
+        if (ol == 2 && out[off] == '.' && out[off + 1] == '.') {
+            int y = off - 2;
+            for (; y >= 0; y--) {
+                if (out[y] == '/')break;
+            }
+            int len = strlen(o);
+            memcpy(&out[y], o, len);
+            out[y + len] = 0;
+            //dprintf("cpy %d %s", y, &o[1]);
+            off = y + 1;
+        } else if (ol == 1 && out[off] == '.') {
+            int len = strlen(&out[off + 2]);
+            memcpy(&out[off], &out[off + 2], len);
+            out[off + len] = 0;
+        } else off += ol + 1;
+    }
+}
+
+int vfs_fix_path(uint32_t pid, const char *name, char *out, int max_len) {
+    const char *cwd = kgetcwd(pid);
+    int p = 0, len = strlen(name), cwd_len = strlen(cwd);
+    if (len >= MAX_PATH_LEN) {
+        deprintf("name too long//");
+        sprintf(out, "/");
+        return 2;
+    }
+    switch (name[0]) {
+        case '.':
+            if (cwd_len + len - 2 >= MAX_PATH_LEN)
+                goto _err;
+            if (len > 1 && name[1] == '/') {
+                p++;
+                sprintf(out, "%s%s", cwd, &name[p + 1]);
+            } else {
+                if (len >= 1 && name[1] == '/')p++;
+                sprintf(out, "%s%s", cwd, &name[p]);
+            }
+            break;
+        case '/':
+            sprintf(out, "%s", name);
+            break;
+        default:
+            if (cwd_len + len - 1 >= MAX_PATH_LEN)
+                goto _err;
+            if (len >= 1 && name[1] == '/')p++;
+            sprintf(out, "%s%s", cwd, &name[p]);
+    }
+    dprintf("fix path:%s ==> %s", name, out);
+    return 0;
+    _err:
+    sprintf(out, "%s", name);
+    return 1;//ignored
+}
+
 int8_t kopen(uint32_t pid, const char *name, uint8_t mode) {
     pcb_t *pcb = getpcb(pid);
-    const char *path = name;
+    char *path = (char *) kmalloc(MAX_PATH_LEN);
+    vfs_fix_path(pid, name, path, MAX_PATH_LEN);
+    vfs_pretty_path(path, NULL);
     mount_point_t *mp;
     int8_t fd = -1;
     for (int8_t x = 0; x < MAX_FILE_HANDLES; x++) {
@@ -265,21 +334,26 @@ int8_t kopen(uint32_t pid, const char *name, uint8_t mode) {
     }
     if (fd == -1) {
         deprintf("cannot open more than %x files.", MAX_FILE_HANDLES);
-        return -1;
+        goto _ret;
     }
     file_handle_t *fh = &pcb->fh[fd];
     if (vfs_get_node(&pcb->vfs, path, &fh->node)) {
         deprintf("no such file or dir:%s", name);
-        return -1;
+        fd = -1;
+        goto _ret;
     }
     if (vfs_find_mount_point(&pcb->vfs, path, &mp, NULL)) {
         dprintf("mount point not found:%s", path);
-        return 1;
+        fd = -1;
+        goto _ret;
     }
     fh->present = 1;
     fh->mode = mode;
     fh->mp = mp;
+    fh->node.offset = 0;
     dprintf("proc %x open %s fd:%x", pid, path, fd);
+    _ret:
+    kfree(path);
     return fd;
 }
 
@@ -311,7 +385,7 @@ int8_t sys_close(int8_t fd) {
     return kclose(getpid(), fd);
 }
 
-int32_t kread(uint32_t pid, int8_t fd, uint32_t offset, int32_t size, uchar_t *buff) {
+int32_t kread(uint32_t pid, int8_t fd, int32_t size, uchar_t *buff) {
     pcb_t *pcb = getpcb(pid);
     file_handle_t *fh = &pcb->fh[fd];
     if (!fh->present) {
@@ -326,19 +400,20 @@ int32_t kread(uint32_t pid, int8_t fd, uint32_t offset, int32_t size, uchar_t *b
         deprintf("fs operator is not implemented.");
         return -1;
     }
-    int32_t ret = fh->mp->fs->read(&fh->node, fh->mp->fsp, offset, size, buff);
+    int32_t ret = fh->mp->fs->read(&fh->node, fh->mp->fsp, size,
+                                   buff);
     return ret;
 }
 
 int32_t sys_read(int8_t fd, int32_t size, uchar_t *buff) {
     pcb_t *pcb = getpcb(getpid());
     file_handle_t *fh = &pcb->fh[fd];
-    int32_t ret = kread(getpid(), fd, fh->offset, size, buff);
-    fh->offset += ret;
+    int32_t ret = kread(getpid(), fd, size, buff);
+    fh->node.offset += ret;
     return ret;
 }
 
-int32_t kwrite(uint32_t pid, int8_t fd, uint32_t offset, int32_t size, uchar_t *buff) {
+off_t klseek(uint32_t pid, int8_t fd, off_t offset, int where) {
     pcb_t *pcb = getpcb(pid);
     file_handle_t *fh = &pcb->fh[fd];
     if (!fh->present) {
@@ -349,7 +424,45 @@ int32_t kwrite(uint32_t pid, int8_t fd, uint32_t offset, int32_t size, uchar_t *
         deprintf("[%x]mount point not found.", fd);
         return -1;
     }
-    int32_t ret = fh->mp->fs->write(&fh->node, fh->mp->fsp, offset, size, buff);
+    switch (where) {
+        case SEEK_CUR:
+            fh->node.offset += offset;
+            break;
+        case SEEK_END:
+            fh->node.offset = fh->node.length + offset;
+            break;
+        case SEEK_SET:
+            fh->node.offset = (uint32_t) offset;
+            break;
+        default:
+            deprintf("Bad where!");
+            return -1;
+    }
+    if (fh->mp->fs->lseek == 0) {
+        deprintf("fs operator is not implemented.");
+        return -1;
+    }
+    fh->mp->fs->lseek(&fh->node, fh->mp->fsp, fh->node.offset);
+    return fh->node.offset;
+}
+
+off_t sys_lseek(int8_t fd, off_t offset, int where) {
+    return klseek(getpid(), fd, offset, where);
+}
+
+int32_t kwrite(uint32_t pid, int8_t fd, int32_t size, uchar_t *buff) {
+    pcb_t *pcb = getpcb(pid);
+    file_handle_t *fh = &pcb->fh[fd];
+    if (!fh->present) {
+        deprintf("fd %x not present.", fd);
+        return -1;
+    }
+    if (fh->mp == 0) {
+        deprintf("[%x]mount point not found.", fd);
+        return -1;
+    }
+    int32_t ret = fh->mp->fs->write(&fh->node, fh->mp->fsp, size,
+                                    buff);
 
     return ret;
 }
@@ -357,17 +470,24 @@ int32_t kwrite(uint32_t pid, int8_t fd, uint32_t offset, int32_t size, uchar_t *
 int32_t sys_write(int8_t fd, int32_t size, uchar_t *buff) {
     pcb_t *pcb = getpcb(getpid());
     file_handle_t *fh = &pcb->fh[fd];
-    int32_t ret = kwrite(getpid(), fd, fh->offset, size, buff);
-    fh->offset += ret;
+    int32_t ret = kwrite(getpid(), fd, size, buff);
+    fh->node.offset += ret;
     return ret;
 }
 
-int sys_access(const char *path, int mode) {
+int sys_access(const char *name, int mode) {
     pcb_t *pcb = getpcb(getpid());
-    return -vfs_get_node(&pcb->vfs, path, NULL);
+    char *path = (char *) kmalloc(MAX_PATH_LEN);
+    vfs_fix_path(getpid(), name, path, MAX_PATH_LEN);
+    int ret = -vfs_get_node(&pcb->vfs, path, NULL);
+    kfree(path);
+    return ret;
+    //TODO mode./..
 }
 
-int sys_stat(const char *path, stat_t *stat) {
+int sys_stat(const char *name, stat_t *stat) {
+    char *path = (char *) kmalloc(MAX_PATH_LEN);
+    vfs_fix_path(getpid(), name, path, MAX_PATH_LEN);
     CHK(vfs_cd(&vfs, path), "No such file or directory.");
     fs_node_t *n = &vfs.current;
     stat->st_dev = 0;
@@ -383,18 +503,32 @@ int sys_stat(const char *path, stat_t *stat) {
     stat->st_atime = 0;
     stat->st_mtime = 0;
     stat->st_ctime = 0;
+    kfree(path);
     return 0;
     _err:
+    kfree(path);
     return -1;
 }
 
-int sys_chdir(const char *path) {
+int sys_chdir(const char *name) {
+    char *path = (char *) kmalloc(MAX_PATH_LEN);
+    vfs_fix_path(getpid(), name, path, MAX_PATH_LEN);
     pcb_t *pcb = getpcb(getpid());
-    CHK(vfs_cd(&pcb->vfs, path), "");
-    strcpy(pcb->dir, path);
+    int len = strlen(path);
+    if (path[len - 1] != '/')
+        strcat(path, "/");
+    vfs_pretty_path(path, pcb->dir);
+    CHK(vfs_cd(&pcb->vfs, pcb->dir), "");
+    //strcpy(pcb->dir, path);
+    kfree(path);
     return 0;
     _err:
+    kfree(path);
     return -1;
+}
+
+char *kgetcwd(pid_t pid) {
+    return getpcb(pid)->dir;
 }
 
 char *sys_getcwd(char *buff, int len) {
@@ -494,17 +628,17 @@ void vfs_test_old() {
     char *bigneko = (char *) kmalloc_paging(size, NULL);
     putf_const("bigneko:%x\n", bigneko);
     memset(bigneko, 'H', size);
-    int32_t a = vfs_write(&vfs, 0, 10, bigneko);
+    int32_t a = vfs_write(&vfs, 10, bigneko);
     kfree(bigneko);
     size = 0x2032;
     bigneko = (char *) kmalloc_paging(size, NULL);
     putf_const("write[1]ret:%x\n", a);
     memset(bigneko, 'P', size);
-    a = vfs_write(&vfs, 10, 10, bigneko);
+    a = vfs_write(&vfs, 10, bigneko);
     putf_const("write[2]ret:%x\n", a);
     char *nya = (char *) kmalloc_paging(size, NULL);
     memset(nya, 0, 2032);
-    int ret = vfs_read(&vfs, 10, 10, nya);
+    int ret = vfs_read(&vfs, 10, nya);
     putnf("[%x][%d]read result:%s", 100, nya, ret, nya);
 
     ASSERT(vfs_make(&vfs, FS_FILE, STR("nemkoo")) == 0);

@@ -8,7 +8,7 @@
 #include "stdint.h"
 //Test
 #define  F_OK 0x0
-
+typedef int32_t off_t;
 typedef struct dirent {
     uint32_t node;
     unsigned short name_len; /* length of this d_name 文件名长 */

@@ -18,7 +18,8 @@ bool elf_load(pid_t pid, int8_t fd, uint32_t *entry_point) {
     pcb_t *pcb = getpcb(pid);
     elf_header_t ehdr;
     uint32_t shdr_ptr = 0;
-    if (kread(pid, fd, 0, sizeof(elf_header_t), &ehdr) != sizeof(elf_header_t)) {
+    klseek(pid, fd, 0, SEEK_SET);
+    if (kread(pid, fd, sizeof(elf_header_t), &ehdr) != sizeof(elf_header_t)) {
         deprintf("cannot read elf header.");
         goto _err;
     }
@@ -36,7 +37,8 @@ bool elf_load(pid_t pid, int8_t fd, uint32_t *entry_point) {
     uint32_t shdrsize = ehdr.e_shentsize * ehdr.e_shnum;
     shdr_ptr = kmalloc_paging(shdrsize, NULL);
     elf_section_t *shdr = (elf_section_t *) shdr_ptr;
-    if (kread(pid, fd, ehdr.e_shoff, shdrsize, shdr) != shdrsize) {
+    klseek(pid, fd, ehdr.e_shoff, SEEK_SET);
+    if (kread(pid, fd, shdrsize, shdr) != shdrsize) {
         deprintf("cannot read section info.");
         goto _err;
     }
@@ -56,7 +58,8 @@ bool elf_load(pid_t pid, int8_t fd, uint32_t *entry_point) {
                     } else {
                         uint32_t size = MIN(shdr->sh_size - y, 0x1000 - (y == 0 ? inoff : 0));
                         uint8_t *sec = (uint8_t *) kmalloc_paging(size, NULL);
-                        if (kread(pid, fd, shdr->sh_offset, size, sec) != size) {
+                        klseek(pid, fd, shdr->sh_offset, SEEK_SET);
+                        if (kread(pid, fd, size, sec) != size) {
                             deprintf("cannot read section:%x:x.I/O error.", x, y);
                             goto _err;
                         }
@@ -74,12 +77,14 @@ bool elf_load(pid_t pid, int8_t fd, uint32_t *entry_point) {
                         if (y == 0) {
                             alloc_frame(page, false, false);
                             uint32_t size = MIN(shdr->sh_size, 0x1000 - inoff);
-                            if (kread(pid, fd, shdr->sh_offset, size, shdr->sh_addr) != size) {
+                            klseek(pid, fd, shdr->sh_offset, SEEK_SET);
+                            if (kread(pid, fd, size, shdr->sh_addr) != size) {
                                 deprintf("cannot read section:%x:%x.I/O error.", x, y);
                                 goto _err;
                             }
                         } else if (y == shdr->sh_size - les && les) {
-                            if (kread(pid, fd, shdr->sh_offset, les, pno + y) != les) {
+                            klseek(pid, fd, shdr->sh_offset + y, SEEK_SET);
+                            if (kread(pid, fd, les, pno + y) != les) {
                                 deprintf("cannot read section:%x:%x.I/O error.", x, y);
                                 goto _err;
                             }

@@ -235,6 +235,11 @@ void ide_test() {
 
 
 int little_test() {
+    char buff2[256];
+    dprintf("now begin test...");
+    vfs_pretty_path("/dev/../", buff2);
+    dprintf("result:%s", buff2);
+    dprintf("test done.");
     extern swap_disk_t sdisk;
     uint32_t apage = kmalloc_paging(0x1000, NULL);
     memset(apage, 0x22, 0x1000);

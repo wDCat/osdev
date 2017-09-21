@@ -52,12 +52,13 @@ int ext2_get_inode_block(ext2_t *fs, uint32_t inode_id, uint32_t *index_out, uin
 
 int ext2_find_inote(ext2_t *ext2_fs, uint32_t inode_id, ext2_inode_t *inode_out) {
     ASSERT(inode_id >= 2);
+    int ret = 0;
     uint32_t bg_no = (inode_id - 1) / ext2_fs->super_blk.s_inodes_per_group;
     uint32_t index = (inode_id - 1) % ext2_fs->super_blk.s_inodes_per_group;
     uint32_t block = (index * sizeof(ext2_inode_t)) / ext2_fs->block_size;
     uint32_t offset = block + ext2_fs->block_group[bg_no].bg_inode_table;
     index = index % (ext2_fs->block_size / sizeof(ext2_inode_t));
-    uint8_t blk[SECTION_SIZE];
+    uint8_t *blk = (uint8_t *) kmalloc_paging(SECTION_SIZE, NULL);
     uint32_t off = ext2_fs->block_size * offset;
     ext2_inode_t *inode;
     //计算inode在哪个section...
@@ -66,12 +67,16 @@ int ext2_find_inote(ext2_t *ext2_fs, uint32_t inode_id, ext2_inode_t *inode_out)
     uint32_t off_les = off_2 % SECTION_SIZE;
     off += off_sec * SECTION_SIZE;
     if (ext2_fs->dev->read(off, SECTION_SIZE, blk)) {
-        return -1;
+        ret = -1;
+        goto _after;
     }
     inode = (ext2_inode_t *) (blk + off_les);
     memcpy(inode_out, inode, sizeof(ext2_inode_t));
     dprintf("inode[%x][%x][%x][%x]", inode_id, off + off_les, off_les, inode);
-    return 0;
+    _after:
+    if (blk)
+        kfree(blk);
+    return ret;
 }
 
 void ext2_dir_iterator_init(ext2_t *fs, ext2_inode_t *inode, ext2_dir_iterator_t *iter) {
@@ -630,7 +635,8 @@ int ext2_init(ext2_t *fs_out, blk_dev_t *dev) {
     return 0;
 }
 
-int32_t ext2_fs_node_write(fs_node_t *node, __fs_special_t *fsp, uint32_t offset, uint32_t len, uint8_t *buff) {
+int32_t ext2_fs_node_write(fs_node_t *node, __fs_special_t *fsp, uint32_t len, uint8_t *buff) {
+    uint32_t offset = node->offset;
     ext2_t *fs = fsp;
     ASSERT(fs->magic == EXT2_MAGIC);
     ext2_inode_t inode;
@@ -646,7 +652,8 @@ int32_t ext2_fs_node_write(fs_node_t *node, __fs_special_t *fsp, uint32_t offset
     return -1;
 }
 
-int32_t ext2_fs_node_read(fs_node_t *node, __fs_special_t *fsp, uint32_t offset, uint32_t len, uint8_t *buff) {
+int32_t ext2_fs_node_read(fs_node_t *node, __fs_special_t *fsp, uint32_t len, uint8_t *buff) {
+    uint32_t offset = node->offset;
     ext2_t *fs = fsp;
     ASSERT(fs->magic == EXT2_MAGIC);
     ext2_inode_t inode;
@@ -775,6 +782,11 @@ int ext2_fs_node_make(fs_node_t *node, __fs_special_t *fsp, uint8_t type, char *
     return 1;
 }
 
+int ext2_fs_node_lseek(fs_node_t *node, __fs_special_t *fsp_, uint32_t offset) {
+    //do nothing
+    return 0;
+}
+
 __fs_special_t *ext2_fs_node_mount(blk_dev_t *dev, fs_node_t *rootnode) {
     ext2_t *fs = kmalloc(sizeof(ext2_t));
     CHK(ext2_init(fs, dev), "[ext2]fail to mount");
@@ -795,4 +807,5 @@ void ext2_create_fstype() {
     ext2_fs.finddir = ext2_fs_node_finddir;
     ext2_fs.getnode = ext2_fs_node_get_node;
     ext2_fs.make = ext2_fs_node_make;
+    ext2_fs.lseek = ext2_fs_node_lseek;
 }

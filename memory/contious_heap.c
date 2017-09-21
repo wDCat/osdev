@@ -133,7 +133,7 @@ void hfree(heap_t *heap, uint32_t addr) {
         hole_header_t *forward_header = forward_footer->header;
         ASSERT(forward_header->magic == HOLE_HEADER_MAGIC);
         if (!forward_header->used) {
-            dumphex("combine forward header:", (uint32_t) forward_header);
+            dprintf("combine forward header:%x", (uint32_t) forward_header);
             header = combine_two_hole(heap, forward_header, header);
             header_removed = true;
             footer = NULL;
@@ -144,7 +144,7 @@ void hfree(heap_t *heap, uint32_t addr) {
                                                         HOLE_HEADER_SIZE);
         if (next_header->magic == HOLE_HEADER_MAGIC) {
             if (!next_header->used) {
-                dumphex("combine next header:", next_header);
+                dprintf("combine next header:%x", next_header);
                 header = combine_two_hole(heap, header, next_header);
                 header_removed = true;
             }

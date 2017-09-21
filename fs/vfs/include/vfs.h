@@ -9,10 +9,18 @@
 #include "fs_node.h"
 #include "stat.h"
 #include "uvfs.h"
+#include "uproc.h"
 
+
+#define MAX_FILENAME_LEN 256
+#define MAX_PATH_LEN 1024
 #define MAX_MOUNT_POINTS 64
 #define MAX_FILE_HANDLES 10
 #define MAX_PATH_LEN 1024
+
+#define SEEK_SET    0
+#define SEEK_CUR    1
+#define SEEK_END    2
 
 typedef __fs_special_t *(*mount_type_t)(void *dev, fs_node_t *node);
 
@@ -22,7 +30,7 @@ typedef int (*make_type_t)(struct fs_node *, __fs_special_t *fsp, uint8_t type, 
 
 typedef int (*rm_type_t)(struct fs_node *, __fs_special_t *fsp);
 
-typedef int (*seek_type_t)(struct fs_node *, __fs_special_t *fsp, uint32_t offset);
+typedef int (*lseek_type_t)(struct fs_node *, __fs_special_t *fsp, uint32_t offset);
 
 typedef struct fs__ {
     char name[256];
@@ -36,7 +44,7 @@ typedef struct fs__ {
     readdir_type_t readdir;
     finddir_type_t finddir;
     rm_type_t rm;
-    seek_type_t seek;
+    lseek_type_t lseek;
 } fs_t;
 typedef struct {
     char path[256];
@@ -54,7 +62,6 @@ typedef struct {
     bool present;
     fs_node_t node;
     mount_point_t *mp;
-    uint32_t offset;
     uint32_t mode;
     void *reserved;
 } file_handle_t;
@@ -78,7 +85,7 @@ int32_t vfs_ls(vfs_t *vfs, dirent_t *dirs, uint32_t max_count);
 
 int vfs_make(vfs_t *vfs, uint8_t type, const char *name);
 
-int32_t vfs_read(vfs_t *vfs, uint32_t offset, uint32_t size, uchar_t *buff);
+int32_t vfs_read(vfs_t *vfs, uint32_t size, uchar_t *buff);
 
 int8_t sys_open(const char *name, uint8_t mode);
 
@@ -90,9 +97,9 @@ int8_t kopen(uint32_t pid, const char *name, uint8_t mode);
 
 int32_t sys_read(int8_t fd, int32_t size, uchar_t *buff);
 
-int32_t kread(uint32_t pid, int8_t fd, uint32_t offset, int32_t size, uchar_t *buff);
+int32_t kread(uint32_t pid, int8_t fd, int32_t size, uchar_t *buff);
 
-int32_t kwrite(uint32_t pid, int8_t fd, uint32_t offset, int32_t size, uchar_t *buff);
+int32_t kwrite(uint32_t pid, int8_t fd, int32_t size, uchar_t *buff);
 
 int32_t sys_write(int8_t fd, int32_t size, uchar_t *buff);
 
@@ -107,5 +114,13 @@ int sys_access(const char *path, int mode);
 int sys_chdir(const char *path);
 
 char *sys_getcwd(char *buff, int len);
+
+char *kgetcwd(pid_t pid);
+
+int vfs_pretty_path(const char *path, char *out);
+
+off_t klseek(uint32_t pid, int8_t fd, off_t offset, int where);
+
+off_t sys_lseek(int8_t fd, off_t offset, int where);
 
 #endif //W2_VFS_H

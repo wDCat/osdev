@@ -16,9 +16,9 @@
 #define FS_MOUNTPOINT  0x08
 typedef void __fs_special_t;
 
-typedef int32_t (*read_type_t)(struct fs_node *, __fs_special_t *fsp, uint32_t, uint32_t, uint8_t *);
+typedef int32_t (*read_type_t)(struct fs_node *, __fs_special_t *fsp, uint32_t, uint8_t *);
 
-typedef int32_t (*write_type_t)(struct fs_node *, __fs_special_t *fsp, uint32_t, uint32_t, uint8_t *);
+typedef int32_t (*write_type_t)(struct fs_node *, __fs_special_t *fsp, uint32_t, uint8_t *);
 
 typedef void (*open_type_t)(struct fs_node *, __fs_special_t *fsp);
 
@@ -40,6 +40,7 @@ typedef struct fs_node {
     uint32_t impl;        // An implementation-defined number.
     uint32_t mount_point;
     __fs_special_t *fsp;
+    uint32_t offset;
     /*
     read_type_t read;
     write_type_t write;

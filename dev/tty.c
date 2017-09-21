@@ -206,7 +206,7 @@ void tty_kb_handler(int code) {
     }
 }
 
-int32_t tty_fs_node_read(fs_node_t *node, __fs_special_t *fsp_, uint32_t offset, uint32_t size, uint8_t *buff) {
+int32_t tty_fs_node_read(fs_node_t *node, __fs_special_t *fsp_, uint32_t size, uint8_t *buff) {
     uint8_t ttyid = (uint8_t) node->inode;
     if (ttyid > TTY_MAX_COUNT) {
         deprintf("tty not exist:%x", ttyid);
@@ -215,7 +215,7 @@ int32_t tty_fs_node_read(fs_node_t *node, __fs_special_t *fsp_, uint32_t offset,
     return tty_read(&ttys[ttyid], getpid(), size, buff);
 }
 
-int32_t tty_fs_node_write(fs_node_t *node, __fs_special_t *fsp_, uint32_t offset, uint32_t size, uint8_t *buff) {
+int32_t tty_fs_node_write(fs_node_t *node, __fs_special_t *fsp_, uint32_t size, uint8_t *buff) {
     uint8_t ttyid = (uint8_t) node->inode;
     if (ttyid > TTY_MAX_COUNT) {
         deprintf("tty not exist:%x", ttyid);
