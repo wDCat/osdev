@@ -24,6 +24,7 @@ mboot:
     .long 200
     .long 8
 .global start
+.section .text
 start:
     mov $_sys_stack,%esp
     push %esp

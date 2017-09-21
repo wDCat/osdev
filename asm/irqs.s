@@ -1,4 +1,4 @@
-
+.section .text
 .extern irq_handler
 _irq_common_stub:
     pusha
@@ -13,7 +13,7 @@ _irq_common_stub:
     mov %ax,%gs
     mov %esp,%eax
     push %eax
-    mov irq_handler,%eax
+    mov $irq_handler,%eax
     call %eax
     pop %eax
     pop %gs
@@ -26,7 +26,10 @@ _irq_common_stub:
 .macro _irq no
     .global _irq\no
     _irq\no:
-        ret
+        push $0
+        push $\no + 0x20
+        jmp _irq_common_stub
+        pop %eax
 .endm
 _irq 0
 _irq 1

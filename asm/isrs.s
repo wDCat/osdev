@@ -1,6 +1,7 @@
+.section .text
 .extern fault_handler
-.global _isr_common
-_isr_common:
+.global _isr_common_stub
+_isr_common_stub:
     pusha
     push %ds
     push %es
@@ -13,7 +14,7 @@ _isr_common:
     mov %ax,%gs
     mov %esp,%eax
     push %eax
-    mov fault_handler,%eax
+    mov $fault_handler,%eax
     call %eax
     pop %eax
     pop %gs
@@ -26,12 +27,15 @@ _isr_common:
 .macro isr_nec no
     .global _isr\no
     _isr\no:
-        ret
+        push $0
+        push $\no
+        jmp _isr_common_stub
 .endm
 .macro isr_ec no
     .global _isr\no
     _isr\no:
-        ret
+        push $\no
+        jmp _isr_common_stub
 .endm
 isr_nec 0
 isr_nec 1
