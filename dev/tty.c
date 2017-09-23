@@ -27,9 +27,9 @@ void tty_install() {
         memset(ttys[x].write, 0, sizeof(tty_queue_t));
         ttys[x].kinput = (tty_queue_t *) kmalloc(sizeof(tty_queue_t));
         memset(ttys[x].kinput, 0, sizeof(tty_queue_t));
-        ttys[x].read->proc_wait_num = 1;
-        ttys[x].write->proc_wait_num = 1;
-        ttys[x].kinput->proc_wait_num = 1;
+        ttys[x].read->proc_wait_num = 0;
+        ttys[x].write->proc_wait_num = 0;
+        ttys[x].kinput->proc_wait_num = 0;
         mutex_init(&ttys[x].read->mutex);
         mutex_init(&ttys[x].write->mutex);
         mutex_init(&ttys[x].kinput->mutex);
@@ -172,14 +172,17 @@ int32_t tty_cook(tty_t *tty) {
         count++;
     }
     pid_t pid_to_wake = 0;
-    for (int x = target->proc_wait_num; x < TTY_MAX_WAIT_PROC; x++) {
-        pid_t tpid = target->proc_wait[x];
+    int x = target->proc_wait_num;
+    pid_t tpid = target->proc_wait[x];
+    if (tpid != 0) {
         target->proc_wait[x] = 0;
         if (get_proc_status(getpcb(tpid)) != STATUS_WAIT) {
             deprintf("Proc %x already wake up....", tpid);
         } else {
+            target->proc_wait_num++;
+            if (target->proc_wait_num > TTY_MAX_WAIT_PROC)
+                target->proc_wait_num = 0;
             pid_to_wake = tpid;
-            break;
         }
     }
     mutex_unlock(&target->mutex);

@@ -94,7 +94,6 @@ int32_t procfs_fs_node_write(fs_node_t *node, __fs_special_t *fsp_, uint32_t siz
 }
 
 int procfs_fs_node_finddir(fs_node_t *node, __fs_special_t *fsp_, const char *name, fs_node_t *result_out) {
-    dprintf("neko try to find %s.", name);
     return catmfs_fs_node_finddir(node, ((procfs_special_t *) fsp_)->catfsp, name, result_out);
 }
 

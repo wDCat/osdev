@@ -116,6 +116,8 @@ void create_user_stack(uint32_t end_addr, uint32_t size, uint32_t *new_ebp, uint
 }
 
 void save_proc_state(pcb_t *pcb, regs_t *r) {
+    deprintf("cpu does it.");
+    return;
     tss_entry_t *tss = &pcb->tss;
     tss->eax = r->eax;
     tss->ebx = r->ebx;
@@ -198,19 +200,31 @@ inline void set_active_user_ldt(ldt_limit_entry_t *ldt_table, uint8_t ldt_table_
     gdt_set_gate(LDT_USER_PROC_ID, base, limit, 0x82, 0x00);
 }
 
+void switch_to_proc_soft(regs_t *r, pcb_t *pcb) {
+    TODO;
+}
+
+
 void switch_to_proc(pcb_t *pcb) {
     ASSERT(pcb->present && (pcb->pid > 1 || pcb->pid == 0));
-    if (pcb->pid == current_pid) {
-        if (!pcb->rejmp)return;
-        pcb->rejmp = false;
-    }
     cli();
+    uint32_t old_pid = current_pid;
+    if (pcb->pid == current_pid) {
+        if (!pcb->rejmp) {
+            return;
+        }
+        dprintf("proc %x rejmp~", pcb->pid);
+    }
+
+    pcb->rejmp = false;
+    pcb_t *old_pcb = getpcb(getpid());
     if (pcb->pid > MAX_PROC_COUNT) PANIC("Bad PID:%x pcb:%x", pcb->pid, pcb);
     set_proc_status(pcb, STATUS_RUN);
+
     set_active_user_tss(&pcb->tss);
-    set_active_user_ldt(pcb->ldt_table, pcb->ldt_table_count);
+    //set_active_user_ldt(pcb->ldt_table, pcb->ldt_table_count);
     _gdt_flush();
-    dprintf("switch to task %x[PC:%x]", pcb->pid, pcb->tss.eip);
+    dprintf("switch to task %x[PC:%x][ESP:%x]", pcb->pid, pcb->tss.eip, pcb->tss.esp);
     current_pid = pcb->pid;
     current_dir = pcb->page_dir;
     //k_delay(1);//cause bug...
@@ -218,8 +232,10 @@ void switch_to_proc(pcb_t *pcb) {
         uint32_t a;
         uint32_t b;
     } lj;
+    lj.a = 0;
     __asm__ __volatile__("movw %%dx,%1;"
             "ljmp %0;"::"m"(*&lj.a), "m"(*&lj.b), "d"(TSS_USER_PROC_ID << 3));
+    dprintf("welcome back.proc %x", old_pid);
 }
 
 void create_ldt(pcb_t *pcb) {
@@ -265,7 +281,7 @@ void clean_pcb_table() {
 
 pid_t fork(regs_t *r) {
     cli();
-    if (proc_count % 10 == 0) {
+    if (proc_count % 5 == 0) {
         clean_pcb_table();
     }
     pid_t fpid = getpid();
@@ -296,7 +312,7 @@ pid_t fork(regs_t *r) {
     tss->esi = r->esi;
     tss->edi = r->edi;
     if (fpid == 1) {
-        create_user_stack(0xCB000000, 0x4000, &tss->ebp, &tss->esp, cpcb->page_dir);
+        create_user_stack(0xCC000000, 0x4000, &tss->ebp, &tss->esp, cpcb->page_dir);
         dprintf("new user stack:[%x][%x]", tss->ebp, tss->esp);
         char neko[256], neko2[256];
         strcpy(neko, "Hello");
@@ -326,7 +342,10 @@ pid_t fork(regs_t *r) {
     strcpy(cpcb->dir, fpcb->dir);
     tss->eflags = r->eflags | 0x200;
     tss->ss0 = 0x10;
-    tss->esp0 = (uint32_t) (cpcb->reserved_page + 0x990);
+    for (uint32_t s = 0; s < UM_KSTACK_SIZE; s++) {
+        alloc_frame(get_page(UM_KSTACK_START + s, true, cpcb->page_dir), false, true);
+    }
+    tss->esp0 = (uint32_t) (UM_KSTACK_START + UM_KSTACK_SIZE - 0x4);
     tss->ldt = 0;
     cpcb->fpcb = fpcb;
     if (fpcb->cpcb) {
@@ -338,9 +357,10 @@ pid_t fork(regs_t *r) {
             } else pp = pp->next_pcb;
         }
     } else fpcb->cpcb = cpcb;
-    save_proc_state(fpcb, r);
-    set_proc_status(fpcb, STATUS_READY);
     procfs_insert_proc(cpid);
+
+    set_proc_status(cpcb, STATUS_READY);
+    set_proc_status(fpcb, STATUS_READY);
     switch_to_proc(cpcb);
     return cpid;
 }

@@ -6,6 +6,7 @@
 #include <str.h>
 #include <schedule.h>
 #include <signal.h>
+#include <page.h>
 #include "../proc/swap/include/swap.h"
 #include "isrs.h"
 #include "idt.h"
@@ -23,9 +24,29 @@ void dump_regs(regs_t *r) {
     dprintf("[FS:%x][GX:%x][EIP:%x]", r->fs, r->gs, r->eip);
 }
 
+void dump_page_dir(pid_t *pid) {
+    page_directory_t *dir = getpcb(pid)->page_dir;
+    dprintf("PAGEDIR[PID:%x]:", pid);
+    dprintf("-------------------------------------------");
+    for (int x = 0; x < 1024; x++) {
+        if (dir->tables[x]) {
+            if (dir->tables[x] != kernel_dir->tables[x]) {
+                dprintf("page table[%x]:%x-%x", dir->tables[x], x * 1024 * 0x1000, (x + 1) * 1024 * 0x1000);
+                dprintf("---------------------");
+                page_table_t *table = dir->tables[x];
+                for (int y = 0; y < 1024; y++) {
+                    if (table->pages[y].frame) {
+                        dprintf("entry:%x frame:%x", y * 0x1000 + x * 1024 * 0x1000, table->pages[y].frame);
+                    }
+                }
+                dprintf("---------------------");
+            }
+        }
+    }
+}
+
 void fault_handler(struct regs *r) {
     cli();
-    int a = 0;
     bool umoude_con = false, no_kill = false;
     //TODO:move kernel stack before disable paging:(
     switch (r->int_no) {
@@ -55,9 +76,10 @@ void fault_handler(struct regs *r) {
             break;
         case 0xE: {
             if (swap_handle_page_fault(r)) {
-                puterr_const("[-] Page Fault.Paging has been disabled.");
+                puterr_const("[-] Page Fault.");
                 umoude_con = true;
                 page_fault_handler(r);
+                dump_page_dir(getpid());
             } else {
                 no_kill = true;
                 //do_schedule_rejmp(NULL);

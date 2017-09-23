@@ -259,16 +259,19 @@ void copy_frame_physical(uint32_t src, uint32_t target) {
     // enable_paging();
 }
 
+uint32_t debug_tno = 0;
+
 page_table_t *clone_page_table(page_table_t *src, uint32_t *phy_out, uint32_t num) {
 
     uint32_t phy_addr;
     page_table_t *target = (page_table_t *) kmalloc_paging(sizeof(page_table_t), &phy_addr);
     *phy_out = phy_addr;
     memset(target, 0, sizeof(page_table_t));
+    dprintf("new table for %x:%x", debug_tno, target);
     for (int x = 0; x < 1024; x++) {
-
         if (src->pages[x].frame) {//Available
             alloc_frame(&target->pages[x], false, true);
+            dprintf("page frame:%x --> %x", target->pages[x].frame, x * 0x1000 + debug_tno);
             if (src->pages[x].present)target->pages[x].present = true;
             if (src->pages[x].rw)target->pages[x].rw = true;
             if (src->pages[x].user)target->pages[x].user = true;
@@ -278,6 +281,40 @@ page_table_t *clone_page_table(page_table_t *src, uint32_t *phy_out, uint32_t nu
             copy_frame_physical(src->pages[x].frame, target->pages[x].frame);
         }
     }
+    page_t *page = get_page(target, false, kernel_dir);
+    page->rw = 0;
+    return target;
+}
+
+page_directory_t *clone_page_directory(page_directory_t *src) {
+    uint32_t phy_addr;
+    page_directory_t *target = (page_directory_t *) kmalloc_paging(sizeof(page_directory_t), &phy_addr);
+    memset(target, 0, sizeof(page_directory_t));
+    //calc offset 1024*pointer = 1K
+    uint32_t offset = (uint32_t) target->table_physical_addr - (uint32_t) target;
+    target->physical_addr = phy_addr + offset;
+    dprintf("[PT]new table at:%x offset:%x ->phyaddr:%x", phy_addr, offset, target->physical_addr);
+    uint8_t count[3];
+    memset(count, 0, sizeof(uint8_t) * 3);
+    for (int x = 0; x < 1024; x++) {
+        if (src->tables[x]) {
+            count[0]++;
+            if (src->tables[x] == kernel_dir->tables[x]) {
+                count[1]++;
+                target->tables[x] = kernel_dir->tables[x];
+                target->table_physical_addr[x] = kernel_dir->table_physical_addr[x];
+            } else {
+                count[2]++;
+                uint32_t table_phy;
+                debug_tno = x * 1024 * 0x1000;
+                dprintf("clone page table:%x-%x", x * 1024 * 0x1000, (x + 1) * 1024 * 0x1000);
+                page_table_t *table = clone_page_table(src->tables[x], &table_phy, x);
+                target->tables[x] = table;
+                target->table_physical_addr[x] = table_phy | 0x7;
+            }
+        }
+    }
+    dprintf("[PT]copied %x PTs [Kernel:%x]", count[0], count[1]);
     return target;
 }
 
@@ -317,36 +354,6 @@ int free_page_directory(page_directory_t *src) {
     kfree(src);
     dprintf("free %x page table(s).", count);
     return 0;
-}
-
-page_directory_t *clone_page_directory(page_directory_t *src) {
-    uint32_t phy_addr;
-    page_directory_t *target = (page_directory_t *) kmalloc_paging(sizeof(page_directory_t), &phy_addr);
-    memset(target, 0, sizeof(page_directory_t));
-    //calc offset 1024*pointer = 1K
-    uint32_t offset = (uint32_t) target->table_physical_addr - (uint32_t) target;
-    target->physical_addr = phy_addr + offset;
-    dprintf("[PT]new table at:%x offset:%x ->phyaddr:%x", phy_addr, offset, target->physical_addr);
-    uint8_t count[3];
-    memset(count, 0, sizeof(uint8_t) * 3);
-    for (int x = 0; x < 1024; x++) {
-        if (src->tables[x]) {
-            count[0]++;
-            if (src->tables[x] == kernel_dir->tables[x]) {
-                count[1]++;
-                target->tables[x] = kernel_dir->tables[x];
-                target->table_physical_addr[x] = kernel_dir->table_physical_addr[x];
-            } else {
-                count[2]++;
-                uint32_t table_phy;
-                page_table_t *table = clone_page_table(src->tables[x], &table_phy, x);
-                target->tables[x] = table;
-                target->table_physical_addr[x] = table_phy | 0x7;
-            }
-        }
-    }
-    dprintf("[PT]copied %x PTs [Kernel:%x]", count[0], count[1]);
-    return target;
 }
 
 void flush_TLB() {

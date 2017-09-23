@@ -20,6 +20,7 @@
 #define ASSERT(x) {\
     if(!(x)){\
 screenSetColor(COLOR_RED,COLOR_BLACK);\
+deprintf("Assertion Failed:%s at %s:%d",#x,__FILE__,__LINE__);\
 puts_const("[ERROR]Assertion Failed:");\
 puts_const(#x);\
 puts_const(" at ");\
@@ -33,6 +34,7 @@ for(;;);\
 #define ASSERTM(x, y) {\
     if(!(x)){\
 screenSetColor(COLOR_RED,COLOR_BLACK);\
+deprintf("Assertion Failed(%s):%s at %s:%d",#x,y,__FILE__,__LINE__);\
 puts_const("[ERROR]Assertion Failed");\
 puts_const("(");\
 puts_const(y);\
@@ -48,6 +50,7 @@ for(;;);\
 }
 #define PANIC(x, args...) { \
 screenSetColor(COLOR_RED,COLOR_BLACK);\
+deprintf("PANIC:%s at %s:%d",#x,__FILE__,__LINE__);\
 puts_const("[PANIC]");\
 putf_const(x,##args);\
 puts_const(" at ");\

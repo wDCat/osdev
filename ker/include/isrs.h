@@ -6,6 +6,7 @@
 #define W2_ISRS_H
 
 #include "system.h"
+#include "uproc.h"
 
 /*Exception #	Description	Error Code?
 0	Division By Zero Exception	No
@@ -80,5 +81,7 @@ extern void _isr19();
 void fault_handler(struct regs *r);
 
 void isrs_install();
+
+void dump_page_dir(pid_t *pid);
 
 #endif //W2_ISRS_H

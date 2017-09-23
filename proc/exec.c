@@ -6,6 +6,7 @@
 #include <str.h>
 #include <elfloader.h>
 #include <schedule.h>
+#include <isrs.h>
 #include "exec.h"
 
 int kexec(pid_t pid, const char *path, int argc, char **argv) {

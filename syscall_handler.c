@@ -13,8 +13,10 @@
 
 long errno;
 
-long helloworld() {
-    putf_const("[USERMODE]Hello world\n");
+long helloworld(uint32_t ebx, uint32_t ecx, uint32_t edx, uint32_t esi, uint32_t edi, regs_t *r) {
+    dprintf("proc %x esp:%x useresp:%x tss_esp:%x", getpid(), r->esp, r->useresp, getpcb(getpid())->tss.esp);
+    set_proc_status(getpcb(getpid()), STATUS_READY);
+    switch_to_proc(getpcb(0));
     return 12;
 }
 
@@ -70,7 +72,7 @@ void syscall_install() {
 typedef uint32_t (*syscall_fun_t)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, regs_t *r);
 
 int syscall_handler(regs_t *r) {
-    dprintf("syscall no:%x ebx:%x ecx:%x edx:%x", r->eax, r->ebx, r->ecx, r->edx);
+    dprintf("syscall pid:%x no:%d ebx:%x ecx:%x edx:%x", getpid(), r->eax, r->ebx, r->ecx, r->edx);
     if (r->eax >= syscalls_count) {
         r->eax = -1;
         return 0;

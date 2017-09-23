@@ -33,7 +33,8 @@ __asm__ __volatile__ ( \
 __asm__ __volatile__("mov %0, %%ebp" : : "r" (ebp));\
 __asm__ __volatile__("mov %0, %%esp" : : "r" (esp));\
 }
-
+#define UM_KSTACK_START 0xCCFFE000
+#define UM_KSTACK_SIZE  0x1000
 typedef enum proc_status {
     STATUS_NEW = 0x0,
     STATUS_RUN = 0x1,
