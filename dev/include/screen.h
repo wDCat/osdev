@@ -39,7 +39,7 @@ puts(data);\
 }
 #define putf(fmt, args...) putnf(fmt,256,##args)
 #define putf_const(fmt, args...) putnf(STR(fmt),256,##args)
-#define TODO ({;PANIC(__FUNCTION__);})
+#define TODO ({;PANIC("Still working...");})
 typedef unsigned char uint8_t;
 
 void putint(int num);

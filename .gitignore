@@ -68,3 +68,4 @@ build_all.makefile
 *.jar
 *.class
 build/.idea/inspectionProfiles/
+log.out

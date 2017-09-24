@@ -35,6 +35,8 @@ __asm__ __volatile__("mov %0, %%esp" : : "r" (esp));\
 }
 #define UM_KSTACK_START 0xCCFFE000
 #define UM_KSTACK_SIZE  0x1000
+#define get_proc_status(pcb) ((pcb)->status)
+
 typedef enum proc_status {
     STATUS_NEW = 0x0,
     STATUS_RUN = 0x1,
@@ -75,9 +77,13 @@ typedef struct pcb_struct {
     struct pcb_struct *next_pcb;
     file_handle_t fh[MAX_FILE_HANDLES];
 } pcb_t;
+typedef struct proc_queue_entry {
+    pcb_t *pcb;
+    struct proc_queue_entry *next;
+} proc_queue_entry_t;
 typedef struct {
     uint32_t count;
-    pcb_t *pcbs[1023];
+    struct proc_queue_entry *first;
 } proc_queue_t;
 extern proc_queue_t *proc_avali_queue, *proc_ready_queue, *proc_wait_queue;
 
@@ -100,7 +106,5 @@ void switch_to_proc(pcb_t *pcb);
 void set_proc_status(pcb_t *pcb, proc_status_t new_status);
 
 void setpid(pid_t pid);
-
-proc_status_t get_proc_status(pcb_t *pcb);
 
 #endif //W2_PROC_H

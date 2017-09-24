@@ -83,15 +83,14 @@ void create_idle_proc() {
 
 void proc_install() {
     memset(processes, 0, sizeof(pcb_t) * MAX_PROC_COUNT);
-    proc_avali_queue = (proc_queue_t *) kmalloc_paging(0x1000, NULL);
-    memset(proc_avali_queue, 0, 0x1000);
-    proc_ready_queue = (proc_queue_t *) kmalloc_paging(0x1000, NULL);
-    memset(proc_ready_queue, 0, 0x1000);
-    proc_wait_queue = (proc_queue_t *) kmalloc_paging(0x1000, NULL);
-    memset(proc_wait_queue, 0, 0x1000);
-    proc_died_queue = (proc_queue_t *) kmalloc_paging(0x1000, NULL);
-    memset(proc_died_queue, 0, 0x1000);
-    //kernel proc(name:init pid:1)
+    proc_avali_queue = (proc_queue_t *) kmalloc(sizeof(proc_queue_t));
+    memset(proc_avali_queue, 0, sizeof(proc_queue_t));
+    proc_ready_queue = (proc_queue_t *) kmalloc(sizeof(proc_queue_t));
+    memset(proc_ready_queue, 0, sizeof(proc_queue_t));
+    proc_wait_queue = (proc_queue_t *) kmalloc(sizeof(proc_queue_t));
+    memset(proc_wait_queue, 0, sizeof(proc_queue_t));
+    proc_died_queue = (proc_queue_t *) kmalloc(sizeof(proc_queue_t));
+    memset(proc_died_queue, 0, sizeof(proc_queue_t));
     create_idle_proc();
     create_first_proc();
 }
@@ -115,8 +114,8 @@ void create_user_stack(uint32_t end_addr, uint32_t size, uint32_t *new_ebp, uint
         *new_esp = end_addr - 0x10;
 }
 
-void save_proc_state(pcb_t *pcb, regs_t *r) {
-    deprintf("cpu does it.");
+inline void save_proc_state(pcb_t *pcb, regs_t *r) {
+    //cpu does it...
     return;
     tss_entry_t *tss = &pcb->tss;
     tss->eax = r->eax;
@@ -153,9 +152,12 @@ proc_queue_t *find_pqueue_by_status(proc_status_t status) {
     }
 }
 
+/*
+ * use macro instead~
 inline proc_status_t get_proc_status(pcb_t *pcb) {
     return pcb->status;
 }
+*/
 
 void set_proc_status(pcb_t *pcb, proc_status_t new_status) {
     ASSERT(pcb > 0x100);//silly
@@ -164,26 +166,48 @@ void set_proc_status(pcb_t *pcb, proc_status_t new_status) {
     dprintf("Proc %x status %x ==> %x", pcb->pid, pcb->status, new_status);
     proc_queue_t *old = find_pqueue_by_status(pcb->status);
     proc_queue_t *ns = find_pqueue_by_status(new_status);
-
+    uint32_t sc = 256;
     if (old) {
-        for (uint32_t x = 0, y = 0; y < 1023 && x < old->count; y++) {
-            if (old->pcbs[y] == 0)continue;
-            x++;
-            if (old->pcbs[y]->pid == pcb->pid) {
-                old->pcbs[y] = 0;
-                old->count--;
-                break;
+        proc_queue_entry_t *e = old->first;
+        if (old->first->pcb == pcb) {
+            old->count--;
+            kfree(old->first);
+            old->first = old->first->next;
+        } else
+            while (e && sc--)
+                if (e->next->pcb == pcb) {
+                    proc_queue_entry_t *oe = e->next;
+                    e->next = e->next->next;
+                    old->count--;
+                    kfree(oe);
+                    break;
+                } else e = e->next;
+    }
+    if (ns) {
+        if (ns->first == NULL) {
+            proc_queue_entry_t *ne = (proc_queue_entry_t *) kmalloc(sizeof(proc_queue_entry_t));
+            ne->pcb = pcb;
+            ne->next = NULL;
+            ns->first = ne;
+            ns->count++;
+            ASSERT(ns->count == 1);
+        } else {
+            proc_queue_entry_t *e = ns->first;
+            while (e && sc--) {
+                if (e->pcb == pcb)break;
+                if (e->next == NULL) {
+                    proc_queue_entry_t *ne = (proc_queue_entry_t *) kmalloc(sizeof(proc_queue_entry_t));
+                    ne->pcb = pcb;
+                    ne->next = NULL;
+                    e->next = ne;
+                    ns->count++;
+                    break;
+                }
+                e = e->next;
             }
         }
     }
-    if (ns)
-        for (uint32_t y = 0; y < 1023; y++) {
-            if (ns->pcbs[y] == 0) {
-                ns->pcbs[y] = pcb;
-                ns->count++;
-                break;
-            } else if (y == 1022) PANIC("Out of proc queue!");
-        }
+    if (sc == 0) PANIC("Unknown Exception");
     pcb->status = new_status;
     sti();
 }
@@ -358,8 +382,6 @@ pid_t fork(regs_t *r) {
         }
     } else fpcb->cpcb = cpcb;
     procfs_insert_proc(cpid);
-
-    set_proc_status(cpcb, STATUS_READY);
     set_proc_status(fpcb, STATUS_READY);
     switch_to_proc(cpcb);
     return cpid;

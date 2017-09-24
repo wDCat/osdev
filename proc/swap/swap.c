@@ -143,15 +143,23 @@ int swap_handle_page_fault(regs_t *r) {
     __asm__ __volatile__("mov %%cr2, %0" : "=r" (cr2));
     pageno = cr2 - cr2 % 0x1000;
     dprintf("process..pid:%x addr:%x", getpid(), cr2);
-    for (int x = 0, y = 0; y < pcb->spages_count && x < MAX_SWAPPED_OUT_PAGE; x++) {
-        if (pcb->spages[x].type != SPAGE_TYPE_UNUSED) {
-            y++;
-            if (pageno == pcb->spages[x].addr) {
-                if (swap_in(pcb, &pcb->spages[x])) {
-                    PANIC("error.")
+    if (cr2 / 0x10000 == 0xCCFF) {
+        uint32_t les = cr2 % 0x1000;
+        //if (!les)cr2 -= 0x1000;
+        dprintf("alloc um kstack:%x", cr2);
+        alloc_frame(get_page(cr2, true, pcb->page_dir), true, true);
+        found = true;
+    } else {
+        for (int x = 0, y = 0; y < pcb->spages_count && x < MAX_SWAPPED_OUT_PAGE; x++) {
+            if (pcb->spages[x].type != SPAGE_TYPE_UNUSED) {
+                y++;
+                if (pageno == pcb->spages[x].addr) {
+                    if (swap_in(pcb, &pcb->spages[x])) {
+                        PANIC("error.")
+                    }
+                    found = true;
+                    dprintf("handler done.");
                 }
-                found = true;
-                dprintf("handler done.");
             }
         }
     }
