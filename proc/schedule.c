@@ -23,18 +23,20 @@ void do_schedule(regs_t *r) {
     pcb_t *cur_pcb = getpcb(getpid());
     cur_pcb->time_slice++;
     dprintf("cur pid:%x status:%x", cur_pcb->pid, cur_pcb->status);
-    dprintf_begin("wait queue[%x]:", proc_wait_queue->count);
-    proc_queue_entry_t *e = proc_wait_queue->first;
-    uint32_t c = proc_wait_queue->count;
-    while (e && c--) {
-        dprintf_cont("[%x]", e->pcb->pid);
-        pcb_t *pcb = e->pcb;
-        if (pcb->signal & ~pcb->blocked) {
-            dprintf_cont("[%x wake up by signal]", getpid());
-            set_proc_status(pcb, STATUS_READY);
+    if (proc_wait_queue->count > 0) {
+        dprintf_begin("wait queue[%x]:", proc_wait_queue->count);
+        proc_queue_entry_t *e = proc_wait_queue->first;
+        uint32_t c = proc_wait_queue->count;
+        while (e && c--) {
+            dprintf_cont("[%x]", e->pcb->pid);
+            pcb_t *pcb = e->pcb;
+            if (pcb->signal & ~pcb->blocked) {
+                dprintf_cont("[%x wake up by signal]", getpid());
+                set_proc_status(pcb, STATUS_READY);
+            }
         }
+        dprintf_end();
     }
-    dprintf_end();
     pcb_t *choosed = NULL;
     if (false) {
         /*
@@ -65,18 +67,20 @@ void do_schedule(regs_t *r) {
     } else {
         //Min proc time slice schedule.
         uint32_t min_ts = (uint32_t) -1;
-        dprintf_begin("ready queue[%x]:", proc_ready_queue->count);
-        proc_queue_entry_t *e = proc_ready_queue->first;
-        uint32_t c = proc_ready_queue->count;
-        while (e && c--) {
-            dprintf_cont("[%x]", e->pcb->pid);
-            if (e->pcb == cur_pcb)continue;
-            if (e->pcb->time_slice < min_ts) {
-                min_ts = e->pcb->time_slice;
-                choosed = e->pcb;
+        if (proc_ready_queue->count > 0) {
+            dprintf_begin("ready queue[%x]:", proc_ready_queue->count);
+            proc_queue_entry_t *e = proc_ready_queue->first;
+            uint32_t c = proc_ready_queue->count;
+            while (e && c--) {
+                dprintf_cont("[%x]", e->pcb->pid);
+                if (e->pcb == cur_pcb)continue;
+                if (e->pcb->time_slice < min_ts) {
+                    min_ts = e->pcb->time_slice;
+                    choosed = e->pcb;
+                }
             }
+            dprintf_end();
         }
-        dprintf_end();
     }
     if (choosed == NULL) {
         if (cur_pcb->status != STATUS_RUN) {

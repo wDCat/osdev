@@ -9,6 +9,7 @@
 #include <mutex.h>
 #include <keyboard.h>
 #include <vfs.h>
+#include <signal.h>
 
 tty_t ttys[TTY_MAX_COUNT];
 uint8_t cur_tty_id;
@@ -63,7 +64,8 @@ inline bool tty_queue_getc(tty_queue_t *queue, uchar_t *c_out) {
     if (tty_queue_isempty(queue)) {
         return false;
     }
-    *c_out = queue->buff[queue->head];
+    if (c_out)
+        *c_out = queue->buff[queue->head];
     queue->head++;
     if (queue->head >= TTY_BUFF_SIZE)
         queue->head = 0;
@@ -73,6 +75,16 @@ inline bool tty_queue_getc(tty_queue_t *queue, uchar_t *c_out) {
     return true;
 }
 
+inline bool tty_queue_remove_last(tty_queue_t *queue, uchar_t *c_out) {
+    if (tty_queue_isempty(queue)) {
+        return false;
+    }
+    if (c_out)
+        *c_out = queue->buff[queue->foot];
+    queue->foot--;
+    queue->buff[queue->foot] = 0;
+    return true;
+}
 
 void tty_empty_wait(tty_queue_t *queue, pid_t pid) {
     bool empty;
@@ -158,6 +170,23 @@ int32_t tty_write(tty_t *tty, pid_t pid, int32_t size, uchar_t *buff) {
     mutex_unlock(&queue->mutex);
 }
 
+pcb_t *tty_queue_next_pcb(tty_queue_t *target, bool remove) {
+    int x = target->proc_wait_num;
+    pid_t tpid = target->proc_wait[x];
+    if (tpid != 0 && remove) {
+        target->proc_wait[x] = 0;
+        if (get_proc_status(getpcb(tpid)) != STATUS_WAIT) {
+            deprintf("Proc %x already wake up....", tpid);
+        } else {
+            target->proc_wait_num++;
+            if (target->proc_wait_num > TTY_MAX_WAIT_PROC)
+                target->proc_wait_num = 0;
+
+        }
+    }
+    return tpid == 0 ? NULL : getpcb(tpid);
+}
+
 int32_t tty_cook(tty_t *tty) {
     dprintf("now cook it");
     tty_queue_t *source = tty->kinput, *target = tty->read;
@@ -168,39 +197,56 @@ int32_t tty_cook(tty_t *tty) {
         uchar_t c;
         if (!tty_queue_getc(source, &c))
             break;
-        tty_queue_putc(target, c);
+        switch (c) {
+            case '\b':
+                tty_queue_remove_last(target, NULL);
+                break;
+            default:
+                tty_queue_putc(target, c);
+        }
         count++;
     }
-    pid_t pid_to_wake = 0;
-    int x = target->proc_wait_num;
-    pid_t tpid = target->proc_wait[x];
-    if (tpid != 0) {
-        target->proc_wait[x] = 0;
-        if (get_proc_status(getpcb(tpid)) != STATUS_WAIT) {
-            deprintf("Proc %x already wake up....", tpid);
-        } else {
-            target->proc_wait_num++;
-            if (target->proc_wait_num > TTY_MAX_WAIT_PROC)
-                target->proc_wait_num = 0;
-            pid_to_wake = tpid;
-        }
-    }
+    pcb_t *pcb = tty_queue_next_pcb(target, true);
     mutex_unlock(&target->mutex);
     mutex_unlock(&source->mutex);
-    if (pid_to_wake != 0) {
-        set_proc_status(getpcb(pid_to_wake), STATUS_READY);
+    if (pcb != NULL) {
+        set_proc_status(pcb, STATUS_READY);
         do_schedule(NULL);
     }
     return count;
 }
 
-void tty_kb_handler(int code) {
+void tty_kb_handler(int code, kb_status_t *kb_status) {
     tty_queue_t *queue = ttys[cur_tty_id].kinput;
-    uchar_t c = kbdus[code];
+    uchar_t c;
+    c = kb_status->shift ? kbdusupper[code] : kbdus[code];
     tty_write(&ttys[cur_tty_id], 0, 1, &c);
+    if (kb_status->ctrl == true) {
+        //FIXME
+        char op[2];
+        op[0] = '^';
+        op[1] = kbdusupper[code];
+        switch (kbdusupper[code]) {
+            case 'C':
+                tty_write(&ttys[cur_tty_id], 0, 2, op);
+                pcb_t *npcb =
+                        getpid() == 0 ? tty_queue_next_pcb(&ttys[cur_tty_id].read, false)
+                                      : getpcb(getpid());
+                if (npcb != NULL) {
+                    send_sig(npcb, SIGINT);
+                    dprintf("Ctrl^C send SIGINT to %x", npcb->pid);
+                }
+                tty_cook(&ttys[cur_tty_id]);
+                return;
+            case 'D':
+                tty_write(&ttys[cur_tty_id], 0, 2, op);
+                //TODO
+                return;
+        }
+    }
     if (code == 0x1C) {
         tty_cook(&ttys[cur_tty_id]);
-    } else {
+    } else if (c != 0) {
         mutex_lock(&queue->mutex);
         if (!tty_queue_putc(queue, c)) {
             deprintf("Ignore input:%x", code);
@@ -224,7 +270,7 @@ int32_t tty_fs_node_write(fs_node_t *node, __fs_special_t *fsp_, uint32_t size, 
         deprintf("tty not exist:%x", ttyid);
         return 1;
     }
-    dprintf("write tty:%x", ttyid);
+    //dprintf("write tty:%x", ttyid);
     return tty_write(&ttys[ttyid], getpid(), size, buff);
 }
 

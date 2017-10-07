@@ -5,7 +5,7 @@
 #ifndef W2_EXT2_H
 #define W2_EXT2_H
 
-#include "fs_node.h"
+#include "ext2_fs_node.h"
 #include "superblk.h"
 #include "blk_dev.h"
 
@@ -93,9 +93,5 @@ typedef struct {
     uint8_t *block;
     ext2_dir_t *cur_dir;
 } ext2_dir_iterator_t;
-
-int ext2_init(ext2_t *fs_out, blk_dev_t *dev);
-
-void ext2_create_fstype();
 
 #endif //W2_EXT2_H

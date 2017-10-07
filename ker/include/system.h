@@ -21,13 +21,7 @@
     if(!(x)){\
 screenSetColor(COLOR_RED,COLOR_BLACK);\
 deprintf("Assertion Failed:%s at %s:%d",#x,__FILE__,__LINE__);\
-puts_const("[ERROR]Assertion Failed:");\
-puts_const(#x);\
-puts_const(" at ");\
-puts_const(__FILE__);\
-puts_const(" : ");\
-putint(__LINE__);\
-putc('\n');\
+putf("[ERROR]Assertion Failed:" #x " at %s:%d\n",__FILE__,__LINE__);\
 for(;;);\
 }\
 }
@@ -35,29 +29,14 @@ for(;;);\
     if(!(x)){\
 screenSetColor(COLOR_RED,COLOR_BLACK);\
 deprintf("Assertion Failed(%s):%s at %s:%d",#x,y,__FILE__,__LINE__);\
-puts_const("[ERROR]Assertion Failed");\
-puts_const("(");\
-puts_const(y);\
-puts_const("):");\
-puts_const(#x);\
-puts_const(" at ");\
-puts_const(__FILE__);\
-puts_const(" : ");\
-putint(__LINE__);\
-putc('\n');\
+putf("[ERROR]Assertion Failed(%s):" #x " at %s:%d\n",y,__FILE__,__LINE__);\
 for(;;);\
 }\
 }
 #define PANIC(x, args...) { \
 screenSetColor(COLOR_RED,COLOR_BLACK);\
 deprintf("PANIC:%s at %s:%d",#x,__FILE__,__LINE__);\
-puts_const("[PANIC]");\
-putf_const(x,##args);\
-puts_const(" at ");\
-puts_const(__FILE__);\
-puts_const(" : ");\
-putint(__LINE__);\
-putc('\n');\
+putf("[PANIC]" #x " at %s:%d\n",##args,__FILE__,__LINE__);\
 for(;;);\
 }
 #define cli() __asm__ __volatile__ ("cli")

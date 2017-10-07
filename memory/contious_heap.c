@@ -33,7 +33,7 @@ inline void insert_default_header(heap_t *heap) {
 }
 
 heap_t *create_heap(uint32_t start_addr, uint32_t end_addr, uint32_t max_addr, page_directory_t *dir) {
-    putf_const("create heap:%x -> %x\n", start_addr, end_addr);
+    //putf_const("create heap:%x -> %x\n", start_addr, end_addr);
     ASSERT(end_addr > start_addr);
     //putln_const("creating heaping...");
     //putln_const("page alloced.");

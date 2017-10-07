@@ -15,6 +15,7 @@ val C_FLAGS = "-fno-stack-protector -m32 -std=c99 -Wall -O0 -O -fstrength-reduce
 val NASM_FLAGS = "-f elf"
 val LD_FLAGS = "n -m elf_i386 -A elf32-i386 -nostdlib"
 val cFiles = Stack<String>()
+val hFiles = Stack<String>()
 val asmFiles = Stack<String>()
 var buildStop = false
 var count = 0
@@ -112,10 +113,12 @@ fun main(args: Array<String>) {
         dirStack.pop().listFiles().forEach {
             val fn = it.name
             if (!fn.startsWith(".") && !fn.toLowerCase().contains("cmake"))
-                if ((fn.endsWith(".c")||fn.endsWith(".s")) && !fn.contains("linker_script"))
+                if ((fn.endsWith(".c") || fn.endsWith(".s")) && !fn.contains("linker_script"))
                     cFiles.add(it.absolutePath)
                 else if (fn.endsWith(".i.asm"))
                     asmFiles.add(it.absolutePath)
+                else if (fn.endsWith(".h"))
+                    hFiles.add(it.absolutePath)
                 else if (it.isDirectory) {
                     if (it.name != "build") {
                         dirStack.push(it)
@@ -157,6 +160,9 @@ fun main(args: Array<String>) {
                 "else " +
                 "echo \"\\033[31m Build Failed: ${it}\\033[0m\" && exit 1;" +
                 "fi\n")
+        cmout.write("${it}\n")
+    }
+    hFiles.forEach {
         cmout.write("${it}\n")
     }
     asmFiles.forEach {

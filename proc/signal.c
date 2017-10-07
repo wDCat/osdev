@@ -30,6 +30,7 @@ int do_signal_inner(int signal) {
             switch (signal) {
                 case 0:
                     return 1;
+                case SIGINT:
                 case SIGQUIT:
                 case SIGILL:
                 case SIGSEGV:

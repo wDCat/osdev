@@ -27,7 +27,6 @@ void moveCsr(void) {
 }
 
 void on_keyboard_event(int kc) {
-    //ASSERT(key_waiter);
     key_waiter = true;
 }
 

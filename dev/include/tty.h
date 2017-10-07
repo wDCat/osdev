@@ -9,6 +9,7 @@
 #include "proc.h"
 #include "console.h"
 #include "mutex.h"
+#include "keyboard.h"
 
 #define TTY_BUFF_SIZE 256
 #define TTY_MAX_COUNT 5
@@ -37,7 +38,7 @@ void tty_install();
 
 void tty_create_fstype();
 
-void tty_kb_handler(int code);
+void tty_kb_handler(int code, kb_status_t *kb_status);
 
 int32_t tty_read(tty_t *tty, pid_t pid, int32_t size, uchar_t *buff);
 
