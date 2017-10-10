@@ -303,6 +303,13 @@ void clean_pcb_table() {
     dprintf("remove %x trash proc.", procc - proc_count);
 }
 
+void create_user_heap(pcb_t *pcb) {
+    for (uint32_t x = 0xD0000000; x < 0xD0001000; x++) {
+        alloc_frame(get_page(x, true, pcb->page_dir), false, true);
+    }
+    create_heap(&pcb->heap, 0xD0000000, 0xD0001000, 0xD0001000);
+}
+
 pid_t fork(regs_t *r) {
     cli();
     if (proc_count % 5 == 0) {
@@ -337,12 +344,17 @@ pid_t fork(regs_t *r) {
     tss->edi = r->edi;
     if (fpid == 1) {
         create_user_stack(0xCC000000, 0x4000, &tss->ebp, &tss->esp, cpcb->page_dir);
+        //create_user_heap(cpcb);
         dprintf("new user stack:[%x][%x]", tss->ebp, tss->esp);
         char neko[256], neko2[256];
         strcpy(neko, "Hello");
         strcpy(neko2, "DCat");
         char *args[2] = {neko, neko2};
-        kexec(cpid, "/init", 2, args);
+        char neko3[256], neko4[256];
+        strcpy(neko3, "PATH=/");
+        strcpy(neko4, "COLOR=black");
+        char *envp[3] = {neko3, neko4, NULL};
+        kexec(cpid, "/init", 2, args, envp);
         //extern int little_test2();
         //tss->eip = (uint32_t) little_test2;
         tss->cs = 3 << 3 | 3;

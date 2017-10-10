@@ -29,6 +29,7 @@ typedef struct {
     heap_array_list_t *al;
 } heap_t;
 
+heap_t *create_heap(heap_t *ret, uint32_t start_addr, uint32_t end_addr, uint32_t max_addr);
 
 void *halloc(heap_t *heap, uint32_t size, bool page_align);
 

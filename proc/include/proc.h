@@ -5,6 +5,7 @@
 #ifndef W2_PROC_H
 #define W2_PROC_H
 
+#include <contious_heap.h>
 #include "intdef.h"
 #include "page.h"
 #include "tss.h"
@@ -70,6 +71,7 @@ typedef struct pcb_struct {
     char dir[256];
     char name[256];
     char cmdline[512];
+    heap_t heap;
     uint8_t hold_proc;//Can this pcb be free?
     struct pcb_struct *fpcb;
     struct pcb_struct *cpcb;
@@ -106,5 +108,7 @@ void switch_to_proc(pcb_t *pcb);
 void set_proc_status(pcb_t *pcb, proc_status_t new_status);
 
 void setpid(pid_t pid);
+
+void create_user_heap(pcb_t *pcb);
 
 #endif //W2_PROC_H

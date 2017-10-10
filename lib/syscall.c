@@ -45,3 +45,7 @@ _impl_syscall1(chdir, 17, const char*);
 _impl_syscall2(getcwd, 18, char*, int);
 
 _impl_syscall3(lseek, 19, int8_t, off_t, int);
+
+_impl_syscall1(malloc, 20, uint32_t);
+
+_impl_syscall1(free, 21, void*);

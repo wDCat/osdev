@@ -46,6 +46,7 @@ long syscall_##fn(P1 p1, P2 p2, P3 p3) \
   __asm__ __volatile__("int $0x60" : "=a" (a) : "0" (num), "b" ((int)p1), "c" ((int)p2), "d"((int)p3)); \
   return a; \
 }
+
 _define_syscall0(helloworld, 0);
 
 _define_syscall1(screen_print, 1, const char*);
@@ -85,5 +86,9 @@ _define_syscall1(chdir, 17, const char*);
 _define_syscall2(getcwd, 18, char*, int);
 
 _define_syscall3(lseek, 19, int8_t, off_t, int);
+
+_define_syscall1(malloc, 20, uint32_t);
+
+_define_syscall1(free, 21, void*);
 
 #endif //W2_SYSCALL_H

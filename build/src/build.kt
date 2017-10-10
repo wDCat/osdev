@@ -11,7 +11,7 @@ val LOG_OUTPUT = "${ROOT}/OUTPUT/LOG"
 val Makefile = "${ROOT}/build_all.makefile"
 val CMakeList = "${ROOT}/CMakeLists.txt"
 var C_INCLUDE = ""
-val C_FLAGS = "-fno-stack-protector -m32 -std=c99 -Wall -O0 -O -fstrength-reduce -fomit-frame-pointer -D__DCAT__ -finline-functions -c -nostdinc -fno-builtin"
+val C_FLAGS = "-fno-stack-protector -m32 -std=c99 -Wall -O0 -O -fstrength-reduce -fomit-frame-pointer -D__DCAT__ -DKERNEL=1 -finline-functions -c -nostdinc -fno-builtin"
 val NASM_FLAGS = "-f elf"
 val LD_FLAGS = "n -m elf_i386 -A elf32-i386 -nostdlib"
 val cFiles = Stack<String>()

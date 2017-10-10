@@ -8,7 +8,7 @@
 #include "../../ker/include/system.h"
 #include "proc.h"
 
-int kexec(pid_t pid, const char *path, int argc, char **argv);
+int kexec(pid_t pid, const char *path, int argc, char **argv, char **envp);
 
 int sys_exec(const char *path, int argc, char **argv);
 

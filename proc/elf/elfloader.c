@@ -46,53 +46,32 @@ bool elf_load(pid_t pid, int8_t fd, uint32_t *entry_point) {
         dprintf("Section %x addr:%x size:%x offset:%x type:%x", x, shdr->sh_addr, shdr->sh_size, shdr->sh_offset,
                 shdr->sh_type);
         if (shdr->sh_addr) {
-            uint32_t pno = shdr->sh_addr - shdr->sh_addr % 0x1000;
-            uint32_t inoff = shdr->sh_addr % 0x1000;
-            uint32_t les = shdr->sh_size % 0x1000;
-            for (uint32_t y = 0; y < shdr->sh_size - les + 0x1000; y += 0x1000) {
-                page_t *page = get_page(pno + y, true, pcb->page_dir);
-                if (page->present) {
-                    //frame reuse
-                    if (shdr->sh_type == SHT_NOBITS) {
-                        memset(shdr->sh_addr, 0, MIN(shdr->sh_size - y, 0x1000 - (y == 0 ? inoff : 0)));
-                    } else {
-                        uint32_t size = MIN(shdr->sh_size - y, 0x1000 - (y == 0 ? inoff : 0));
-                        uint8_t *sec = (uint8_t *) kmalloc_paging(size, NULL);
-                        klseek(pid, fd, shdr->sh_offset, SEEK_SET);
-                        if (kread(pid, fd, size, sec) != size) {
-                            deprintf("cannot read section:%x:x.I/O error.", x, y);
-                            goto _err;
-                        }
-                        memcpy(shdr->sh_addr, sec, size);
-                        kfree(sec);
-                    }
+            uint32_t les = shdr->sh_size;
+            uint32_t y = shdr->sh_addr;
+            klseek(pid, fd, shdr->sh_offset, SEEK_SET);
+            while (les > 0) {
+                page_t *page = get_page(y, true, pcb->page_dir);
+                uint32_t size = MIN(MIN(PAGE_SIZE, les), PAGE_SIZE - (y % PAGE_SIZE));
+                uint32_t foffset = shdr->sh_offset + y - shdr->sh_addr;
+
+                if (shdr->sh_type == SHT_NOBITS) {
+                    alloc_frame(page, false, true);
+                    memset(y, 0, size);
+                    //swap_insert_empty_page(pcb, pno + y);
                 } else {
-                    /**load the begin and the end of each section
-                     * late load other space
-                     * */
-                    if (shdr->sh_type == SHT_NOBITS) {
-                        alloc_frame(page, false, false);
-                        swap_insert_empty_page(pcb, pno + y);
+                    if (size == PAGE_SIZE) {
+                        swap_insert_pload_page(pcb, y, fd, foffset);
                     } else {
-                        if (y == 0) {
-                            alloc_frame(page, false, false);
-                            uint32_t size = MIN(shdr->sh_size, 0x1000 - inoff);
-                            klseek(pid, fd, shdr->sh_offset, SEEK_SET);
-                            if (kread(pid, fd, size, shdr->sh_addr) != size) {
-                                deprintf("cannot read section:%x:%x.I/O error.", x, y);
-                                goto _err;
-                            }
-                        } else if (y == shdr->sh_size - les && les) {
-                            klseek(pid, fd, shdr->sh_offset + y, SEEK_SET);
-                            if (kread(pid, fd, les, pno + y) != les) {
-                                deprintf("cannot read section:%x:%x.I/O error.", x, y);
-                                goto _err;
-                            }
-                        } else {
-                            swap_insert_pload_page(pcb, pno + y, fd, shdr->sh_offset - inoff + y);
+                        alloc_frame(page, false, true);
+                        klseek(pid, fd, foffset, SEEK_SET);
+                        if (kread(pid, fd, size, y) != size) {
+                            deprintf("cannot read section:%x:%x.I/O error.", x, y);
+                            goto _err;
                         }
                     }
                 }
+                y += size;
+                les -= size;
             }
         }
         shdr = (elf_section_t *) ((uint32_t) shdr + ehdr.e_shentsize);

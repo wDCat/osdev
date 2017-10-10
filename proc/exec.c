@@ -7,9 +7,10 @@
 #include <elfloader.h>
 #include <schedule.h>
 #include <isrs.h>
+#include <umalloc.h>
 #include "exec.h"
 
-int kexec(pid_t pid, const char *path, int argc, char **argv) {
+int kexec(pid_t pid, const char *path, int argc, char **argv, char **envp) {
     dprintf("%x try to exec %s", pid, path);
     pcb_t *pcb = getpcb(pid);
     if (!pcb->present) {
@@ -26,15 +27,16 @@ int kexec(pid_t pid, const char *path, int argc, char **argv) {
         dprintf("switch to proc's pd:%x orig:%x", pcb->page_dir, orig_pd);
         switch_page_directory(pcb->page_dir);
     }
+    create_user_heap(pcb);
     uint32_t eip;
     if (elf_load(pid, fd, &eip)) {
         deprintf("error happened during elf load.");
         goto _err;
     }
     pcb->tss.eip = eip;
-    uint8_t *espptr = (uint8_t *) pcb->tss.esp;
-    uint32_t *esp;
+    uint32_t *esp = pcb->tss.esp;
     dprintf("elf load done.new PC:%x", eip);
+    uint8_t *espptr = (uint8_t *) esp;
     strcpy(pcb->cmdline, path);
     if (argv) {
         //push **argv
@@ -51,9 +53,32 @@ int kexec(pid_t pid, const char *path, int argc, char **argv) {
             strcpy(espptr, str);
 
         }
+    }
+    esp = ((uint32_t *) espptr) - 1;
+    uint32_t __envp = NULL;
+    uint32_t __env_rs = 0;
+    if (envp && envp[0] != NULL) {
+        int envc = 0;
+        for (; envp[envc] != NULL; envc++);
+        envc++;
+        __env_rs = envc * 2 * sizeof(uint32_t);
+        uint32_t *uenvp = umalloc(pid, __env_rs);
+        __envp = (uint32_t) uenvp;
+        //push *envp
+        for (int x = 0; envp[x] != NULL && x < 128; x++) {
+            dprintf("env:%s %x %x", envp[x], uenvp, 0x2333);
+            int len = strlen(envp[x]);
+            uchar_t *cp = umalloc(pid, len + 1);
+            strcpy(cp, envp[x]);
+            *uenvp = (uint32_t) cp;
+            uenvp += 1;
+        }
+        *uenvp=NULL;
+    }
 
+    if (argv) {
         //push *argv
-        esp = (uint32_t *) espptr - argc - 1;
+        esp = esp - argc - 1;
         for (int x = 0; x < argc; x++) {
             esp += 1;
             *esp = (uint32_t) argv[x];
@@ -61,6 +86,12 @@ int kexec(pid_t pid, const char *path, int argc, char **argv) {
         }
         esp -= argc;
     }
+    //push envp_reserved
+    *esp = __env_rs;
+    esp -= 1;
+    //push envp
+    *esp = __envp;
+    esp -= 1;
     //push argv
     *esp = (uint32_t) (esp + 1);
     esp -= 1;
@@ -88,5 +119,5 @@ int kexec(pid_t pid, const char *path, int argc, char **argv) {
 
 
 int sys_exec(const char *path, int argc, char **argv) {
-    return kexec(getpid(), path, argc, argv);
+    return kexec(getpid(), path, argc, argv, NULL);
 }

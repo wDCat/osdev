@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.6)
 project(W2)
-set(CMAKE_C_FLAGS "-fno-stack-protector -m32 -std=c99 -Wall -O0 -O -fstrength-reduce -fomit-frame-pointer -D__DCAT__ -finline-functions -c -nostdinc -fno-builtin")
+set(CMAKE_C_FLAGS "-fno-stack-protector -m32 -std=c99 -Wall -O0 -O -fstrength-reduce -fomit-frame-pointer -D__DCAT__ -DKERNEL=1 -finline-functions -c -nostdinc -fno-builtin")
 include_directories(/home/dcat/osdev/w2/include)
 include_directories(/home/dcat/osdev/w2/lib/include)
 include_directories(/home/dcat/osdev/w2/memory/include)
@@ -20,15 +20,18 @@ FILE(GLOB MyCSources
 /home/dcat/osdev/w2/fs_node.c
 /home/dcat/osdev/w2/little_test.c
 /home/dcat/osdev/w2/lib/env.c
+/home/dcat/osdev/w2/lib/start.c
 /home/dcat/osdev/w2/lib/file.c
 /home/dcat/osdev/w2/lib/print.c
 /home/dcat/osdev/w2/lib/syscall.c
+/home/dcat/osdev/w2/lib/malloc.c
 /home/dcat/osdev/w2/lib/str.c
 /home/dcat/osdev/w2/memory/heap_array_list.c
 /home/dcat/osdev/w2/memory/linkedlist.c
 /home/dcat/osdev/w2/memory/mem.c
 /home/dcat/osdev/w2/memory/kmalloc.c
 /home/dcat/osdev/w2/memory/paging_heap.c
+/home/dcat/osdev/w2/memory/umalloc.c
 /home/dcat/osdev/w2/memory/page.c
 /home/dcat/osdev/w2/memory/contious_heap.c
 /home/dcat/osdev/w2/asm/page.s
@@ -67,6 +70,7 @@ FILE(GLOB MyCSources
 /home/dcat/osdev/w2/fs/procfs/procfs.c
 /home/dcat/osdev/w2/fs/ext2/ext2.c
 /home/dcat/osdev/w2/fs/ext2/ext2_fs_node.c
+/home/dcat/osdev/w2/lib/include/malloc.h
 /home/dcat/osdev/w2/lib/include/syscall.h
 /home/dcat/osdev/w2/lib/include/print.h
 /home/dcat/osdev/w2/lib/include/str.h
@@ -84,6 +88,7 @@ FILE(GLOB MyCSources
 /home/dcat/osdev/w2/memory/include/paging_heap.h
 /home/dcat/osdev/w2/memory/include/mem.h
 /home/dcat/osdev/w2/memory/include/page.h
+/home/dcat/osdev/w2/memory/include/umalloc.h
 /home/dcat/osdev/w2/memory/include/heap_array_list.h
 /home/dcat/osdev/w2/include/fs_node.h
 /home/dcat/osdev/w2/include/bochs_debug.h

@@ -2,6 +2,7 @@
 // Created by dcat on 3/16/17.
 //
 
+#include <str.h>
 #include "include/heap_array_list.h"
 #include "include/heap_array_list.h"
 #include "include/kmalloc.h"

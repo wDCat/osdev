@@ -32,12 +32,9 @@ inline void insert_default_header(heap_t *heap) {
     insert_item_ordered(al, &info);
 }
 
-heap_t *create_heap(uint32_t start_addr, uint32_t end_addr, uint32_t max_addr, page_directory_t *dir) {
-    //putf_const("create heap:%x -> %x\n", start_addr, end_addr);
+heap_t *create_heap(heap_t *ret, uint32_t start_addr, uint32_t end_addr, uint32_t max_addr) {
+    dprintf("create heap:%x -> %x\n", start_addr, end_addr);
     ASSERT(end_addr > start_addr);
-    //putln_const("creating heaping...");
-    //putln_const("page alloced.");
-    heap_t *ret = (heap_t *) kmalloc(sizeof(heap_t));
     ret->start_addr = start_addr;
     ret->end_addr = end_addr;
     ret->max_addr = max_addr;

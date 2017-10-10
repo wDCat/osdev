@@ -34,7 +34,7 @@ void fprintf(FILE *fp, const char *fmt, ...) {
             case 'd': {
                 pos++;
                 int n = va_arg(args, int);
-                char c2[32];
+                char c2[12];
                 itos(n, c2);
                 int len = strlen(c2);
                 syscall_write(fd, len, c2);
@@ -42,8 +42,8 @@ void fprintf(FILE *fp, const char *fmt, ...) {
                 break;
             case 'x': {
                 pos++;
-                int n = va_arg(args, int);
-                char c2[32];
+                long n = va_arg(args, long);
+                char c2[12];
                 itohexs(n, c2);
                 int len = strlen(c2);
                 syscall_write(fd, len, c2);

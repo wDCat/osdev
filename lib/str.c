@@ -104,10 +104,10 @@ uint itos(const int num, char *c2) {
     return 0;
 }
 
-uint itohexs(const int num, char *out) {
-    out[0] = '\0';
+uint itohexs(uint32_t num, char *out) {
+    out[0] = '0';
+    out[1] = 'x';
     uint32_t tmp;
-    strcat(out, STR("0x"));
     int len = 2;
 
     char noZeroes = 1;
@@ -135,6 +135,7 @@ uint itohexs(const int num, char *out) {
         out[len++] = (tmp + '0');
     }
     out[len] = '\0';
+    return 0;
 }
 
 bool strcmp(const char *s1, const char *s2) {

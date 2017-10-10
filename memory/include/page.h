@@ -7,7 +7,7 @@
 
 #include "../../ker/include/system.h"
 #include "intdef.h"
-
+#define PAGE_SIZE (0x1000)
 /*
 typedef struct page_struct {
     uint32_t present:1;

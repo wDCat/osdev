@@ -18,6 +18,7 @@
 #include <console.h>
 #include <tty.h>
 #include <swap.h>
+#include <print.h>
 
 uint32_t init_esp;
 #ifndef _BUILD_TIME

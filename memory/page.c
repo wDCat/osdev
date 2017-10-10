@@ -12,7 +12,8 @@
 #include <proc.h>
 #include "include/page.h"
 
-extern heap_t *create_heap(uint32_t start_addr, uint32_t end_addr, uint32_t max_addr, page_directory_t *dir);
+extern heap_t *create_heap(heap_t *ret, uint32_t start_addr, uint32_t end_addr, uint32_t max_addr);
+
 
 extern heap_t *kernel_heap;
 uint32_t *frame_status = NULL;//保存frame状态的数组
@@ -168,7 +169,8 @@ void paging_install() {
     switch_page_directory(kernel_dir);
     enable_paging();
     flush_TLB();
-    kernel_heap = create_heap(KHEAP_START, KHEAP_START + KHEAP_SIZE, KHEAP_START + KHEAP_SIZE * 2, kernel_dir);
+    kernel_heap = create_heap((heap_t *) kmalloc(sizeof(heap_t)), KHEAP_START, KHEAP_START + KHEAP_SIZE,
+                              KHEAP_START + KHEAP_SIZE * 2);
     kernel_pheap = pheap_create(KPHEAP_START, KPHEAP_SIZE);
 }
 

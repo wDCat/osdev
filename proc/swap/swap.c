@@ -124,8 +124,8 @@ int swap_in(pcb_t *pcb, spage_info_t *info) {
             uint32_t pageno = info->addr - info->addr % 0x1000;
             page_t *page = get_page(pageno, true, pcb->page_dir);
             ASSERT(page);
-            alloc_frame(page, false, false);
-            //memset(info->addr, 0, 0x1000);
+            alloc_frame(page, false, true);
+            memset(info->addr, 0, 0x1000);
             return 0;
         }
             break;

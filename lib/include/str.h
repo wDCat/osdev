@@ -31,7 +31,7 @@ char *strfmt_insspace(char *out, int tok_pos, int tok_len, int buff_len);
 
 uint strformatw(void (*writer)(void *extern_data, char c), void *extern_data, const char *fmt, ...);
 
-uint itohexs(const int num, char *out);
+uint itohexs(uint32_t num, char *out);
 
 uint itos(const int num, char *c2);
 

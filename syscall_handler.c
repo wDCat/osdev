@@ -6,6 +6,7 @@
 #include <wait.h>
 #include <signal.h>
 #include <exit.h>
+#include <umalloc.h>
 #include "ker/include/idt.h"
 #include "proc.h"
 #include "syscall_handler.h"
@@ -59,7 +60,9 @@ uint32_t syscalls_table[] = {
         &sys_access,
         &sys_chdir,
         &sys_getcwd,
-        &sys_lseek
+        &sys_lseek,
+        &sys_malloc,
+        &sys_free
 };
 uint32_t syscalls_count = sizeof(syscalls_table) / sizeof(uint32_t);
 
