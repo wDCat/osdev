@@ -31,6 +31,8 @@ typedef struct {
 
 heap_t *create_heap(heap_t *ret, uint32_t start_addr, uint32_t end_addr, uint32_t max_addr);
 
+heap_t *clone_heap(heap_t *src, heap_t *target);
+
 void *halloc(heap_t *heap, uint32_t size, bool page_align);
 
 void hfree(heap_t *heap, uint32_t addr);

@@ -27,7 +27,10 @@ int kexec(pid_t pid, const char *path, int argc, char **argv, char **envp) {
         dprintf("switch to proc's pd:%x orig:%x", pcb->page_dir, orig_pd);
         switch_page_directory(pcb->page_dir);
     }
-    create_user_heap(pcb);
+    if (!pcb->heap_ready) {
+        pcb->heap_ready = true;
+        create_user_heap(pcb);
+    }
     uint32_t eip;
     if (elf_load(pid, fd, &eip)) {
         deprintf("error happened during elf load.");
@@ -55,7 +58,7 @@ int kexec(pid_t pid, const char *path, int argc, char **argv, char **envp) {
         }
     }
     esp = ((uint32_t *) espptr) - 1;
-    uint32_t __envp = NULL;
+    uint32_t __envp = NULL, __argvp = NULL;
     uint32_t __env_rs = 0;
     if (envp && envp[0] != NULL) {
         int envc = 0;
@@ -73,7 +76,7 @@ int kexec(pid_t pid, const char *path, int argc, char **argv, char **envp) {
             *uenvp = (uint32_t) cp;
             uenvp += 1;
         }
-        *uenvp=NULL;
+        *uenvp = NULL;
     }
 
     if (argv) {
@@ -85,6 +88,7 @@ int kexec(pid_t pid, const char *path, int argc, char **argv, char **envp) {
             dprintf("push arg %x to %x", *esp, esp);
         }
         esp -= argc;
+        __argvp = (uint32_t) (esp + 1);
     }
     //push envp_reserved
     *esp = __env_rs;
@@ -93,7 +97,7 @@ int kexec(pid_t pid, const char *path, int argc, char **argv, char **envp) {
     *esp = __envp;
     esp -= 1;
     //push argv
-    *esp = (uint32_t) (esp + 1);
+    *esp = __argvp;
     esp -= 1;
     //push argc
     *esp = (uint32_t) argc;
@@ -118,6 +122,6 @@ int kexec(pid_t pid, const char *path, int argc, char **argv, char **envp) {
 }
 
 
-int sys_exec(const char *path, int argc, char **argv) {
-    return kexec(getpid(), path, argc, argv, NULL);
+int sys_exec(const char *path, int argc, char *const *argv, char **envp) {
+    return kexec(getpid(), path, argc, argv, envp);
 }

@@ -351,7 +351,7 @@ pid_t fork(regs_t *r) {
         strcpy(neko2, "DCat");
         char *args[2] = {neko, neko2};
         char neko3[256], neko4[256];
-        strcpy(neko3, "PATH=/");
+        strcpy(neko3, "PATH=/:/bin");
         strcpy(neko4, "COLOR=black");
         char *envp[3] = {neko3, neko4, NULL};
         kexec(cpid, "/init", 2, args, envp);
@@ -373,6 +373,10 @@ pid_t fork(regs_t *r) {
         tss->ds = r->ds;
         tss->fs = r->fs;
         tss->gs = r->gs;
+    }
+    if (fpcb->heap_ready) {
+        cpcb->heap_ready = true;
+        clone_heap(&fpcb->heap, &cpcb->heap);
     }
     dprintf("proc cs[%x] es[%x]", r->cs, r->es);
     strcpy(cpcb->dir, fpcb->dir);

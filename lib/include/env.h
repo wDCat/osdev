@@ -7,7 +7,9 @@
 
 #include <intdef.h>
 
-void initenv(uint32_t start_addr, uint32_t end_addr);
+void __initenv(uint32_t start_addr, uint32_t end_addr);
+
+char **__getenvp();
 
 char *getenv(const char *key);
 

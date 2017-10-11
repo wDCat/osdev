@@ -52,9 +52,16 @@ uint strncpy(char *target, const char *src, int len) {
     return len;
 }
 
-uint strcat(char *target, const char *src) {
+int strcat(char *target, const char *src) {
     int len = strlen(target);
     return strcpy(&target[len], src);
+}
+
+int strcats(char *target, const char *src, int maxlen) {
+    if (strlen(target) + strlen(src) > maxlen)
+        return -1;
+    else
+        return strcat(target, src);
 }
 
 char *strfmt_insspace(char *out, int tok_pos, int tok_len, int buff_len) {
@@ -238,4 +245,27 @@ uint strformatw(void (*writer)(void *extern_data, char c), void *extern_data, co
     for (int x = pos; fmt[x] != '\0'; x++)
         writer(extern_data, fmt[x]);
     va_end(args);
+}
+
+
+int strnxtok(const char *str, const char c, int start) {
+    bool aq = 0, dq = 0;
+    int len = strlen(str);
+    for (int x = start; x < len; x++) {
+        switch (str[x]) {
+            case '\'':
+                aq = !aq;
+                break;
+            case '\"':
+                dq = !dq;
+                break;
+            default:
+                if (str[x] == c && !aq && !dq) {
+                    if (x - 1 >= start && str[x] == '\\')continue;
+                    return x;
+                }
+
+        }
+    }
+    return -1;
 }

@@ -32,8 +32,15 @@ inline void insert_default_header(heap_t *heap) {
     insert_item_ordered(al, &info);
 }
 
+heap_t *clone_heap(heap_t *src, heap_t *target) {
+    memcpy(target, src, sizeof(heap_t));
+    target->al = clone_heap_array_list(src->al);
+    return target;
+}
+
 heap_t *create_heap(heap_t *ret, uint32_t start_addr, uint32_t end_addr, uint32_t max_addr) {
     dprintf("create heap:%x -> %x\n", start_addr, end_addr);
+    ASSERT(ret);
     ASSERT(end_addr > start_addr);
     ret->start_addr = start_addr;
     ret->end_addr = end_addr;

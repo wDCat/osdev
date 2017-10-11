@@ -3,13 +3,22 @@
 //
 
 #include <str.h>
+#include <heap_array_list.h>
 #include "include/heap_array_list.h"
 #include "include/heap_array_list.h"
 #include "include/kmalloc.h"
 
+heap_array_list_t *clone_heap_array_list(heap_array_list_t *src) {
+    heap_array_list_t *ret = (heap_array_list_t *) kmalloc(sizeof(heap_array_list_t));
+    ret->headers = (header_info_t *) kmalloc(sizeof(header_info_t) * src->max_size);
+    ret->size = src->size;
+    memcpy(ret->headers, src->headers, sizeof(header_info_t) * src->max_size);
+    return ret;
+}
+
 heap_array_list_t *create_heap_array_list(uint32_t max_size) {
-    heap_array_list_t *alist = kmalloc(sizeof(heap_array_list_t));
-    alist->headers = kmalloc(sizeof(header_info_t) * max_size);
+    heap_array_list_t *alist = (heap_array_list_t *) kmalloc(sizeof(heap_array_list_t));
+    alist->headers = (header_info_t *) kmalloc(sizeof(header_info_t) * max_size);
     alist->size = 0;
     alist->max_size = max_size;
     return alist;

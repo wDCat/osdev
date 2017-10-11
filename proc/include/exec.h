@@ -10,6 +10,6 @@
 
 int kexec(pid_t pid, const char *path, int argc, char **argv, char **envp);
 
-int sys_exec(const char *path, int argc, char **argv);
+int sys_exec(const char *path, int argc, char *const *argv, char **envp);
 
 #endif //W2_EXEC_H

@@ -19,6 +19,7 @@ FILE(GLOB MyCSources
 /home/dcat/osdev/w2/main.c
 /home/dcat/osdev/w2/fs_node.c
 /home/dcat/osdev/w2/little_test.c
+/home/dcat/osdev/w2/lib/uexec.c
 /home/dcat/osdev/w2/lib/env.c
 /home/dcat/osdev/w2/lib/start.c
 /home/dcat/osdev/w2/lib/file.c
@@ -73,6 +74,7 @@ FILE(GLOB MyCSources
 /home/dcat/osdev/w2/lib/include/malloc.h
 /home/dcat/osdev/w2/lib/include/syscall.h
 /home/dcat/osdev/w2/lib/include/print.h
+/home/dcat/osdev/w2/lib/include/uexec.h
 /home/dcat/osdev/w2/lib/include/str.h
 /home/dcat/osdev/w2/lib/include/file.h
 /home/dcat/osdev/w2/lib/include/va.h

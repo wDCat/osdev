@@ -71,6 +71,7 @@ typedef struct pcb_struct {
     char dir[256];
     char name[256];
     char cmdline[512];
+    bool heap_ready;
     heap_t heap;
     uint8_t hold_proc;//Can this pcb be free?
     struct pcb_struct *fpcb;

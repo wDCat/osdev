@@ -14,6 +14,7 @@
 #define _define_syscall1(fn, num, P1) long syscall_##fn(P1 p1)
 #define _define_syscall2(fn, num, P1, P2) long syscall_##fn(P1 p1, P2 p2)
 #define _define_syscall3(fn, num, P1, P2, P3) long syscall_##fn(P1 p1, P2 p2, P3 p3)
+#define _define_syscall4(fn, num, P1, P2, P3, P4) long syscall_##fn(P1 p1, P2 p2, P3 p3,P4 p4)
 extern long errno;
 #define _impl_syscall0(fn, num) \
 long syscall_##fn() \
@@ -46,6 +47,13 @@ long syscall_##fn(P1 p1, P2 p2, P3 p3) \
   __asm__ __volatile__("int $0x60" : "=a" (a) : "0" (num), "b" ((int)p1), "c" ((int)p2), "d"((int)p3)); \
   return a; \
 }
+#define _impl_syscall4(fn, num, P1, P2, P3, P4) \
+long syscall_##fn(P1 p1, P2 p2, P3 p3,P4 p4) \
+{ \
+  long a; \
+  __asm__ __volatile__("int $0x60" : "=a" (a) : "0" (num), "b" ((int)p1), "c" ((int)p2), "d"((int)p3),"S"((int)p4)); \
+  return a; \
+}
 
 _define_syscall0(helloworld, 0);
 
@@ -73,7 +81,7 @@ _define_syscall2(stat, 11, const char*, stat_t*);
 
 _define_syscall3(ls, 12, const char*, dirent_t*, uint32_t);
 
-_define_syscall3(exec, 13, const char*, int, char**);
+_define_syscall4(exec, 13, const char*, int, char*const*, char**);
 
 _define_syscall3(waitpid, 14, pid_t, int*, int);
 

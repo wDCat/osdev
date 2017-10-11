@@ -21,7 +21,9 @@ char *strchr(const char *str, char c);
 
 uint strcpy(char *target, const char *src);
 
-uint strcat(char *target, const char *src);
+int strcat(char *target, const char *src);
+
+int strcats(char *target, const char *src, int maxlen);
 
 uint strncpy(char *target, const char *src, int len);
 
@@ -34,5 +36,7 @@ uint strformatw(void (*writer)(void *extern_data, char c), void *extern_data, co
 uint itohexs(uint32_t num, char *out);
 
 uint itos(const int num, char *c2);
+
+int strnxtok(const char *str, const char c, int start);
 
 #endif //W2_STR_H
