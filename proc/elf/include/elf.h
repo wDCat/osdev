@@ -99,4 +99,26 @@ typedef struct elf_phdr {
     uint32_t p_flags;
     uint32_t p_align;
 } elf_program_t;
+#define DT_NULL      0
+#define DT_NEEDED    1
+#define DT_STRTAB    5
+#define DT_SYMTAB    6
+#define DT_STRSZ	10
+#define DT_SYMENT	11
+typedef struct dynamic {
+    int32_t d_tag;
+    union {
+        int32_t d_val;
+        uint32_t d_ptr;
+    } d_un;
+} elf_dynamic_t;
+
+typedef struct elf32_sym {
+    uint32_t st_name;
+    uint32_t st_value;
+    uint32_t st_size;
+    unsigned char st_info;
+    unsigned char st_other;
+    uint16_t st_shndx;
+} elf_symbol_t;
 #endif //W2_ELF_H

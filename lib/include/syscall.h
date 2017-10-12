@@ -81,7 +81,7 @@ _define_syscall2(stat, 11, const char*, stat_t*);
 
 _define_syscall3(ls, 12, const char*, dirent_t*, uint32_t);
 
-_define_syscall4(exec, 13, const char*, int, char*const*, char**);
+_define_syscall4(exec, 13, const char*, int, char*const*, char*const*);
 
 _define_syscall3(waitpid, 14, pid_t, int*, int);
 

@@ -54,7 +54,7 @@ uint32_t *pheap_alloc(paging_heap_t *heap, uint32_t size) {
         }
         for (int x = curbit; x < curbit + (size / 0x1000); x++) {
             if (BIT_GET(bitptr[x / 8], x % 8)) {
-                curbit = x + 1;
+                curbit = (uint8_t) (x + 1);
                 if (curbit * 0x1000 > heap->size) {
                     if (ft) {
                         goto out_of_heap;
@@ -72,7 +72,7 @@ uint32_t *pheap_alloc(paging_heap_t *heap, uint32_t size) {
         BIT_SET(bitptr[x / 8], x % 8);
         BIT_CLEAR(endbitptr[x / 8], x % 8);
     }
-    uint8_t endbitindex = curbit + (size / 0x1000) - 1;
+    uint8_t endbitindex = (uint8_t) (curbit + (size / 0x1000) - 1);
     BIT_SET(endbitptr[endbitindex / 8], endbitindex % 8);
     result = heap->start_addr + 0x1000 + curbit * 0x1000;
     heap->current = heap->start_addr + 0x1000 + curbit * 0x1000 + size;

@@ -10,9 +10,10 @@
 #include <umalloc.h>
 #include "exec.h"
 
-int kexec(pid_t pid, const char *path, int argc, char **argv, char **envp) {
+int kexec(pid_t pid, const char *path, int argc, char *const argv[], char *const envp[]) {
     dprintf("%x try to exec %s", pid, path);
     pcb_t *pcb = getpcb(pid);
+    page_directory_t *orig_pd = current_dir;
     if (!pcb->present) {
         deprintf("process %x not exist.", pid);
         goto _err;
@@ -22,7 +23,6 @@ int kexec(pid_t pid, const char *path, int argc, char **argv, char **envp) {
         deprintf("cannot open elf:%s", path);
         goto _err;
     }
-    page_directory_t *orig_pd = current_dir;
     if (current_dir != pcb->page_dir) {
         dprintf("switch to proc's pd:%x orig:%x", pcb->page_dir, orig_pd);
         switch_page_directory(pcb->page_dir);
@@ -37,24 +37,24 @@ int kexec(pid_t pid, const char *path, int argc, char **argv, char **envp) {
         goto _err;
     }
     pcb->tss.eip = eip;
-    uint32_t *esp = pcb->tss.esp;
+    uint32_t *esp = (uint32_t *) pcb->tss.esp;
     dprintf("elf load done.new PC:%x", eip);
     uint8_t *espptr = (uint8_t *) esp;
     strcpy(pcb->cmdline, path);
+    char **argvp = (char **) argv;
     if (argv) {
         //push **argv
         for (int x = argc - 1; x >= 0; x--) {
             dprintf("arg:%x", argv[x]);
             char *str = argv[x];
-            int len = strlen(str);
+            int len = strlen(str) + 1;
             espptr -= len;
             espptr -= (uint32_t) espptr % 4;
-            argv[x] = (char *) espptr;
+            argvp[x] = (char *) espptr;
             strcat(pcb->cmdline, " ");
             strcat(pcb->cmdline, argv[argc - x - 1]);
             dprintf("copy str %s to %x", str, espptr);
             strcpy(espptr, str);
-
         }
     }
     esp = ((uint32_t *) espptr) - 1;
@@ -84,7 +84,7 @@ int kexec(pid_t pid, const char *path, int argc, char **argv, char **envp) {
         esp = esp - argc - 1;
         for (int x = 0; x < argc; x++) {
             esp += 1;
-            *esp = (uint32_t) argv[x];
+            *esp = (uint32_t) argvp[x];
             dprintf("push arg %x to %x", *esp, esp);
         }
         esp -= argc;
@@ -122,6 +122,6 @@ int kexec(pid_t pid, const char *path, int argc, char **argv, char **envp) {
 }
 
 
-int sys_exec(const char *path, int argc, char *const *argv, char **envp) {
+int sys_exec(const char *path, int argc, char *const argv[], char *const envp[]) {
     return kexec(getpid(), path, argc, argv, envp);
 }

@@ -10,11 +10,34 @@
 #include <proc.h>
 #include "../swap/include/swap.h"
 #include <page.h>
+#include <elfloader.h>
 #include "elfloader.h"
+
+bool elsp_dynamic_section(elf_digested_t *edg, elf_section_t *shdr) {
+    dprintf("processing dynamic section...");
+    ASSERT(shdr->sh_type == SHT_DYNAMIC);
+    elf_dynamic_t *dht;
+    for (int x = 0; x < shdr->sh_size / sizeof(elf_dynamic_t); x++) {
+        dht = shdr->sh_addr + sizeof(elf_dynamic_t) * x;
+        dprintf("dynamic sec entry[%x]:tag[%x] ptr[%x]", x, dht->d_tag, dht->d_un.d_ptr);
+        if (dht->d_tag == 0)break;
+    }
+    return 0;
+    _err:
+    return 1;
+}
+
+bool elsp_load_symbols(elf_digested_t *edg) {
+
+}
 
 
 bool elf_load(pid_t pid, int8_t fd, uint32_t *entry_point) {
     dprintf("try to load elf pid:%x fd:%x", pid, fd);
+    elf_digested_t edg;
+    memset(&edg, 0, sizeof(elf_digested_t));
+    edg.pid = pid;
+    edg.fd = fd;
     pcb_t *pcb = getpcb(pid);
     elf_header_t ehdr;
     uint32_t shdr_ptr = 0;
@@ -45,40 +68,55 @@ bool elf_load(pid_t pid, int8_t fd, uint32_t *entry_point) {
     for (int x = 0; x < ehdr.e_shnum; x++) {
         dprintf("Section %x addr:%x size:%x offset:%x type:%x", x, shdr->sh_addr, shdr->sh_size, shdr->sh_offset,
                 shdr->sh_type);
-        if (shdr->sh_addr) {
-            uint32_t les = shdr->sh_size;
-            uint32_t y = shdr->sh_addr;
-            klseek(pid, fd, shdr->sh_offset, SEEK_SET);
-            while (les > 0) {
-                page_t *page = get_page(y, true, pcb->page_dir);
-                uint32_t size = MIN(MIN(PAGE_SIZE, les), PAGE_SIZE - (y % PAGE_SIZE));
-                uint32_t foffset = shdr->sh_offset + y - shdr->sh_addr;
 
-                if (shdr->sh_type == SHT_NOBITS) {
-                    alloc_frame(page, false, true);
-                    memset(y, 0, size);
-                    //swap_insert_empty_page(pcb, pno + y);
-                } else {
-                    if (size == PAGE_SIZE) {
-                        swap_insert_pload_page(pcb, y, fd, foffset);
-                    } else {
-                        alloc_frame(page, false, true);
-                        klseek(pid, fd, foffset, SEEK_SET);
-                        if (kread(pid, fd, size, y) != size) {
-                            deprintf("cannot read section:%x:%x.I/O error.", x, y);
-                            goto _err;
+        switch (shdr->sh_type) {
+            case SHT_DYNAMIC:
+                if (elsp_dynamic_section(&edg, shdr)) {
+                    deprintf("exception happened when processing dynamic section");
+                    goto _err;
+                }
+                break;
+            default: {
+                if (shdr->sh_addr) {
+                    if (shdr->sh_addr < 0x8000000) {
+                        shdr->sh_addr += 0x80000000;
+                    }
+                    uint32_t les = shdr->sh_size;
+                    uint32_t y = shdr->sh_addr;
+                    klseek(pid, fd, shdr->sh_offset, SEEK_SET);
+                    while (les > 0) {
+                        page_t *page = get_page(y, true, pcb->page_dir);
+                        uint32_t size = MIN(MIN(PAGE_SIZE, les), PAGE_SIZE - (y % PAGE_SIZE));
+                        uint32_t foffset = shdr->sh_offset + y - shdr->sh_addr;
+
+                        if (shdr->sh_type == SHT_NOBITS) {
+                            alloc_frame(page, false, true);
+                            memset(y, 0, size);
+                            //swap_insert_empty_page(pcb, pno + y);
+                        } else {
+                            if (size == PAGE_SIZE) {
+                                swap_insert_pload_page(pcb, y, fd, foffset);
+                            } else {
+                                alloc_frame(page, false, true);
+                                klseek(pid, fd, foffset, SEEK_SET);
+                                if (kread(pid, fd, size, y) != size) {
+                                    deprintf("cannot read section:%x:%x.I/O error.", x, y);
+                                    goto _err;
+                                }
+                            }
                         }
+                        y += size;
+                        les -= size;
                     }
                 }
-                y += size;
-                les -= size;
             }
+
         }
         shdr = (elf_section_t *) ((uint32_t) shdr + ehdr.e_shentsize);
     }
     dprintf("elf entry point:%x", ehdr.e_entry);
     if (entry_point)
-        *entry_point = ehdr.e_entry;
+        *entry_point = ehdr.e_entry + 0x80000000;
     dprintf("elf load done.");
     if (shdr_ptr)
         kfree(shdr_ptr);

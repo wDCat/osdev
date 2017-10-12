@@ -46,7 +46,7 @@ char *getenv(const char *key) {
 }
 
 int setenv(const char *name, const char *value, int overwrite) {
-    char **envp = (char **) __env_start;
+    char **envp = __getenvp();
     char *vspace;
     int vno = -1;
     int len = strlen(name) + strlen(value) + 2;
@@ -78,6 +78,16 @@ int setenv(const char *name, const char *value, int overwrite) {
 }
 
 int unsetenv(const char *name) {
-    //TODO
-    return -1;
+    char **envp = __getenvp();
+    char *vspace;
+    int vno = -1;
+    if (__getenv(name, &vspace, &vno) == 0) {
+        syscall_free(vspace);
+        for (int x = vno; envp[x] != NULL &&
+                          x * sizeof(uint32_t) < __env_rs; x++)
+            envp[x] = envp[x + 1];
+        return 0;
+    } else {
+        return -1;
+    }
 }

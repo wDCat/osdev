@@ -7,7 +7,10 @@
 
 #include "stdint.h"
 //Test
-#define  F_OK 0x0
+#define    R_OK    4        /* Test for read permission.  */
+#define    W_OK    2        /* Test for write permission.  */
+#define    X_OK    1        /* Test for execute permission.  */
+#define    F_OK    0        /* Test for existence.  */
 typedef int32_t off_t;
 typedef struct dirent {
     uint32_t node;
