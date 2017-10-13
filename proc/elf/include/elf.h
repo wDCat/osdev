@@ -99,12 +99,14 @@ typedef struct elf_phdr {
     uint32_t p_flags;
     uint32_t p_align;
 } elf_program_t;
+
 #define DT_NULL      0
 #define DT_NEEDED    1
+#define DT_PLTGOT    3
 #define DT_STRTAB    5
 #define DT_SYMTAB    6
-#define DT_STRSZ	10
-#define DT_SYMENT	11
+#define DT_STRSZ    10
+#define DT_SYMENT    11
 typedef struct dynamic {
     int32_t d_tag;
     union {
@@ -112,7 +114,20 @@ typedef struct dynamic {
         uint32_t d_ptr;
     } d_un;
 } elf_dynamic_t;
-
+#define ELF32_R_DYNSYM(x) ((x) >> 8)
+#define ELF32_R_TYPE(x) ((x) & 0xff)
+#define    R_386_NONE        0
+#define    R_386_32        1
+#define    R_386_PC32        2
+#define    R_386_GOT32        3
+#define    R_386_PLT32        4
+#define    R_386_COPY        5
+#define    R_386_GLOB_DAT        6
+#define    R_386_JMP_SLOT        7
+#define    R_386_RELATIVE        8
+#define    R_386_GOTOFF        9
+#define    R_386_GOTPC        10
+#define    R_386_32PLT        11
 typedef struct elf32_sym {
     uint32_t st_name;
     uint32_t st_value;
@@ -121,4 +136,13 @@ typedef struct elf32_sym {
     unsigned char st_other;
     uint16_t st_shndx;
 } elf_symbol_t;
+typedef struct elf_rel {
+    uint32_t r_offset;
+    uint32_t r_info;
+} elf_rel_t;
+typedef struct elf_rela {
+    uint32_t r_offset;
+    uint32_t r_info;
+    int32_t r_addend;
+} elf_rela_t;
 #endif //W2_ELF_H
