@@ -8,34 +8,72 @@
 #include <schedule.h>
 #include <isrs.h>
 #include <umalloc.h>
+#include <elf.h>
+#include <kmalloc.h>
 #include "exec.h"
 
 int kexec(pid_t pid, const char *path, int argc, char *const argv[], char *const envp[]) {
     dprintf("%x try to exec %s", pid, path);
     pcb_t *pcb = getpcb(pid);
     page_directory_t *orig_pd = current_dir;
+    int envc = 0;
+    if (envp && envp[0] != NULL) {
+        for (; envp[envc] != NULL; envc++);
+        envc++;
+    }
+    char *targv[argc], *tenvp[envc];
     if (!pcb->present) {
         deprintf("process %x not exist.", pid);
         goto _err;
+    }
+    uint32_t args_tspace = kmalloc_paging(PAGE_SIZE, NULL);
+    char *tsw = (char *) args_tspace;
+    for (int x = 0; x < argc; x++) {
+        if ((uint32_t) tsw - args_tspace > PAGE_SIZE) {
+            deprintf("argv and envs bigger than 1 page.");
+            goto _err;
+        }
+        strcpy(tsw, argv[x]);
+        targv[x] = tsw;
+        tsw = tsw + strlen(argv[x]) + 1;
+    }
+    for (int x = 0; x < envc; x++) {
+        if ((uint32_t) tsw - args_tspace > PAGE_SIZE) {
+            deprintf("argv and envs bigger than 1 page.");
+            goto _err;
+        }
+        if (envp[x] == NULL) {
+            tenvp[x] = NULL;
+            break;
+        }
+        tenvp[x] = tsw;
+        strcpy(tsw, envp[x]);
+        tsw = tsw + strlen(envp[x]) + 1;
+    }
+    if (current_dir != pcb->page_dir) {
+        dprintf("switch to proc's pd:%x orig:%x", pcb->page_dir, orig_pd);
+        switch_page_directory(pcb->page_dir);
     }
     int fd = kopen(pid, path, 0);
     if (fd < 0) {
         deprintf("cannot open elf:%s", path);
         goto _err;
     }
-    if (current_dir != pcb->page_dir) {
-        dprintf("switch to proc's pd:%x orig:%x", pcb->page_dir, orig_pd);
-        switch_page_directory(pcb->page_dir);
-    }
-    if (!pcb->heap_ready) {
-        pcb->heap_ready = true;
-        create_user_heap(pcb);
-    }
-    uint32_t eip;
-    if (elf_load(pid, fd, &eip)) {
-        deprintf("error happened during elf load.");
-        goto _err;
-    }
+    if (pcb->heap_ready)
+        CHK(destory_user_heap(pcb), "fail to release old heap..");
+
+    elf_digested_t edg;
+    memset(&edg, 0, sizeof(elf_digested_t));
+    edg.pid = pid;
+    edg.fd = (int8_t) fd;
+    edg.global_offset = 0x8000000;
+    CHK(elsp_load_header(&edg), "");
+    CHK(elsp_load_sections(&edg), "");
+    elsp_load_need_dynlibs(&edg);
+    dprintf("elf end addr:%x", edg.elf_end_addr);
+    uint32_t heap_start = edg.elf_end_addr + (PAGE_SIZE - (edg.elf_end_addr % PAGE_SIZE)) + PAGE_SIZE * 2;
+    CHK(create_user_heap(pcb, heap_start, 0x4000), "");
+    uint32_t eip = elsp_get_entry(&edg);
     pcb->tss.eip = eip;
     uint32_t *esp = (uint32_t *) pcb->tss.esp;
     dprintf("elf load done.new PC:%x", eip);
@@ -45,14 +83,14 @@ int kexec(pid_t pid, const char *path, int argc, char *const argv[], char *const
     if (argv) {
         //push **argv
         for (int x = argc - 1; x >= 0; x--) {
-            dprintf("arg:%x", argv[x]);
-            char *str = argv[x];
+            dprintf("arg:%x", targv[x]);
+            char *str = targv[x];
             int len = strlen(str) + 1;
             espptr -= len;
             espptr -= (uint32_t) espptr % 4;
             argvp[x] = (char *) espptr;
             strcat(pcb->cmdline, " ");
-            strcat(pcb->cmdline, argv[argc - x - 1]);
+            strcat(pcb->cmdline, targv[argc - x - 1]);
             dprintf("copy str %s to %x", str, espptr);
             strcpy(espptr, str);
         }
@@ -61,18 +99,18 @@ int kexec(pid_t pid, const char *path, int argc, char *const argv[], char *const
     uint32_t __envp = NULL, __argvp = NULL;
     uint32_t __env_rs = 0;
     if (envp && envp[0] != NULL) {
-        int envc = 0;
+        envc = 0;
         for (; envp[envc] != NULL; envc++);
         envc++;
         __env_rs = envc * 2 * sizeof(uint32_t);
         uint32_t *uenvp = umalloc(pid, __env_rs);
         __envp = (uint32_t) uenvp;
         //push *envp
-        for (int x = 0; envp[x] != NULL && x < 128; x++) {
-            dprintf("env:%s %x %x", envp[x], uenvp, 0x2333);
-            int len = strlen(envp[x]);
+        for (int x = 0; tenvp[x] != NULL && x < 128; x++) {
+            dprintf("env:%s %x %x", tenvp[x], uenvp, 0x2333);
+            int len = strlen(tenvp[x]);
             uchar_t *cp = umalloc(pid, len + 1);
-            strcpy(cp, envp[x]);
+            strcpy(cp, tenvp[x]);
             *uenvp = (uint32_t) cp;
             uenvp += 1;
         }
@@ -110,9 +148,13 @@ int kexec(pid_t pid, const char *path, int argc, char *const argv[], char *const
     }
     strcpy(pcb->name, path);
     dprintf("kexec done.");
+    if (args_tspace)
+        kfree(args_tspace);
     proc_rejmp(pcb);
     return 0;
     _err:
+    if (args_tspace)
+        kfree(args_tspace);
     if (current_dir != orig_pd && orig_pd != 0) {
         dprintf("switch back pd:%x", orig_pd);
         switch_page_directory(orig_pd);

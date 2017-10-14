@@ -270,7 +270,7 @@ int32_t tty_fs_node_write(fs_node_t *node, __fs_special_t *fsp_, uint32_t size, 
         deprintf("tty not exist:%x", ttyid);
         return 1;
     }
-    dprintf("write tty:%x %s", ttyid, buff);
+    //dprintf("write tty:%x %s", ttyid, buff);
     return tty_write(&ttys[ttyid], getpid(), size, buff);
 }
 

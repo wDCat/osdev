@@ -11,6 +11,8 @@
 #include <schedule.h>
 #include <timer.h>
 #include <procfs.h>
+#include <contious_heap.h>
+#include <page.h>
 
 extern void _gdt_flush();
 
@@ -21,10 +23,6 @@ pid_t current_pid = 0;
 pcb_t processes[MAX_PROC_COUNT];
 uint32_t proc_count = 1;
 
-proc_queue_t *proc_avali_queue,
-        *proc_ready_queue,
-        *proc_wait_queue,
-        *proc_died_queue;
 
 pid_t getpid() {
     return current_pid;
@@ -303,11 +301,26 @@ void clean_pcb_table() {
     dprintf("remove %x trash proc.", procc - proc_count);
 }
 
-void create_user_heap(pcb_t *pcb) {
-    for (uint32_t x = 0xD0000000; x < 0xD0001000; x++) {
+int create_user_heap(pcb_t *pcb, uint32_t start, uint32_t size) {
+    ASSERT(pcb->heap_ready == false);
+    pcb->heap_ready = true;
+    for (uint32_t x = start; x <= start + size; x += PAGE_SIZE) {
         alloc_frame(get_page(x, true, pcb->page_dir), false, true);
     }
-    create_heap(&pcb->heap, 0xD0000000, 0xD0001000, 0xD0001000);
+    create_heap(&pcb->heap, start, start + size, start + size);
+    return 0;
+}
+
+int destory_user_heap(pcb_t *pcb) {
+    ASSERT(pcb->heap_ready);
+    pcb->heap_ready = false;
+    heap_t *heap = &pcb->heap;
+    for (uint32_t x = heap->start_addr; x <= heap->end_addr; x += PAGE_SIZE) {
+        dprintf("free frame:%x %x", x, get_page(x, false, pcb->page_dir)->frame);
+        free_frame(get_page(x, false, pcb->page_dir));
+    }
+    destory_heap(&pcb->heap);
+    return 0;
 }
 
 pid_t fork(regs_t *r) {
@@ -343,7 +356,7 @@ pid_t fork(regs_t *r) {
     tss->esi = r->esi;
     tss->edi = r->edi;
     if (fpid == 1) {
-        create_user_stack(0xCC000000, 0x4000, &tss->ebp, &tss->esp, cpcb->page_dir);
+        create_user_stack(UM_STACK_START, UM_STACK_SIZE, &tss->ebp, &tss->esp, cpcb->page_dir);
         //create_user_heap(cpcb);
         dprintf("new user stack:[%x][%x]", tss->ebp, tss->esp);
         char neko[256], neko2[256];
@@ -382,7 +395,7 @@ pid_t fork(regs_t *r) {
     strcpy(cpcb->dir, fpcb->dir);
     tss->eflags = r->eflags | 0x200;
     tss->ss0 = 0x10;
-    for (uint32_t s = 0; s < UM_KSTACK_SIZE; s++) {
+    for (uint32_t s = 0; s <= UM_KSTACK_SIZE; s++) {
         alloc_frame(get_page(UM_KSTACK_START + s, true, cpcb->page_dir), false, true);
     }
     tss->esp0 = (uint32_t) (UM_KSTACK_START + UM_KSTACK_SIZE - 0x4);

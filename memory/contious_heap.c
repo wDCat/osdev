@@ -6,13 +6,14 @@
 #include "include/heap_array_list.h"
 #include "include/page.h"
 #include <str.h>
+#include <contious_heap.h>
 #include "include/contious_heap.h"
 #include "include/kmalloc.h"
 
 extern heap_t *kernel_heap;
 
 inline void insert_default_header(heap_t *heap) {
-    heap_array_list_t *al = heap->al;
+    heap_array_list_t *al = &heap->al;
     header_info_t info;
     uint32_t max_size = heap->end_addr - heap->start_addr;
     info.size = max_size - HOLE_HEADER_SIZE - HOLE_FOOTER_SIZE;
@@ -33,8 +34,10 @@ inline void insert_default_header(heap_t *heap) {
 }
 
 heap_t *clone_heap(heap_t *src, heap_t *target) {
-    memcpy(target, src, sizeof(heap_t));
-    target->al = clone_heap_array_list(src->al);
+    target->start_addr = src->start_addr;
+    target->end_addr = src->end_addr;
+    target->max_addr = src->max_addr;
+    clone_heap_array_list(&src->al, &target->al);
     return target;
 }
 
@@ -45,16 +48,22 @@ heap_t *create_heap(heap_t *ret, uint32_t start_addr, uint32_t end_addr, uint32_
     ret->start_addr = start_addr;
     ret->end_addr = end_addr;
     ret->max_addr = max_addr;
-    ret->al = create_heap_array_list(1024);
+    create_heap_array_list(&ret->al, 1024);
     insert_default_header(ret);
     return ret;
+}
+
+int destory_heap(heap_t *heap) {
+    ASSERT(heap);
+    destory_heap_array_list(&heap->al);
+    return 0;
 }
 
 void *halloc(heap_t *heap, uint32_t size, bool page_align) {
     if (page_align) PANIC("Use kmalloc_paging instead.");
     ASSERT(heap && size >= 0);
     int hinfo_index;
-    header_info_t *hinfo = find_suit_hole(heap->al, size, page_align, &hinfo_index);
+    header_info_t *hinfo = find_suit_hole(&heap->al, size, page_align, &hinfo_index);
     if (!hinfo) {
         PANIC("Out of heap.")
     }
@@ -84,7 +93,7 @@ void *halloc(heap_t *heap, uint32_t size, bool page_align) {
     header->size = size;
     footer->header = new_header;
     //插入到header表
-    remove_item(heap->al, hinfo_index);
+    remove_item(&heap->al, hinfo_index);
     header_info_t h1info, h2info;//h1 for header,h2 for new_header
     h1info.addr = (uint32_t) header;
     h1info.size = header->size;
@@ -92,8 +101,8 @@ void *halloc(heap_t *heap, uint32_t size, bool page_align) {
     h2info.addr = (uint32_t) new_header;
     h2info.size = new_header->size;
     h2info.used = false;
-    insert_item_ordered(heap->al, &h1info);
-    insert_item_ordered(heap->al, &h2info);
+    insert_item_ordered(&heap->al, &h1info);
+    insert_item_ordered(&heap->al, &h2info);
     header->used = true;
     //TODO correct header and footer position when page_align
     if (page_align) {
@@ -112,9 +121,9 @@ hole_header_t *combine_two_hole(heap_t *heap, hole_header_t *h1, hole_header_t *
     footer2->header = h1;
     h1->size = h1->size + h2->size + HOLE_HEADER_SIZE + HOLE_FOOTER_SIZE;
     //从索引中移除
-    for (int x = 0; x < heap->al->size; x++) {
-        if (heap->al->headers[x].addr == (uint32_t) h1 || heap->al->headers[x].addr == (uint32_t) h2) {
-            remove_item(heap->al, x);
+    for (int x = 0; x < heap->al.size; x++) {
+        if (heap->al.headers[x].addr == (uint32_t) h1 || heap->al.headers[x].addr == (uint32_t) h2) {
+            remove_item(&heap->al, x);
             x--;
         }
     }
@@ -155,9 +164,9 @@ void hfree(heap_t *heap, uint32_t addr) {
         }
     }
     if (!header_removed) {
-        for (int x = 0; x < heap->al->size; x++) {
-            if (heap->al->headers[x].addr == (uint32_t) header) {
-                remove_item(heap->al, x);
+        for (int x = 0; x < heap->al.size; x++) {
+            if (heap->al.headers[x].addr == (uint32_t) header) {
+                remove_item(&heap->al, x);
                 break;
             }
         }
@@ -166,5 +175,5 @@ void hfree(heap_t *heap, uint32_t addr) {
     info.used = false;
     info.size = header->size;
     info.addr = (uint32_t) header;
-    insert_item_ordered(heap->al, &info);
+    insert_item_ordered(&heap->al, &info);
 }

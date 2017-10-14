@@ -54,44 +54,6 @@ void dump_al(heap_array_list_t *al) {
     putln_const("------------------------");
 }
 
-void heap_test() {
-    puts_const("[+] heap test");
-    heap_t *heap = create_heap(KHEAP_START, KHEAP_START + KHEAP_SIZE, KHEAP_START + KHEAP_SIZE * 2, kernel_dir);
-    void *mem = halloc(heap, 4096, false);
-    dumphex("alloced mem addr:", mem);
-    void *mem2 = halloc(heap, 4096, false);
-    dumphex("alloced mem addr:", mem2);
-    void *mem3 = halloc(heap, 4096, false);
-    dumphex("alloced mem addr:", mem3);
-    dump_al(heap->al);
-    dumphex("header size:", HOLE_HEADER_SIZE);
-    dumphex("footer size:", HOLE_FOOTER_SIZE);
-    pause();
-    hfree(heap, mem2);
-    dump_al(heap->al);
-    pause();
-    hfree(heap, mem3);
-    dump_al(heap->al);
-    pause();
-    void *mem4 = halloc(heap, 1024, false);
-    dumphex("alloced mem addr:", mem4);
-    dump_al(heap->al);
-    pause();
-    void *mem5 = halloc(heap, 1024 * 200, false);
-    dumphex("alloced mem addr:", mem5);
-    dump_al(heap->al);
-    pause();
-    hfree(heap, mem4);
-    dump_al(heap->al);
-    pause();
-    hfree(heap, mem5);
-    dump_al(heap->al);
-    pause();
-    hfree(heap, mem);
-    dump_al(heap->al);
-    pause();
-    puts_const("[+] heap test done.");
-}
 
 
 void str_test() {

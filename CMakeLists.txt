@@ -46,14 +46,17 @@ FILE(GLOB MyCSources
 /home/dcat/osdev/w2/ker/irqs.c
 /home/dcat/osdev/w2/ker/system.c
 /home/dcat/osdev/w2/ker/gdt.c
+/home/dcat/osdev/w2/proc/squeue.c
 /home/dcat/osdev/w2/proc/exec.c
 /home/dcat/osdev/w2/proc/wait.c
+/home/dcat/osdev/w2/proc/proc_queue.c
 /home/dcat/osdev/w2/proc/proc.c
 /home/dcat/osdev/w2/proc/signal.c
 /home/dcat/osdev/w2/proc/schedule.c
 /home/dcat/osdev/w2/proc/exit.c
 /home/dcat/osdev/w2/proc/swap/swap.c
 /home/dcat/osdev/w2/proc/swap/swap_disk.c
+/home/dcat/osdev/w2/proc/elf/dynlibs.c
 /home/dcat/osdev/w2/proc/elf/elfloader.c
 /home/dcat/osdev/w2/dev/tty.c
 /home/dcat/osdev/w2/dev/console.c
@@ -72,6 +75,7 @@ FILE(GLOB MyCSources
 /home/dcat/osdev/w2/fs/ext2/ext2.c
 /home/dcat/osdev/w2/fs/ext2/ext2_fs_node.c
 /home/dcat/osdev/w2/lib/include/malloc.h
+/home/dcat/osdev/w2/lib/include/umem.h
 /home/dcat/osdev/w2/lib/include/syscall.h
 /home/dcat/osdev/w2/lib/include/print.h
 /home/dcat/osdev/w2/lib/include/uexec.h
@@ -104,7 +108,9 @@ FILE(GLOB MyCSources
 /home/dcat/osdev/w2/ker/include/irqs.h
 /home/dcat/osdev/w2/ker/include/multiboot.h
 /home/dcat/osdev/w2/proc/include/schedule.h
+/home/dcat/osdev/w2/proc/include/proc_queue.h
 /home/dcat/osdev/w2/proc/include/signal.h
+/home/dcat/osdev/w2/proc/include/squeue.h
 /home/dcat/osdev/w2/proc/include/exec.h
 /home/dcat/osdev/w2/proc/include/wait.h
 /home/dcat/osdev/w2/proc/include/proc.h
@@ -113,6 +119,7 @@ FILE(GLOB MyCSources
 /home/dcat/osdev/w2/proc/swap/include/swap_disk.h
 /home/dcat/osdev/w2/proc/elf/include/elf.h
 /home/dcat/osdev/w2/proc/elf/include/elfloader.h
+/home/dcat/osdev/w2/proc/elf/include/dynlibs.h
 /home/dcat/osdev/w2/dev/include/console.h
 /home/dcat/osdev/w2/dev/include/keyboard.h
 /home/dcat/osdev/w2/dev/include/vga.h

@@ -21,16 +21,18 @@ typedef struct {
 } heap_array_list_t;
 
 
-extern void dump_al(heap_array_list_t *al);
+void dump_al(heap_array_list_t *al);
 
-extern heap_array_list_t *create_heap_array_list(uint32_t max_size);
+int create_heap_array_list(heap_array_list_t *src, uint32_t max_size);
 
-extern int insert_item_ordered(heap_array_list_t *al, header_info_t *info);
+int insert_item_ordered(heap_array_list_t *al, header_info_t *info);
 
-extern void remove_item(heap_array_list_t *al, int index);
+int destory_heap_array_list(heap_array_list_t *al);
 
-extern header_info_t *find_suit_hole(heap_array_list_t *al, uint32_t size, bool page_align, int *index);
+void remove_item(heap_array_list_t *al, int index);
 
-heap_array_list_t *clone_heap_array_list(heap_array_list_t *src);
+header_info_t *find_suit_hole(heap_array_list_t *al, uint32_t size, bool page_align, int *index);
+
+int clone_heap_array_list(heap_array_list_t *src, heap_array_list_t *target);
 
 #endif //W2_HEAP_ARRAY_LIST_H

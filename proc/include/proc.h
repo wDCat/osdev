@@ -10,6 +10,7 @@
 #include "page.h"
 #include "tss.h"
 #include "vfs.h"
+#include "proc_queue.h"
 
 #define MAX_PROC_COUNT 64
 /*"pop %eax;" \
@@ -34,8 +35,10 @@ __asm__ __volatile__ ( \
 __asm__ __volatile__("mov %0, %%ebp" : : "r" (ebp));\
 __asm__ __volatile__("mov %0, %%esp" : : "r" (esp));\
 }
-#define UM_KSTACK_START 0xCCFFE000
+#define UM_KSTACK_START 0x10000000
 #define UM_KSTACK_SIZE  0x1000
+#define UM_STACK_START 0xF000000
+#define UM_STACK_SIZE  0x4000
 #define get_proc_status(pcb) ((pcb)->status)
 
 typedef enum proc_status {
@@ -78,17 +81,9 @@ typedef struct pcb_struct {
     struct pcb_struct *cpcb;
     //same group proc linked list
     struct pcb_struct *next_pcb;
+    struct dynlib_inctree *dynlibs;
     file_handle_t fh[MAX_FILE_HANDLES];
 } pcb_t;
-typedef struct proc_queue_entry {
-    pcb_t *pcb;
-    struct proc_queue_entry *next;
-} proc_queue_entry_t;
-typedef struct {
-    uint32_t count;
-    struct proc_queue_entry *first;
-} proc_queue_t;
-extern proc_queue_t *proc_avali_queue, *proc_ready_queue, *proc_wait_queue;
 
 pid_t getpid();
 
@@ -110,6 +105,8 @@ void set_proc_status(pcb_t *pcb, proc_status_t new_status);
 
 void setpid(pid_t pid);
 
-void create_user_heap(pcb_t *pcb);
+int destory_user_heap(pcb_t *pcb);
+
+int create_user_heap(pcb_t *pcb, uint32_t start, uint32_t size);
 
 #endif //W2_PROC_H
