@@ -24,5 +24,7 @@ uint32_t squeue_get(squeue_t *sq, int index);
 
 int squeue_remove(squeue_t *sq, int index);
 
+bool squeue_isempty(squeue_t *sq);
+
 #define SQUEUE_GET(sq, index, type) ((type)squeue_get(sq,index))
 #endif //W2_SQUEUE_H

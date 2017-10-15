@@ -19,6 +19,7 @@
 #include <tty.h>
 #include <swap.h>
 #include <print.h>
+#include <dynlibs.h>
 
 uint32_t init_esp;
 #ifndef _BUILD_TIME
@@ -56,6 +57,7 @@ void install_step1() {
     console_install();
     tty_install();
     swap_install();
+    dynlibs_install();
 }
 
 int kernel_init() {

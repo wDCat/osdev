@@ -102,9 +102,13 @@ pid_t find_free_pcb() {
 }
 
 
-void create_user_stack(uint32_t end_addr, uint32_t size, uint32_t *new_ebp, uint32_t *new_esp, page_directory_t *dir) {
+void create_user_stack(pcb_t *pcb, uint32_t end_addr, uint32_t size, uint32_t *new_ebp, uint32_t *new_esp,
+                       page_directory_t *dir) {
     for (uint32_t p = end_addr - size; p < end_addr; p += 0x1000) {
         alloc_frame(get_page(p, true, dir), false, true);
+        page_typeinfo_t *info = get_page_type(p, pcb->page_dir);
+        info->pid = pcb->pid;
+        info->free_on_proc_exit = true;
     }
     if (new_ebp)
         *new_ebp = end_addr - 0x10;
@@ -306,6 +310,9 @@ int create_user_heap(pcb_t *pcb, uint32_t start, uint32_t size) {
     pcb->heap_ready = true;
     for (uint32_t x = start; x <= start + size; x += PAGE_SIZE) {
         alloc_frame(get_page(x, true, pcb->page_dir), false, true);
+        page_typeinfo_t *info = get_page_type(x, pcb->page_dir);
+        info->pid = pcb->pid;
+        info->free_on_proc_exit = true;
     }
     create_heap(&pcb->heap, start, start + size, start + size);
     return 0;
@@ -356,7 +363,7 @@ pid_t fork(regs_t *r) {
     tss->esi = r->esi;
     tss->edi = r->edi;
     if (fpid == 1) {
-        create_user_stack(UM_STACK_START, UM_STACK_SIZE, &tss->ebp, &tss->esp, cpcb->page_dir);
+        create_user_stack(cpcb, UM_STACK_START, UM_STACK_SIZE, &tss->ebp, &tss->esp, cpcb->page_dir);
         //create_user_heap(cpcb);
         dprintf("new user stack:[%x][%x]", tss->ebp, tss->esp);
         char neko[256], neko2[256];

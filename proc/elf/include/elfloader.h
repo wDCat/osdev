@@ -28,11 +28,18 @@ typedef struct {
     elf_section_t *shdrs;
     uint32_t elf_end_addr;
     squeue_t dynlibs_need_queue;
+    elf_section_t *s_rel, *s_rela;
 } elf_digested_t;
 
 int elsp_init_edg(elf_digested_t *edg, pid_t pid, int8_t fd);
 
 uint32_t elsp_get_entry(elf_digested_t *edg);
+
+const char *elsp_get_string_by_offset(elf_digested_t *edg, uint32_t offset);
+
+elf_symbol_t *elsp_get_dynsym(elf_digested_t *edg, uint32_t id);
+
+const char *elsp_get_dynstring_by_offset(elf_digested_t *edg, uint32_t offset);
 
 int elsp_load_header(elf_digested_t *edg);
 

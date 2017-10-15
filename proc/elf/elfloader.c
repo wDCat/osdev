@@ -68,7 +68,7 @@ int elsp_load_strings(elf_digested_t *edg) {
         deprintf("strtab is not defined in dyn section");
         goto _err;
     }
-    //TODO;
+
     _err:
     return 1;
 
@@ -107,6 +107,13 @@ inline int elsp_rel_386_glob_dat(elf_digested_t *edg, elf_rel_tmp_t *rtmp, uint3
     if (sym == NULL)goto _err;
     const char *symname = elsp_get_dynstring_by_offset(edg, sym->st_name);
     dprintf("glob dat name:%s(%x)(%x)", symname, sym->st_name, symname);
+    uint32_t addr;
+    if (dynlibs_find_symbol(edg->pid, symname, &addr)) {
+        dprintf("symbol %s not found!", symname);
+        goto _err;
+    }
+    dprintf("update symbol %s to %x", symname, addr);
+    *ptr = addr;
     return 0;
     _err:
     return -1;
@@ -200,6 +207,9 @@ int elsp_load_section_data(elf_digested_t *edg, elf_section_t *shdr) {
         klseek(edg->pid, edg->fd, shdr->sh_offset, SEEK_SET);
         while (les > 0) {
             page_t *page = get_page(y, true, pcb->page_dir);
+            page_typeinfo_t *info = get_page_type(y, pcb->page_dir);
+            info->pid = pcb->pid;
+            info->free_on_proc_exit = true;
             uint32_t size = MIN(MIN(PAGE_SIZE, les), PAGE_SIZE - (y % PAGE_SIZE));
             uint32_t foffset = shdr->sh_offset + y - shdr->sh_addr;
 
@@ -272,9 +282,16 @@ int elsp_load_need_dynlibs(elf_digested_t *edg) {
         const char *libname = elsp_get_dynstring_by_offset(edg, i->objaddr);
         dprintf("dynlib need(%x):%s", i->objaddr,
                 libname);
-        dynlibs_load(edg->pid, libname);
+        if (dynlibs_try_to_load(edg->pid, libname))return -1;
         i = i->next;
     }
+    dprintf("now relocate symbols...");
+    if ((edg->s_rel && elsp_relocate(edg, edg->s_rel)) ||
+        (edg->s_rela && elsp_relocate(edg, edg->s_rela))) {
+        deprintf("exception happened when relocating code.");
+        return -1;
+    }
+    return 0;
 }
 
 int elsp_load_sections(elf_digested_t *edg) {
@@ -301,7 +318,6 @@ int elsp_load_sections(elf_digested_t *edg) {
         shdr = (elf_section_t *) ((uint32_t) shdr + edg->ehdr.e_shentsize);
     }
     shdr = edg->shdrs;
-    elf_section_t *s_rel = NULL, *s_rela = NULL;
     for (int x = 0; x < edg->ehdr.e_shnum; x++) {
         switch (shdr->sh_type) {
             case SHT_SYMTAB:
@@ -346,19 +362,21 @@ int elsp_load_sections(elf_digested_t *edg) {
                     dprintf("ignore strtab:%x", x);
                 break;
             case SHT_REL:
-                s_rel = shdr;
+                edg->s_rel = shdr;
                 break;
             case SHT_RELA:
-                s_rela = shdr;
+                edg->s_rela = shdr;
                 break;
 
         }
         shdr = (elf_section_t *) ((uint32_t) shdr + edg->ehdr.e_shentsize);
     }
-    if ((s_rel && elsp_relocate(edg, s_rel)) || (s_rela && elsp_relocate(edg, s_rela))) {
+    /*
+    if ((edg->s_rel && elsp_relocate(edg, edg->s_rel)) ||
+        (edg->s_rela && elsp_relocate(edg, edg->s_rela))) {
         deprintf("exception happened when relocating code.");
         goto _err;
-    }
+    }*/
     return 0;
     _err:
     return 1;

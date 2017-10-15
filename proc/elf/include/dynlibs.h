@@ -7,6 +7,7 @@
 
 #include <system.h>
 #include <proc_queue.h>
+#include "elfloader.h"
 
 #define MAX_LOADED_LIBS 64
 typedef struct {
@@ -28,8 +29,12 @@ typedef struct dynlib_inctree {
 
 void dynlibs_install();
 
-int dynlibs_load(pid_t pid, const char *path);
+int dynlibs_try_to_load(pid_t pid, const char *path);
+
+dynlib_t *dynlibs_do_load(pid_t pid, const char *path);
 
 int dynlibs_add_to_tree(pid_t pid, dynlib_inctree_t *parent, dynlib_t *lib);
+
+int dynlibs_find_symbol(pid_t *pid, const char *name, uint32_t *out);
 
 #endif //W2_DYNLIBS_H

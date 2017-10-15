@@ -5,8 +5,8 @@
 #ifndef W2_PAGE_H
 #define W2_PAGE_H
 
-#include "../../ker/include/system.h"
-#include "intdef.h"
+#include "system.h"
+#include "uproc.h"
 
 #define PAGE_SIZE (0x1000)
 typedef struct {
@@ -18,8 +18,13 @@ typedef struct {
     uint32_t unused     : 7;   // Amalgamation of unused and reserved bits
     uint32_t frame      : 20;  // Frame address (shifted right 12 bits)
 } page_t;
+typedef struct {
+    bool free_on_proc_exit;
+    pid_t pid;
+} page_typeinfo_t;
 typedef struct page_table_struct {
     page_t pages[1024];
+    page_typeinfo_t typeinfo[1024];
 }__attribute__((packed)) page_table_t;
 typedef struct page_directory_struct {
     page_table_t *tables[1024];
@@ -66,6 +71,10 @@ void paging_install();
 void switch_page_directory(page_directory_t *dir);
 
 page_t *get_page(uint32_t addr, int make, page_directory_t *dir);
+
+//int set_page_type(uint32_t addr, page_typeinfo_t *type, page_directory_t *dir);
+
+page_typeinfo_t *get_page_type(uint32_t addr, page_directory_t *dir);
 
 void page_fault_handler(regs_t *r);
 

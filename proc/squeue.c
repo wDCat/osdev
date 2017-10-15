@@ -5,6 +5,7 @@
 #include <system.h>
 #include <str.h>
 #include <kmalloc.h>
+#include <squeue.h>
 #include "squeue.h"
 
 int squeue_init(squeue_t *sq) {
@@ -39,6 +40,10 @@ int squeue_insert(squeue_t *ns, uint32_t objaddr) {
         PANIC("Unknown Exception");
     }
     return 0;
+}
+
+bool squeue_isempty(squeue_t *sq) {
+    return sq->count == 0;
 }
 
 uint32_t squeue_get(squeue_t *sq, int index) {

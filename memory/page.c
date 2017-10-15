@@ -205,6 +205,25 @@ page_t *get_page(uint32_t addr, int make, page_directory_t *dir) {
     }
 }
 
+int set_page_type(uint32_t addr, page_typeinfo_t *type, page_directory_t *dir) {
+    uint32_t frame_no = addr / PAGE_SIZE;
+    uint32_t table_idx = frame_no / 1024;
+    if (dir->tables[table_idx]) {
+        memcpy(&dir->tables[table_idx]->typeinfo[frame_no % 1024], type, sizeof(page_typeinfo_t));
+        return 0;
+    }
+    return -1;
+}
+
+page_typeinfo_t *get_page_type(uint32_t addr, page_directory_t *dir) {
+    uint32_t frame_no = addr / PAGE_SIZE;
+    uint32_t table_idx = frame_no / 1024;
+    if (dir->tables[table_idx])
+        return &(dir->tables[table_idx]->typeinfo[frame_no % 1024]);
+
+    return NULL;
+}
+
 uint32_t get_physical_address(uint32_t va) {
     page_t *page = get_page(va, false, current_dir);
     if (page == NULL) {
@@ -337,6 +356,7 @@ bool is_kernel_space(page_directory_t *dir, uint32_t addr) {
     uint32_t table_idx = addr / 0x1000 / 1024;
     return dir->tables[table_idx] == kernel_dir->tables[table_idx];
 }
+
 
 int free_page_directory(page_directory_t *src) {
     int count = 0;

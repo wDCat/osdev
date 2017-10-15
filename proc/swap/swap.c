@@ -97,23 +97,17 @@ int swap_in(pcb_t *pcb, spage_info_t *info) {
     dprintf("swap in page %x", info->addr);
     switch (info->type) {
         case SPAGE_TYPE_PLOAD: {
-            TODO;
-            /*
             uint32_t pageno = info->addr - info->addr % 0x1000;
-            dprintf("offset:%x inoff:%x size:%x write to:%x", info->offset, info->in_offset, info->size,
-                    info->addr + info->in_offset);
+            dprintf("offset:%x write to:%x", info->offset, info->addr);
             page_t *page = get_page(pageno, true, pcb->page_dir);
             ASSERT(page);
             alloc_frame(page, false, true);
-            uint8_t *ptr = (uint8_t *) (info->addr + info->in_offset);
-            int32_t rsize = kread(pcb->pid, info->fd, info->offset, info->size, ptr);
-
-            if ((uint32_t) rsize != info->size) {
-                deprintf("fail to swap in page.I/O error.expect:%x ret:%x", info->size, rsize);
-                send_sig(pcb, SIGABRT);
+            klseek(pcb->pid, info->fd, info->offset, SEEK_SET);
+            if (kread(pcb->pid, info->fd, PAGE_SIZE, info->addr) != PAGE_SIZE) {
+                deprintf("fail to swap in page.I/O error.");
                 return 1;
             }
-            return 0;*/
+            return 0;
         }
             break;
         case SPAGE_TYPE_SOUT: {
@@ -154,9 +148,7 @@ int swap_handle_page_fault(regs_t *r) {
             if (pcb->spages[x].type != SPAGE_TYPE_UNUSED) {
                 y++;
                 if (pageno == pcb->spages[x].addr) {
-                    if (swap_in(pcb, &pcb->spages[x])) {
-                        PANIC("error.")
-                    }
+                    if (swap_in(pcb, &pcb->spages[x]))return 1;
                     found = true;
                     dprintf("handler done.");
                 }
