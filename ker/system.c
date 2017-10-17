@@ -40,3 +40,15 @@ inline void dprint_(const char *str) {
     for (int x = 0; str[x] != '\0' && x < 0xFF; x++)
         serial_write(COM1, str[x]);
 }
+
+inline int get_interrupt_status() {
+    extern bool _get_interrupt_status();
+    return _get_interrupt_status();
+}
+
+inline void set_interrupt_status(int status) {
+    if (status == 0)
+            cli();
+    else
+            sti();
+}

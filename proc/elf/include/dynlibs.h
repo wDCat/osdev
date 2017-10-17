@@ -19,6 +19,7 @@ typedef struct {
     char *path;
     elf_digested_t edg;
     dynlib_frame_t *frames;
+    uint32_t frames_count;
     proc_queue_t *used_proc;
 } dynlib_t;
 typedef struct dynlib_inctree {

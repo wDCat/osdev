@@ -39,6 +39,7 @@ FILE(GLOB MyCSources
 /home/dcat/osdev/w2/asm/boot.s
 /home/dcat/osdev/w2/asm/isrs.s
 /home/dcat/osdev/w2/asm/syscall.s
+/home/dcat/osdev/w2/asm/sys.s
 /home/dcat/osdev/w2/asm/irqs.s
 /home/dcat/osdev/w2/ker/idt.c
 /home/dcat/osdev/w2/ker/isrs.c

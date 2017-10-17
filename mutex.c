@@ -8,47 +8,54 @@
 #include <timer.h>
 #include <mutex.h>
 #include <schedule.h>
+#include <signal.h>
 #include "mutex.h"
 
 void mutex_init(mutex_lock_t *m) {
     m->mutex = 1;
     m->holdpid = 0;
+    memset(&m->wait_queue, 0, sizeof(proc_queue_t));
 }
 
 //FIXME some bug...
 void mutex_lock(mutex_lock_t *m) {
-    bool dbgmsg_mark = false;
+    int ints;
+    pcb_t *pcb = getpcb(getpid());
+    ASSERT(pcb);
+    scli(&ints);
+    if (m->holdpid == getpid())return;
     uint8_t al;
-    lock:
     __asm__ __volatile__(""
             "movb $0,%%al;"
             "xchgb %%al,%0;"
             "movb %%al,%1;"::"m"(m->mutex), "m"(al), "ax"(0));
     if (al == 1) {
-        //dprintf("proc %x hold lck:%x", getpid(), m);
+        m->holdpid = getpid();
+        dprintf("proc %x get lock:%x", pcb->pid, m);
+        srestorei(&ints);
         return;
     } else {
         //suspend it
-        if (!dbgmsg_mark) {
-            dbgmsg_mark = true;
-            dprintf("proc %x busy wait:%x %x", getpid(), m, dbgmsg_mark);
-        }
-        if (m->holdpid != 0)
-            goto lock;
-        set_proc_status(getpcb(getpid()), STATUS_WAIT);
-        m->holdpid = getpid();
+        dprintf("proc %x wait lock:%x", getpid(), m);
+        set_proc_status(pcb, STATUS_WAIT);
+        CHK(proc_queue_insert(&m->wait_queue, pcb), "");
+        srestorei(&ints);
         do_schedule(NULL);
     }
+    _err:
+    srestorei(&ints);
+    PANIC("exception happened.");
 }
 
 void mutex_unlock(mutex_lock_t *m) {
-    //dprintf("proc %x release lck:%x", getpid(), m);
+    int ints;
+    scli(&ints);
+    dprintf("proc %x release lck:%x", getpid(), m);
     __asm__ __volatile__(""
             "movb $1,%%al;"
             "xchgb %%al,%0;"::"m"(m->mutex), "ax"(0));
-    if (m->holdpid != 0) {
-        set_proc_status(getpcb(getpid()), STATUS_READY);
-        m->holdpid = 0;
-        do_schedule(NULL);
-    }
+    proc_queue_wakeupall(&m->wait_queue, true);
+    m->holdpid = 0;
+    srestorei(&ints);
+    //do_schedule(NULL);
 }

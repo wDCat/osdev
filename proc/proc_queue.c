@@ -6,6 +6,7 @@
 #include <kmalloc.h>
 #include <str.h>
 #include <dynlibs.h>
+#include <proc_queue.h>
 #include "proc_queue.h"
 
 //default proc queues
@@ -45,6 +46,27 @@ int proc_queue_insert(proc_queue_t *ns, pcb_t *pcb) {
     return 0;
 }
 
+int proc_queue_wakeupall(proc_queue_t *ns, bool clear_queue) {
+    if (ns->first != NULL) {
+        proc_queue_entry_t *e = ns->first;
+        while (e != NULL) {
+            proc_queue_entry_t *cur = e;
+            if (get_proc_status(cur->pcb) == STATUS_WAIT) {
+                dprintf("wake up %x", cur->pcb->pid);
+                set_proc_status(cur->pcb, STATUS_READY);
+            }
+            e = cur->next;
+            if (clear_queue)
+                kfree(cur);
+        }
+    }
+    if (clear_queue) {
+        ns->first = 0;
+        ns->count = 0;
+    }
+    return 0;
+}
+
 pcb_t *proc_queue_next(proc_queue_t *ns) {
     ASSERT(ns);
     return ns->first->pcb;
@@ -60,8 +82,8 @@ int proc_queue_remove(proc_queue_t *old, pcb_t *pcb) {
         kfree(old->first);
         old->first = old->first->next;
         removed = true;
-    } else
-        while (e && sc--)
+    } else {
+        while (e && sc--) {
             if (e->next->pcb == pcb) {
                 proc_queue_entry_t *oe = e->next;
                 e->next = e->next->next;
@@ -70,6 +92,8 @@ int proc_queue_remove(proc_queue_t *old, pcb_t *pcb) {
                 removed = true;
                 break;
             } else e = e->next;
+        }
+    }
     if (sc == 0) {
         PANIC("Unknown Exception");
     }

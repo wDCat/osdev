@@ -192,6 +192,72 @@ int elsp_relocate(elf_digested_t *edg, elf_section_t *shdr) {
     }
 }
 
+int elsp_load_segment_data(elf_digested_t *edg, elf_program_t *phdr) {
+    TODO;
+    ASSERT(edg && phdr);
+    pcb_t *pcb = getpcb(edg->pid);
+    if (phdr->p_vaddr) {
+        if (phdr->p_vaddr + phdr->p_filesz > edg->elf_end_addr) {
+            edg->elf_end_addr = phdr->p_vaddr + phdr->p_filesz;
+        }
+        dprintf("load segment to %x global_offset:%x", phdr->p_filesz,
+                edg->global_offset);
+        uint32_t les = phdr->p_filesz;
+        uint32_t y = phdr->p_vaddr;
+        klseek(edg->pid, edg->fd, phdr->p_offset, SEEK_SET);
+        while (les > 0) {
+            page_t *page = get_page(y, true, pcb->page_dir);
+            page_typeinfo_t *info = get_page_type(y, pcb->page_dir);
+            info->pid = pcb->pid;
+            info->free_on_proc_exit = true;
+            uint32_t size = MIN(MIN(PAGE_SIZE, les), PAGE_SIZE - (y % PAGE_SIZE));
+            uint32_t foffset = phdr->p_offset + y - phdr->p_vaddr;
+            if (size == PAGE_SIZE) {
+                swap_insert_pload_page(pcb, y, edg->fd, foffset);
+            } else {
+                alloc_frame(page, false, true);
+                klseek(edg->pid, edg->fd, foffset, SEEK_SET);
+                if (kread(edg->pid, edg->fd, size, y) != size) {
+                    deprintf("cannot read section:%x.I/O error.", y);
+                    goto _err;
+                }
+            }
+            y += size;
+            les -= size;
+        }
+    }
+    return 0;
+    _err:
+    return -1;
+}
+
+int elsp_load_segments(elf_digested_t *edg) {
+    elf_header_t *ehdr = &edg->ehdr;
+    uint32_t psize = ehdr->e_phentsize * ehdr->e_phnum;
+    elf_program_t *phdr = (elf_program_t *) kmalloc(psize);
+    edg->phdrs = phdr;
+    klseek(edg->pid, edg->fd, ehdr->e_phoff, SEEK_SET);
+    if (kread(edg->pid, edg->fd, psize, phdr) != psize) {
+        deprintf("cannot read program headers.");
+        goto _err;
+    }
+    for (int x = 0; x < ehdr->e_phnum; x++) {
+        dprintf("Segment %x vaddr:%x off:%x size:%x", x, phdr->p_vaddr,
+                phdr->p_offset,
+                phdr->p_filesz);
+        if (phdr->p_vaddr != 0) {
+            phdr->p_vaddr = (uint32_t) phdr->p_vaddr + edg->global_offset;
+            phdr->p_paddr = phdr->p_vaddr;
+            CHK(elsp_load_segment_data(edg, phdr), "fail to load segment %x", x);
+        }
+
+        phdr = (elf_program_t *) ((uint32_t) phdr + ehdr->e_phentsize);
+    }
+    return 0;
+    _err:
+    return 1;
+}
+
 int elsp_load_section_data(elf_digested_t *edg, elf_section_t *shdr) {
     ASSERT(edg && shdr);
     pcb_t *pcb = getpcb(edg->pid);
@@ -410,6 +476,26 @@ int elsp_init_edg(elf_digested_t *edg, pid_t pid, int8_t fd) {
     edg->pid = pid;
     edg->fd = fd;
     squeue_init(&edg->dynlibs_need_queue);
+}
+
+int elsp_free_edg(elf_digested_t *edg) {
+    if (edg->shdrs) {
+        kfree(edg->shdrs);
+        edg->shdrs = NULL;
+    }
+    if (edg->phdrs) {
+        kfree(edg->phdrs);
+        edg->phdrs = NULL;
+    }
+    if (edg->symbols) {
+        kfree(edg->symbols);
+        edg->symbols = NULL;
+    }
+    if (edg->strings) {
+        kfree(edg->strings);
+        edg->strings = NULL;
+    }
+    return 0;
 }
 
 uint32_t elsp_get_entry(elf_digested_t *edg) {

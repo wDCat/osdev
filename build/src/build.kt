@@ -106,6 +106,7 @@ class BuildThread(val id: Int) : Runnable {
 }
 
 fun main(args: Array<String>) {
+    val slient = true
     val dirStack = Stack<File>()
     val includeDir = Stack<String>()
     dirStack.push(File(ROOT))
@@ -149,16 +150,22 @@ fun main(args: Array<String>) {
     mfout.write("\tmkdir  ${LOG_OUTPUT}||echo \"\"\n")
     mfout.write("\trm -rf ${LOG_OUTPUT}/*\n")
     cFiles.forEach {
+        val prog=((count.toFloat() / fileCount) * 100).toInt()
         count++
         val outputName = prettyOutputName(it)
-        mfout.write("\t@echo \"[ ${((count.toFloat() / fileCount) * 100).toInt()}% ] \\033[32m Building ${it}\\033[0m\"\n")
-        mfout.write("\tgcc ${C_FLAGS} ${C_INCLUDE} -o ${O_OUTPUT}/${outputName} ${it} 2>&1 | tee ${LOG_OUTPUT}/${outputName}.log\n")
-
+        mfout.write("\t@echo \"[ $prog% ] \\033[32m Building ${it}\\033[0m\"\n")
+        if (slient)
+            mfout.write("\t@gcc ${C_FLAGS} ${C_INCLUDE} -o ${O_OUTPUT}/${outputName} ${it} 1>${LOG_OUTPUT}/${outputName}.log 2>&1 || echo ''\n")
+        else
+            mfout.write("\tgcc ${C_FLAGS} ${C_INCLUDE} -o ${O_OUTPUT}/${outputName} ${it} 2>&1 | tee ${LOG_OUTPUT}/${outputName}.log\n")
         mfout.write("\t@if [ -e \"${O_OUTPUT}/${outputName}\" ];" +
                 "then " +
-                "echo \"\\033[32m Build Done: ${it}\\033[0m\";" +
+                "echo \"[ $prog% ] \\033[32m Build Done: ${it}\\033[0m\";" +
                 "else " +
-                "echo \"\\033[31m Build Failed: ${it}\\033[0m\" && exit 1;" +
+                "echo \"\\033[31m Build Output: \\033[0m\" &&" +
+                " cat ${LOG_OUTPUT}/${outputName}.log &&" +
+                " echo \"\\033[31m Build Failed: ${it}\\033[0m\" &&" +
+                " exit 1;" +
                 "fi\n")
         cmout.write("${it}\n")
     }

@@ -55,6 +55,7 @@ __asm__ __volatile__("mov %%cr0, %0":"=r"(cr0));\
 cr0 |= 0x80000000;\
 __asm__ __volatile__("mov %0, %%cr0"::"r"(cr0));\
 }
+#define get_frame(page) ((page)->frame)
 
 void set_frame_status(uint32_t frame_addr, uint32_t status);
 

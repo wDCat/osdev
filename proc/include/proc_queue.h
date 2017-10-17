@@ -25,4 +25,6 @@ struct pcb_struct *proc_queue_next(proc_queue_t *ns);
 
 int proc_queue_remove(proc_queue_t *old, struct pcb_struct *pcb);
 
+int proc_queue_wakeupall(proc_queue_t *ns, bool clear_queue);
+
 #endif //W2_PROC_QUEUE_H

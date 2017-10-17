@@ -59,6 +59,13 @@ void k_delay(uint32_t time);
 
 uint32_t get_eip();
 
+int get_interrupt_status();
+
+void set_interrupt_status(int status);
+
+#define ssti(iflag) ({*(iflag)=get_interrupt_status();sti();})
+#define scli(iflag) ({*(iflag)=get_interrupt_status();cli();})
+#define srestorei(iflag) ({set_interrupt_status(*(iflag));})
 
 //debug print
 void dprint_(const char *str);
@@ -82,4 +89,5 @@ strformatw(serial_write, COM1,"[ERROR][%s] " str "\n",__func__,##args);\
 deprintf("CHK::" #fun " Failed:" msg,##args);\
 goto _err;\
 }
+
 #endif

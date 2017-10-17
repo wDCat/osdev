@@ -69,7 +69,8 @@ int kexec(pid_t pid, const char *path, int argc, char *const argv[], char *const
     edg.global_offset = 0x8000000;
     CHK(elsp_load_header(&edg), "");
     CHK(elsp_load_sections(&edg), "");
-    elsp_load_need_dynlibs(&edg);
+    CHK(elsp_load_need_dynlibs(&edg), "");
+    CHK(elsp_free_edg(&edg), "");
     dprintf("elf end addr:%x", edg.elf_end_addr);
     uint32_t heap_start = edg.elf_end_addr + (PAGE_SIZE - (edg.elf_end_addr % PAGE_SIZE)) + PAGE_SIZE * 2;
     CHK(create_user_heap(pcb, heap_start, 0x4000), "");
