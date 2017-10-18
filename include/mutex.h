@@ -5,6 +5,7 @@
 #ifndef W2_MUTEX_H
 #define W2_MUTEX_H
 
+#include <proc_queue.h>
 #include "intdef.h"
 
 typedef struct {

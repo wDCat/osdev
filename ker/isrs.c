@@ -47,6 +47,7 @@ void dump_page_dir(pid_t *pid) {
 
 void fault_handler(struct regs *r) {
     cli();
+    save_cur_proc_reg(r);
     bool umoude_con = false, no_kill = false;
     //TODO:move kernel stack before disable paging:(
     switch (r->int_no) {

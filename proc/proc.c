@@ -18,6 +18,7 @@ extern void _gdt_flush();
 
 extern void gdt_set_gate(int num, unsigned long base, unsigned long limit, unsigned char access, unsigned char gran);
 
+mutex_lock_t pcbs_lck;
 pid_t pid = 0;
 pid_t current_pid = 0;
 pcb_t processes[MAX_PROC_COUNT];
@@ -80,6 +81,7 @@ void create_idle_proc() {
 }
 
 void proc_install() {
+    mutex_init(&pcbs_lck);
     memset(processes, 0, sizeof(pcb_t) * MAX_PROC_COUNT);
     proc_avali_queue = (proc_queue_t *) kmalloc(sizeof(proc_queue_t));
     memset(proc_avali_queue, 0, sizeof(proc_queue_t));
@@ -114,6 +116,13 @@ void create_user_stack(pcb_t *pcb, uint32_t end_addr, uint32_t size, uint32_t *n
         *new_ebp = end_addr - 0x10;
     if (new_esp)
         *new_esp = end_addr - 0x10;
+}
+
+inline void save_cur_proc_reg(regs_t *r) {
+    if (getpid() >= 2) {
+        pcb_t *pcb = getpcb(getpid());
+        pcb->lastreg = r;
+    }
 }
 
 inline void save_proc_state(pcb_t *pcb, regs_t *r) {
@@ -226,31 +235,12 @@ inline void set_active_user_ldt(ldt_limit_entry_t *ldt_table, uint8_t ldt_table_
     gdt_set_gate(LDT_USER_PROC_ID, base, limit, 0x82, 0x00);
 }
 
-void switch_to_proc_soft(regs_t *r, pcb_t *pcb) {
-    TODO;
-}
-
-
-void switch_to_proc(pcb_t *pcb) {
-    ASSERT(pcb->present && (pcb->pid > 1 || pcb->pid == 0));
-    cli();
+void switch_to_proc_hard(pcb_t *pcb) {
     uint32_t old_pid = current_pid;
-    if (pcb->pid == current_pid) {
-        if (!pcb->rejmp) {
-            return;
-        }
-        dprintf("proc %x rejmp~", pcb->pid);
-    }
-
-    pcb->rejmp = false;
-    pcb_t *old_pcb = getpcb(getpid());
-    if (pcb->pid > MAX_PROC_COUNT) PANIC("Bad PID:%x pcb:%x", pcb->pid, pcb);
-    set_proc_status(pcb, STATUS_RUN);
-
     set_active_user_tss(&pcb->tss);
     //set_active_user_ldt(pcb->ldt_table, pcb->ldt_table_count);
     _gdt_flush();
-    dprintf("switch to task %x[PC:%x][ESP:%x]", pcb->pid, pcb->tss.eip, pcb->tss.esp);
+    dprintf("switch(hard) to task %x[PC:%x][ESP:%x]", pcb->pid, pcb->tss.eip, pcb->tss.esp);
     current_pid = pcb->pid;
     current_dir = pcb->page_dir;
     //k_delay(1);//cause bug...
@@ -262,6 +252,33 @@ void switch_to_proc(pcb_t *pcb) {
     __asm__ __volatile__("movw %%dx,%1;"
             "ljmp %0;"::"m"(*&lj.a), "m"(*&lj.b), "d"(TSS_USER_PROC_ID << 3));
     dprintf("welcome back.proc %x", old_pid);
+}
+
+void switch_to_proc_soft(pcb_t *pcb_arg) {
+    pcb_t *pcb = pcb_arg;
+    dprintf("switch(soft) to task %x lastreg:%x pd:%x", pcb->pid, pcb->lastreg, pcb->page_dir);
+    __asm__ __volatile__("mov %%eax, %%esp;"
+            "mov %%ebx, %%cr3;"
+            "iret;"::"a"(0x23333), "b"(pcb->page_dir->physical_addr));
+
+}
+
+void switch_to_proc(pcb_t *pcb) {
+    ASSERT(pcb->present && (pcb->pid > 1 || pcb->pid == 0));
+    cli();
+
+    if (pcb->pid == current_pid) {
+        if (!pcb->rejmp) {
+            return;
+        }
+        dprintf("proc %x rejmp~", pcb->pid);
+    }
+
+    pcb->rejmp = false;
+    pcb_t *old_pcb = getpcb(getpid());
+    if (pcb->pid > MAX_PROC_COUNT) PANIC("Bad PID:%x pcb:%x", pcb->pid, pcb);
+    set_proc_status(pcb, STATUS_RUN);
+    switch_to_proc_hard(pcb);
 }
 
 void create_ldt(pcb_t *pcb) {
@@ -332,7 +349,7 @@ int destory_user_heap(pcb_t *pcb) {
 
 pid_t fork(regs_t *r) {
     cli();
-    if (proc_count % 5 == 0) {
+    if (proc_count % 2 == 0) {
         clean_pcb_table();
     }
     pid_t fpid = getpid();
@@ -343,6 +360,7 @@ pid_t fork(regs_t *r) {
     dprintf("%x try to fork.child %x", fpid, cpid);
     pcb_t *fpcb = getpcb(fpid);
     pcb_t *cpcb = getpcb(cpid);
+    mutex_init(&cpcb->lock);
     proc_count++;
     cpcb->present = true;
     cpcb->pid = cpid;

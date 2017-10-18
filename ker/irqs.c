@@ -3,6 +3,7 @@
 //
 
 #include <io.h>
+#include <proc.h>
 #include "include/irqs.h"
 
 void irq_remap(void) {
@@ -50,7 +51,9 @@ void irq_handler(struct regs *r) {
 /* This is a blank function pointer */
     //putln("irq_handler called.")
     void (*handler)(struct regs *r);
-
+    cli();
+    save_cur_proc_reg(r);
+    sti();
     /* Find out if we have a custom handler to run for this
     *  IRQ, and then finally, run it */
     handler = irq_routines[r->int_no - 32];

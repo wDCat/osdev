@@ -1,6 +1,7 @@
 #ifndef __SYSTEM_H
 #define __SYSTEM_H
 
+#include "uproc.h"
 #include "screen.h"
 #include "bochs_debug.h"
 #include "intdef.h"
@@ -50,6 +51,7 @@ typedef struct regs {
     unsigned int eip, cs, eflags, useresp, ss;   /* pushed by the processor automatically */
 } regs_t;
 extern uint32_t init_esp;
+extern pid_t current_pid;
 
 /* MAIN.C */
 
@@ -71,10 +73,10 @@ void set_interrupt_status(int status);
 void dprint_(const char *str);
 
 #define dprintf(str, args...) ({\
-strformatw(serial_write, COM1,"[D][%s] " str "\n",__func__,##args);\
+strformatw(serial_write, COM1,"[D][%d][%s] " str "\n",current_pid,__func__,##args);\
 })
 #define dprintf_begin(str, args...)({\
-strformatw(serial_write, COM1,"[D][%s] " str ,__func__,##args);\
+strformatw(serial_write, COM1,"[D][%d][%s] " str ,current_pid,__func__,##args);\
 })
 #define dprintf_cont(str, args...)({\
 strformatw(serial_write, COM1,str,##args);\
@@ -83,7 +85,7 @@ strformatw(serial_write, COM1,str,##args);\
 strformatw(serial_write, COM1,"\n");\
 })
 #define deprintf(str, args...) ({\
-strformatw(serial_write, COM1,"[ERROR][%s] " str "\n",__func__,##args);\
+strformatw(serial_write, COM1,"[ERROR][%d][%s] " str "\n",current_pid,__func__,##args);\
 })
 #define CHK(fun, msg, args...) if(fun){\
 deprintf("CHK::" #fun " Failed:" msg,##args);\

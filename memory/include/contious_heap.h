@@ -5,6 +5,7 @@
 #ifndef W2_HEAP_H
 #define W2_HEAP_H
 
+#include <mutex.h>
 #include "../../ker/include/system.h"
 #include "heap_array_list.h"
 
@@ -23,6 +24,7 @@ typedef struct {
 } hole_footer_t;
 #define HOLE_FOOTER_SIZE sizeof(hole_footer_t)
 typedef struct {
+    mutex_lock_t lock;
     uint32_t start_addr;
     uint32_t end_addr;
     uint32_t max_addr;

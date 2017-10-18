@@ -29,6 +29,7 @@ int destory_heap_array_list(heap_array_list_t *al) {
 }
 
 int insert_item_ordered(heap_array_list_t *al, header_info_t *info) {
+    dprintf("insert %x %x %x", info->addr, info->used, info->size);
     ASSERT(al && info);
     bool inserted = false;
     int x = 0;
@@ -63,13 +64,10 @@ void remove_item(heap_array_list_t *al, int index) {
 }
 
 //寻找合适的ass hole
-header_info_t *find_suit_hole(heap_array_list_t *al, uint32_t size, bool page_align, int *index) {
+header_info_t *find_suit_hole(heap_array_list_t *al, uint32_t size, int *index) {
     ASSERT(al);
     for (int x = 0; x < al->size; x++) {
-        if (size < al->headers[x].size && !al->headers[x].used) {
-            if (page_align && ((0x1000 - al->headers[x].addr & 0xFFF) + size >= al->headers[x].size)) {
-                continue;
-            }
+        if (!al->headers[x].used && size + HOLE_HEADER_SIZE + HOLE_FOOTER_SIZE < al->headers[x].size) {
             *index = x;
             return &al->headers[x];
         }

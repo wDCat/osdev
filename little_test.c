@@ -39,19 +39,11 @@ int putTest(int a) {
 
 
 void dump_al(heap_array_list_t *al) {
-    putln_const("------------------------");
+    dprintf("------------------------");
     for (int x = 0; x < al->size; x++) {
-        puts_const("AL[");
-        putint(x);
-        puts_const("] st:");
-        puthex(al->headers[x].addr);
-        puts_const("  size:");
-        puthex(al->headers[x].size);
-        puts_const("  used:");
-        putint(al->headers[x].used);
-        putn();
+        dprintf("AL[%x] st:%x size:%x used:%x", x, al->headers[x].addr, al->headers[x].size, al->headers[x].used);
     }
-    putln_const("------------------------");
+    dprintf("------------------------");
 }
 
 

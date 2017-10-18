@@ -29,20 +29,20 @@ int free_proc_frames(pcb_t *pcb) {
                 page_table_t *pt = dir->tables[x];
                 bool is_empty = true;
                 for (int y = 0; y < 1024; y++) {
-                    if (pt->pages[x].frame) {
-                        if (pt->typeinfo[x].pid == pcb->pid && pt->typeinfo[x].free_on_proc_exit) {
-                            dprintf("freeing frame:%x", pt->pages[x].frame);
+                    if (pt->pages[y].frame) {
+                        if (pt->typeinfo[y].pid == pcb->pid && pt->typeinfo[y].free_on_proc_exit) {
+                            dprintf("freeing frame:%x", pt->pages[y].frame);
                             count++;
-                            free_frame(&pt->pages[x]);
+                            free_frame(&pt->pages[y]);
                         } else is_empty = false;
                     }
                 }
-                if (is_empty)
-                    kfree(pt);
+                kfree(pt);
             }
         }
     }
     dprintf("free %x page table(s).", count);
+    kfree(dir);
     return 0;
 }
 

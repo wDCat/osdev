@@ -27,16 +27,19 @@ int squeue_set(squeue_t *ns, int index, uint32_t objaddr) {
 
 int squeue_insert(squeue_t *ns, uint32_t objaddr) {
     ASSERT(ns);
+    dprintf("insert item %x to %x current cound:%x", objaddr, ns, ns->count);
     uint32_t sc = 256;
     if (ns->first == NULL) {
         squeue_entry_t *ne = (squeue_entry_t *) kmalloc(sizeof(squeue_entry_t));
         ns->first = ne;
+        ne->next = NULL;
         ne->objaddr = objaddr;
         ns->count++;
     } else {
         squeue_entry_t *e = ns->first;
         while (e && sc--) {
             if (e->objaddr == objaddr)break;
+            dprintf("iter next:%x", e->next);
             if (e->next == NULL) {
                 squeue_entry_t *ne = (squeue_entry_t *) kmalloc(sizeof(squeue_entry_t));
                 ne->objaddr = objaddr;
