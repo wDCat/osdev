@@ -10,7 +10,7 @@
 
 typedef struct {
     proc_queue_t wait_queue;
-    uint32_t holdpid;
+    int32_t holdpid;
     uint8_t mutex;
 } mutex_lock_t;
 

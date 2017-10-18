@@ -16,6 +16,7 @@
 #include <tty.h>
 #include <swap_disk.h>
 #include <swap.h>
+#include <print.h>
 #include "ker/include/gdt.h"
 #include "ker/include/idt.h"
 #include "ker/include/system.h"
@@ -107,20 +108,19 @@ void get_phy_test() {
 }
 
 
-void usermode_test() {
-    syscall_screen_print("Nekoya");
+void little_test2() {
+    printf("Nekoya");
     pid_t cpid = (pid_t) syscall_fork();
-    syscall_screen_print("fork done.\n");
+    printf("fork done.\n");
     char buff[256];
     switch (cpid) {
         case 0:
             strformat(buff, "[child] [%x]\n", syscall_getpid());
-            syscall_screen_print(buff);
+            printf(buff);
             for (int x = 0;; x++) {
                 strformat(buff, "[child] [count:%x]\n", x);
-                syscall_screen_print(buff);
-                //syscall_hello_switcher(2);
-                if (x == 3) {
+                printf(buff);
+                if (x == 9999) {
                     int cpid = syscall_fork();
                     if (cpid != 0)return;
                 }
@@ -129,15 +129,15 @@ void usermode_test() {
             break;
         default:
             strformat(buff, "[father] [%x]child:[%x]\n", syscall_getpid(), cpid);
-            syscall_screen_print(buff);
+            printf(buff);
             for (int x = 0;; x++) {
                 strformat(buff, "[father] [count:%x]\n", x);
-                syscall_screen_print(buff);
-                if (x == 3) {
+                printf(buff);
+                if (x == 9999) {
                     int cpid = syscall_fork();
                     if (cpid == 0) {
                         for (int x = 0; x < 100; x++) {
-                            syscall_screen_print("NEKONEKONE!!!");
+                            printf("NEKONEKONE!!!");
                         }
                         syscall_exit(1);
                     } else {

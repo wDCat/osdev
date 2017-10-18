@@ -20,8 +20,8 @@ void dump_regs(regs_t *r) {
     dprintf("-------------------------------------------");
     dprintf("[EAX:%x][EBX:%x][ECX:%x]", r->eax, r->ebx, r->ecx);
     dprintf("[EDX:%x][EBP:%x][ESP:%x]", r->edx, r->ebp, r->useresp);
-    dprintf("[CS:%x][DX:%x][ES:%x]", r->cs, r->ds, r->es, r->fs, r->gs);
-    dprintf("[FS:%x][GX:%x][EIP:%x]", r->fs, r->gs, r->eip);
+    dprintf("[CS:%x][DS:%x][ES:%x]", r->cs, r->ds, r->es);
+    dprintf("[FS:%x][GS:%x][EIP:%x]", r->fs, r->gs, r->eip);
 }
 
 void dump_page_dir(pid_t *pid) {
@@ -105,6 +105,11 @@ void fault_handler(struct regs *r) {
             dprintf("Proc %x cause NO.%x fault.Kill it.PC:%x", getpid(), r->int_no, r->eip);
             send_sig(getpcb(getpid()), SIGSEGV);
             if (getpid() == 1) PANIC("Abort!");
+            if (getpid() == 0) {
+                dprintf("restart idle proc...");
+                extern void create_idle_proc();
+                create_idle_proc();
+            }
             //handle signal~
             do_signal(r);
             do_schedule(NULL);

@@ -84,4 +84,6 @@ void isrs_install();
 
 void dump_page_dir(pid_t *pid);
 
+void dump_regs(regs_t *r);
+
 #endif //W2_ISRS_H

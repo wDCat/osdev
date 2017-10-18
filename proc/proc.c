@@ -53,16 +53,15 @@ void create_first_proc() {
 }
 
 void idle() {
-    dprintf("now idle.");
-    for (;;) {
-        extern void irq_remap();
-        irq_remap();
-        delay(5);
-    }
+    dprintf("Hello!I'm idle proc.");
+    for (;;)
+        delay(0xFFF);
 }
 
 void create_idle_proc() {
     pcb_t *pcb = getpcb(0);
+    if (pcb->reserved_page)
+        kfree(pcb->reserved_page);
     pcb->present = true;
     pcb->status = STATUS_READY;
     pcb->pid = 0;
@@ -119,15 +118,18 @@ void create_user_stack(pcb_t *pcb, uint32_t end_addr, uint32_t size, uint32_t *n
 }
 
 inline void save_cur_proc_reg(regs_t *r) {
+    return;
+    /*
     if (getpid() >= 2) {
         pcb_t *pcb = getpcb(getpid());
         pcb->lastreg = r;
-    }
+    }*/
 }
 
 inline void save_proc_state(pcb_t *pcb, regs_t *r) {
-    //cpu does it...
+    //no necessary to save it...
     return;
+    /*
     tss_entry_t *tss = &pcb->tss;
     tss->eax = r->eax;
     tss->ebx = r->ebx;
@@ -147,7 +149,7 @@ inline void save_proc_state(pcb_t *pcb, regs_t *r) {
     tss->ds = r->ds;
     tss->fs = r->fs;
     tss->gs = r->gs;
-    tss->eflags = r->eflags;
+    tss->eflags = r->eflags;*/
 }
 
 proc_queue_t *find_pqueue_by_status(proc_status_t status) {
@@ -163,12 +165,6 @@ proc_queue_t *find_pqueue_by_status(proc_status_t status) {
     }
 }
 
-/*
- * use macro instead~
-inline proc_status_t get_proc_status(pcb_t *pcb) {
-    return pcb->status;
-}
-*/
 
 void set_proc_status(pcb_t *pcb, proc_status_t new_status) {
     ASSERT(pcb > 0x100);//silly
@@ -241,26 +237,27 @@ void switch_to_proc_hard(pcb_t *pcb) {
     //set_active_user_ldt(pcb->ldt_table, pcb->ldt_table_count);
     _gdt_flush();
     dprintf("switch(hard) to task %x[PC:%x][ESP:%x]", pcb->pid, pcb->tss.eip, pcb->tss.esp);
-    current_pid = pcb->pid;
-    current_dir = pcb->page_dir;
     //k_delay(1);//cause bug...
     struct {
         uint32_t a;
         uint32_t b;
     } lj;
     lj.a = 0;
+    pcb->rejmp = false;
+    //after ljmp the cpu save the tss?
     __asm__ __volatile__("movw %%dx,%1;"
             "ljmp %0;"::"m"(*&lj.a), "m"(*&lj.b), "d"(TSS_USER_PROC_ID << 3));
+    //proc which call this function will be paused at here.. eip=ret;
+    ret:
     dprintf("welcome back.proc %x", old_pid);
 }
 
-void switch_to_proc_soft(pcb_t *pcb_arg) {
-    pcb_t *pcb = pcb_arg;
-    dprintf("switch(soft) to task %x lastreg:%x pd:%x", pcb->pid, pcb->lastreg, pcb->page_dir);
-    __asm__ __volatile__("mov %%eax, %%esp;"
-            "mov %%ebx, %%cr3;"
-            "iret;"::"a"(0x23333), "b"(pcb->page_dir->physical_addr));
-
+void switch_to_proc_soft(pcb_t *pcb) {
+    TODO;
+    dprintf("switch(soft) to task %x at %x lastreg:%x pd:%x", pcb->pid, pcb, pcb->lastreg, pcb->page_dir);
+    uint32_t a;
+    pcb->rejmp = false;
+    __asm__ __volatile__("int $0x61;":"=a" (a) : "b" (pcb));
 }
 
 void switch_to_proc(pcb_t *pcb) {
@@ -273,11 +270,11 @@ void switch_to_proc(pcb_t *pcb) {
         }
         dprintf("proc %x rejmp~", pcb->pid);
     }
-
-    pcb->rejmp = false;
     pcb_t *old_pcb = getpcb(getpid());
     if (pcb->pid > MAX_PROC_COUNT) PANIC("Bad PID:%x pcb:%x", pcb->pid, pcb);
     set_proc_status(pcb, STATUS_RUN);
+    current_pid = pcb->pid;
+    current_dir = pcb->page_dir;
     switch_to_proc_hard(pcb);
 }
 
@@ -357,9 +354,9 @@ pid_t fork(regs_t *r) {
     cpid = find_free_pcb();
     extern tss_entry_t tss_entry;
     if (cpid == 0) PANIC("Out of PCB///");
-    dprintf("%x try to fork.child %x", fpid, cpid);
     pcb_t *fpcb = getpcb(fpid);
     pcb_t *cpcb = getpcb(cpid);
+    dprintf("%x try to fork.child %x PC:%x", fpid, cpid, fpcb->tss.eip);
     mutex_init(&cpcb->lock);
     proc_count++;
     cpcb->present = true;
@@ -420,10 +417,11 @@ pid_t fork(regs_t *r) {
     strcpy(cpcb->dir, fpcb->dir);
     tss->eflags = r->eflags | 0x200;
     tss->ss0 = 0x10;
+    /*
     for (uint32_t s = 0; s <= UM_KSTACK_SIZE; s++) {
         alloc_frame(get_page(UM_KSTACK_START + s, true, cpcb->page_dir), false, true);
-    }
-    tss->esp0 = (uint32_t) (UM_KSTACK_START + UM_KSTACK_SIZE - 0x4);
+    }*/
+    tss->esp0 = (uint32_t) cpcb->reserved_page + 0xFF0;
     tss->ldt = 0;
     cpcb->fpcb = fpcb;
     if (fpcb->cpcb) {

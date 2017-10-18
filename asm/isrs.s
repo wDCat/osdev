@@ -16,14 +16,7 @@ _isr_common_stub:
     push %eax
     mov $fault_handler,%eax
     call %eax
-    pop %eax
-    pop %gs
-    pop %fs
-    pop %es
-    pop %ds
-    popa
-    add $0x8,%esp
-    iret
+    jmp _after_interrupt_common
 .macro isr_nec no
     .global _isr\no
     _isr\no:

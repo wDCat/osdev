@@ -9,7 +9,14 @@ _get_interrupt_status:
 __ret:
     mov $1,%eax
     ret
-.global _do_switch
-_do_switch:
-    push %esp
-    mov 8(%esp),%eax
+.global _after_interrupt_common
+
+_after_interrupt_common:
+     pop %eax
+     pop %gs
+     pop %fs
+     pop %es
+     pop %ds
+     popa
+     add $0x8,%esp
+     iret

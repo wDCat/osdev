@@ -15,14 +15,7 @@ _irq_common_stub:
     push %eax
     mov $irq_handler,%eax
     call %eax
-    pop %eax
-    pop %gs
-    pop %fs
-    pop %es
-    pop %ds
-    popa
-    add $0x8,%esp
-    iret
+    jmp _after_interrupt_common
 .macro _irq no
     .global _irq\no
     _irq\no:

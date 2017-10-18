@@ -7,6 +7,7 @@
 #include <proc.h>
 #include <keyboard.h>
 #include <signal.h>
+#include <isrs.h>
 #include "schedule.h"
 
 extern void irq_remap();
@@ -16,15 +17,14 @@ uint32_t sch_rr_last = 0;
 void do_schedule(regs_t *r) {
     extern bool proc_ready;
     if (!getpcb(2)->present)return;
-    if (getpid() != 0)
-        dprintf("schedule routine.cur_pid:%x eip:%x", getpid(), r->eip);
+
+    dprintf_begin("schedule routine.cur_pid:%x eip:%x", getpid(), r->eip);
     //FIXME some place damaged the irq remap......
     irq_remap();
     pcb_t *cur_pcb = getpcb(getpid());
     cur_pcb->time_slice++;
-    dprintf("cur pid:%x status:%x", cur_pcb->pid, cur_pcb->status);
     if (proc_wait_queue->count > 0) {
-        dprintf_begin("wait queue[%x]:", proc_wait_queue->count);
+        dprintf_cont("\n{wait queue[%x]:", proc_wait_queue->count);
         proc_queue_entry_t *e = proc_wait_queue->first;
         uint32_t c = proc_wait_queue->count;
         while (e && c--) {
@@ -35,7 +35,7 @@ void do_schedule(regs_t *r) {
                 set_proc_status(pcb, STATUS_READY);
             }
         }
-        dprintf_end();
+        dprintf_cont("}");
     }
     pcb_t *choosed = NULL;
     if (false) {
@@ -68,7 +68,7 @@ void do_schedule(regs_t *r) {
         //Min proc time slice schedule.
         uint32_t min_ts = (uint32_t) -1;
         if (proc_ready_queue->count > 0) {
-            dprintf_begin("ready queue[%x]:", proc_ready_queue->count);
+            dprintf_cont("\n{ready queue[%x]:", proc_ready_queue->count);
             proc_queue_entry_t *e = proc_ready_queue->first;
             uint32_t c = proc_ready_queue->count;
             while (e && c--) {
@@ -79,7 +79,7 @@ void do_schedule(regs_t *r) {
                     choosed = e->pcb;
                 }
             }
-            dprintf_end();
+            dprintf_cont("}");
         }
     }
     if (choosed == NULL) {
@@ -90,8 +90,9 @@ void do_schedule(regs_t *r) {
     if (choosed != NULL && choosed->pid != getpid()) {
         if (cur_pcb->status == STATUS_RUN)
             set_proc_status(cur_pcb, STATUS_READY);
-        dprintf("choosed proc:%x", choosed->pid);
+        dprintf("\nchoosed proc:%x", choosed->pid);
     }
+    dprintf_end();
     switch_to_proc(choosed);
 }
 
@@ -114,3 +115,22 @@ void proc_rejmp(pcb_t *pcb) {
     pcb->rejmp = true;
 }
 
+void choose_next_task(regs_t *r) {
+    TODO;
+    save_cur_proc_reg(r);
+    dprintf("pass in pcb:%x no:%d ebx:%x ecx:%x edx:%x", getpid(), r->eax, r->ebx, r->ecx, r->edx);
+    pcb_t *pcb = (pcb_t *) r->ebx;
+    dprintf("soft task switch to %x lastreg:%x", pcb->pid, pcb->lastreg);
+    //r->esp = pcb->lastreg->esp;
+    regs_t *nr = pcb->lastreg;
+    dump_regs(nr);
+    __asm__ __volatile__("mov %%eax,%%esp;"
+            "mov %%ebx,%%cr3;"
+            "pop %%gs;"
+            "pop %%fs;"
+            "pop %%es;"
+            "pop %%ds;"
+            "popa;"
+            "add $0x8,%%esp;"
+            "iret;"::"a"(pcb->lastreg), "b"(pcb->page_dir->physical_addr));
+}

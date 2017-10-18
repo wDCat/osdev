@@ -50,12 +50,14 @@ void mutex_lock(mutex_lock_t *m) {
 void mutex_unlock(mutex_lock_t *m) {
     int ints;
     scli(&ints);
+    if (m->holdpid != getpid())goto _ret;
     dprintf("proc %x release lck:%x", getpid(), m);
     __asm__ __volatile__(""
             "movb $1,%%al;"
             "xchgb %%al,%0;"::"m"(m->mutex), "ax"(0));
     proc_queue_wakeupall(&m->wait_queue, true);
-    m->holdpid = 0;
+    m->holdpid = -1;
+    _ret:
     srestorei(&ints);
     //do_schedule(NULL);
 }
