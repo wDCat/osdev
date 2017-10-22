@@ -37,10 +37,15 @@ uint32_t kmalloc_internal(uint32_t sz, bool align, uint32_t *phys, heap_t *heap)
     ASSERT(heap_placement_addr >= &end);
     if (heap) {
         void *ret = halloc(heap, sz, align);
-        if (!ret) PANIC("[kmalloc]Out of heap.");
+        if (!ret) {
+            dump_al(&heap->al);
+            PANIC("[kmalloc]Out of kernel heap.");
+        }
+
         if (phys != 0) {
             *phys = get_physical_address(ret);
         }
+        dprintf("kmalloc size:%x ret:%x", sz, ret);
         return ret;
     } else {
         if (align && (heap_placement_addr & 0xFFFFF000)) {

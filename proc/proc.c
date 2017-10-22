@@ -174,14 +174,14 @@ void set_proc_status(pcb_t *pcb, proc_status_t new_status) {
     proc_queue_t *old = find_pqueue_by_status(pcb->status);
     proc_queue_t *ns = find_pqueue_by_status(new_status);
     uint32_t sc = 256;
-    if (old) {
+    if (old && old->first != NULL) {
         proc_queue_entry_t *e = old->first;
         if (old->first->pcb == pcb) {
             old->count--;
             kfree(old->first);
             old->first = old->first->next;
         } else
-            while (e && sc--)
+            while (e->next && sc--)
                 if (e->next->pcb == pcb) {
                     proc_queue_entry_t *oe = e->next;
                     e->next = e->next->next;

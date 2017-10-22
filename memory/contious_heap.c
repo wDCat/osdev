@@ -7,6 +7,7 @@
 #include "include/page.h"
 #include <str.h>
 #include <contious_heap.h>
+#include <proc.h>
 #include "include/contious_heap.h"
 #include "include/kmalloc.h"
 
@@ -68,7 +69,8 @@ void *halloc(heap_t *heap, uint32_t size, bool page_align) {
     int hinfo_index;
     header_info_t *hinfo = find_suit_hole(&heap->al, size, &hinfo_index);
     if (!hinfo) {
-        PANIC("Out of heap.")
+        deprintf("Out of heap.");
+        return NULL;
     }
     ASSERT(!hinfo->used);
     //putf_const("hole[%x][%x][%x]", hinfo->addr, hinfo->size, hinfo->used);

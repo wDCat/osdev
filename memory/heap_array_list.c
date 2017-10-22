@@ -24,6 +24,7 @@ int create_heap_array_list(heap_array_list_t *al, uint32_t max_size) {
 }
 
 int destory_heap_array_list(heap_array_list_t *al) {
+    dprintf("freeing headers:%x", al->headers);
     kfree(al->headers);
     return 0;
 }

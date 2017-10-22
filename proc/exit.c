@@ -58,6 +58,7 @@ void do_exit(pcb_t *pcb, int32_t ret) {
             sys_close(x);
     }
     set_proc_status(pcb, STATUS_DIED);
+    destory_user_heap(pcb);
     free_proc_frames(pcb);
     uint32_t reserved_page = pcb->reserved_page;
     pcb->reserved_page = 0;

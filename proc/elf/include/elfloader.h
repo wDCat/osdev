@@ -21,12 +21,12 @@ typedef struct {
         uint32_t pltgot;
     } dyn_entry;
     char *dyn_strings;
-    char *strings;
+    char *strings;//free
     uint32_t strings_size;
-    elf_symbol_t *symbols;
+    elf_symbol_t *symbols;//free
     uint32_t symbols_size;
-    elf_section_t *shdrs;
-    elf_program_t *phdrs;
+    elf_section_t *shdrs;//free
+    elf_program_t *phdrs;//free
     uint32_t elf_end_addr;
     squeue_t dynlibs_need_queue;
     elf_section_t *s_rel, *s_rela;

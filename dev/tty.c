@@ -28,9 +28,6 @@ void tty_install() {
         memset(ttys[x].write, 0, sizeof(tty_queue_t));
         ttys[x].kinput = (tty_queue_t *) kmalloc(sizeof(tty_queue_t));
         memset(ttys[x].kinput, 0, sizeof(tty_queue_t));
-        ttys[x].read->proc_wait_num = 0;
-        ttys[x].write->proc_wait_num = 0;
-        ttys[x].kinput->proc_wait_num = 0;
         mutex_init(&ttys[x].read->mutex);
         mutex_init(&ttys[x].write->mutex);
         mutex_init(&ttys[x].kinput->mutex);
@@ -93,20 +90,7 @@ void tty_empty_wait(tty_queue_t *queue, pid_t pid) {
     mutex_unlock(&queue->mutex);
     if (empty) {
         mutex_lock(&queue->mutex);
-        for (int x = queue->proc_wait_num, lmask = false; x <= TTY_MAX_WAIT_PROC; x++) {
-            if (x == TTY_MAX_WAIT_PROC) {
-                if (lmask) {
-                    deprintf("Out of tty wait queue!");
-                    return;
-                }
-                lmask = true;
-                x = 0;
-            }
-            if (queue->proc_wait[x] == 0) {
-                queue->proc_wait[x] = pid;
-                break;
-            }
-        }
+        proc_queue_insert(&queue->proc_wait, getpcb(pid));
         mutex_unlock(&queue->mutex);
         set_proc_status(getpcb(pid), STATUS_WAIT);
         do_schedule(NULL);
@@ -122,20 +106,7 @@ void tty_full_wait(tty_queue_t *queue, pid_t pid) {
         mutex_unlock(&queue->mutex);
         if (empty) {
             mutex_lock(&queue->mutex);
-            for (int x = queue->proc_wait_num, lmask = false; x <= TTY_MAX_WAIT_PROC; x++) {
-                if (x == TTY_MAX_WAIT_PROC) {
-                    if (lmask) {
-                        deprintf("Out of tty wait queue!");
-                        return;
-                    }
-                    lmask = true;
-                    x = 0;
-                }
-                if (queue->proc_wait[x] == 0) {
-                    queue->proc_wait[x] = pid;
-                    break;
-                }
-            }
+            proc_queue_insert(&queue->proc_wait, getpcb(pid));
             mutex_unlock(&queue->mutex);
             set_proc_status(getpcb(pid), STATUS_WAIT);
             do_schedule(NULL);
@@ -171,20 +142,10 @@ int32_t tty_write(tty_t *tty, pid_t pid, int32_t size, uchar_t *buff) {
 }
 
 pcb_t *tty_queue_next_pcb(tty_queue_t *target, bool remove) {
-    int x = target->proc_wait_num;
-    pid_t tpid = target->proc_wait[x];
-    if (tpid != 0 && remove) {
-        target->proc_wait[x] = 0;
-        if (get_proc_status(getpcb(tpid)) != STATUS_WAIT) {
-            deprintf("Proc %x already wake up....", tpid);
-        } else {
-            target->proc_wait_num++;
-            if (target->proc_wait_num > TTY_MAX_WAIT_PROC)
-                target->proc_wait_num = 0;
-
-        }
-    }
-    return tpid == 0 ? NULL : getpcb(tpid);
+    pcb_t *pcb = proc_queue_next(&target->proc_wait);
+    if (remove && pcb != NULL)
+        proc_queue_remove(&target->proc_wait, pcb);
+    return pcb;
 }
 
 int32_t tty_cook(tty_t *tty) {

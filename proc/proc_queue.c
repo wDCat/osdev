@@ -69,6 +69,7 @@ int proc_queue_wakeupall(proc_queue_t *ns, bool clear_queue) {
 
 pcb_t *proc_queue_next(proc_queue_t *ns) {
     ASSERT(ns);
+    if (ns->first == NULL)return NULL;
     return ns->first->pcb;
 }
 
@@ -77,13 +78,15 @@ int proc_queue_remove(proc_queue_t *old, pcb_t *pcb) {
     uint32_t sc = 256;
     bool removed = false;
     proc_queue_entry_t *e = old->first;
+    if (old->first == NULL)return 1;
     if (old->first->pcb == pcb) {
         old->count--;
+        proc_queue_entry_t *oe = old->first->next;
         kfree(old->first);
-        old->first = old->first->next;
+        old->first = oe;
         removed = true;
     } else {
-        while (e && sc--) {
+        while (e->next && sc--) {
             if (e->next->pcb == pcb) {
                 proc_queue_entry_t *oe = e->next;
                 e->next = e->next->next;

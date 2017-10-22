@@ -21,8 +21,7 @@ typedef struct {
     uint32_t head;
     uint32_t foot;
     mutex_lock_t mutex;
-    pid_t proc_wait[TTY_MAX_WAIT_PROC];
-    uint8_t proc_wait_num;
+    proc_queue_t proc_wait;
     uchar_t buff[TTY_BUFF_SIZE];
 } tty_queue_t;
 typedef struct tty_struct {
