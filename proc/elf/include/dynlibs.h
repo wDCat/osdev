@@ -36,6 +36,6 @@ dynlib_t *dynlibs_do_load(pid_t pid, const char *path);
 
 int dynlibs_add_to_tree(pid_t pid, dynlib_inctree_t *parent, dynlib_t *lib);
 
-int dynlibs_find_symbol(pid_t *pid, const char *name, uint32_t *out);
+int dynlibs_find_symbol(pid_t pid, const char *name, uint32_t *out);
 
 #endif //W2_DYNLIBS_H

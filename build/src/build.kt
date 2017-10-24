@@ -8,10 +8,12 @@ import java.util.*
 val ROOT = "/home/dcat/osdev/w2"
 val O_OUTPUT = "${ROOT}/OUTPUT"
 val LOG_OUTPUT = "${ROOT}/OUTPUT/LOG"
-val Makefile = "${ROOT}/build_all.makefile"
+val Makefile = "${ROOT}/build_kernel.makefile"
+val clibMakefile = "${ROOT}/build_lib.makefile"
 val CMakeList = "${ROOT}/CMakeLists.txt"
 var C_INCLUDE = ""
 val C_FLAGS = "-fno-stack-protector -m32 -std=c99 -Wall -O0 -O -fstrength-reduce -fomit-frame-pointer -D__DCAT__ -DKERNEL=1 -finline-functions -c -nostdinc -fno-builtin"
+val CLIB_C_FLAGS = "-I${ROOT}/lib/include -fPIC -fno-stack-protector -m32 -std=c99 -Wall -O -fomit-frame-pointer -finline-functions -nostdinc -fno-builtin -nostdlib"
 val NASM_FLAGS = "-f elf"
 val LD_FLAGS = "n -m elf_i386 -A elf32-i386 -nostdlib"
 val cFiles = Stack<String>()
@@ -144,13 +146,17 @@ fun main(args: Array<String>) {
     }
     cmout.write("FILE(GLOB MyCSources \n")
     val mfout = FileWriter(File(Makefile))
-    mfout.write("build_all:\n")
+    mfout.write("build_kernel:\n")
     mfout.write("\tmkdir  ${O_OUTPUT}||echo \"\"\n")
     mfout.write("\trm -rf ${O_OUTPUT}/*\n")
     mfout.write("\tmkdir  ${LOG_OUTPUT}||echo \"\"\n")
     mfout.write("\trm -rf ${LOG_OUTPUT}/*\n")
+    val clibmfout = FileWriter(File(clibMakefile))
+    clibmfout.write("build_lib:\n")
+    clibmfout.write("\t@echo \"[ %%% ] \\033[32m Building clib...\\033[0m\"\n")
+    clibmfout.write("\t@gcc -shared -o ${ROOT}/libdcat.so  ${CLIB_C_FLAGS} ")
     cFiles.forEach {
-        val prog=((count.toFloat() / fileCount) * 100).toInt()
+        val prog = ((count.toFloat() / fileCount) * 100).toInt()
         count++
         val outputName = prettyOutputName(it)
         mfout.write("\t@echo \"[ $prog% ] \\033[32m Building ${it}\\033[0m\"\n")
@@ -168,7 +174,20 @@ fun main(args: Array<String>) {
                 " exit 1;" +
                 "fi\n")
         cmout.write("${it}\n")
+        if ((it.startsWith("${ROOT}/lib/") || it.startsWith("${ROOT}lib/"))) {
+            clibmfout.write(it + " ")
+        }
     }
+    clibmfout.write("1>${LOG_OUTPUT}/clib.log 2>&1 || echo ''\n")
+    clibmfout.write("\t@if [ -e \"${ROOT}/libdcat.so\" ];" +
+            "then " +
+            "echo \"[ %%% ] \\033[32m Build Lib Done!\\033[0m\";" +
+            "else " +
+            "echo \"\\033[31m Build Output: \\033[0m\" &&" +
+            " cat ${LOG_OUTPUT}/clib.log &&" +
+            " echo \"\\033[31m Build Lib Failed!!\\033[0m\" &&" +
+            " exit 1;" +
+            "fi\n")
     hFiles.forEach {
         cmout.write("${it}\n")
     }
@@ -177,6 +196,8 @@ fun main(args: Array<String>) {
         val outputName = prettyOutputName(it)
         mfout.write("\tnasm ${NASM_FLAGS} -o ${O_OUTPUT}/${outputName} ${it}\n")
     }
+    clibmfout.flush()
+    clibmfout.close()
     mfout.flush()
     mfout.close()
 

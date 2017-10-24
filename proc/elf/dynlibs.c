@@ -24,7 +24,7 @@ void dynlibs_install() {
     mutex_init(&dynlibs_lock);
 }
 
-int dynlibs_find_symbol(pid_t *pid, const char *name, uint32_t *out) {
+int dynlibs_find_symbol(pid_t pid, const char *name, uint32_t *out) {
     dynlib_inctree_t *roottree = getpcb(pid)->dynlibs;
     squeue_t pre_iter;
     memset(&pre_iter, 0, sizeof(squeue_t));
@@ -255,6 +255,10 @@ int dynlibs_load_sections(dynlib_t *lib, elf_digested_t *edg) {
         }
         shdr = (elf_section_t *) ((uint32_t) shdr + edg->ehdr.e_shentsize);
     }
+    if (edg->s_rel)
+        CHK(elsp_relocate(edg, edg->s_rel), "");
+    if (edg->s_rela)
+        CHK(elsp_relocate(edg, edg->s_rela), "");
     //save frame info to dynlib_t
     uint32_t framec = (uint32_t) (squeue_count(&framesinfo) - 1);
     lib->frames = (dynlib_frame_t *) kmalloc(sizeof(dynlib_frame_t) * framec);

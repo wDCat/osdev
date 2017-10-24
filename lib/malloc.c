@@ -3,6 +3,3 @@
 //
 
 #include <intdef.h>
-#include <proc.h>
-#include <umalloc.h>
-

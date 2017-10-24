@@ -25,6 +25,27 @@ int squeue_set(squeue_t *ns, int index, uint32_t objaddr) {
     return 0;
 }
 
+int squeue_iter_begin(squeue_iter_t *iter, squeue_t *ns) {
+    ASSERT(iter && ns);
+    iter->queue = ns;
+    iter->current = ns->first;
+    return 0;
+}
+
+uint32_t squeue_iter_next(squeue_iter_t *iter) {
+    ASSERT(iter && iter->queue);
+    squeue_entry_t *entry = iter->current;
+    if (entry == NULL)return NULL;
+    iter->current = entry->next;
+    return entry->objaddr;
+}
+
+int squeue_iter_end(squeue_iter_t *iter) {
+    iter->queue = NULL;
+    iter->current = NULL;
+    return 0;
+}
+
 int squeue_insert(squeue_t *ns, uint32_t objaddr) {
     ASSERT(ns);
     dprintf("insert item %x to %x current cound:%x", objaddr, ns, ns->count);

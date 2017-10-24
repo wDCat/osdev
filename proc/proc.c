@@ -46,6 +46,7 @@ void create_first_proc() {
     init_pcb->pid = 1;
     init_pcb->page_dir = kernel_dir;
     strcpy(init_pcb->dir, "/");
+
     extern tss_entry_t tss_entry;
     memcpy(&init_pcb->tss, &tss_entry, sizeof(tss_entry_t));
     //init_pcb->tss = &tss_entry;
@@ -167,56 +168,24 @@ proc_queue_t *find_pqueue_by_status(proc_status_t status) {
 
 
 void set_proc_status(pcb_t *pcb, proc_status_t new_status) {
-    ASSERT(pcb > 0x100);//silly
-    cli();
+    if (pcb < 0x100) PANIC("so silly the cat!");
+    int ints;
+    scli(&ints);
     if (pcb->status == new_status || pcb->pid <= 1)return;
     dprintf("Proc %x status %x ==> %x", pcb->pid, pcb->status, new_status);
     proc_queue_t *old = find_pqueue_by_status(pcb->status);
     proc_queue_t *ns = find_pqueue_by_status(new_status);
-    uint32_t sc = 256;
-    if (old && old->first != NULL) {
-        proc_queue_entry_t *e = old->first;
-        if (old->first->pcb == pcb) {
-            old->count--;
-            kfree(old->first);
-            old->first = old->first->next;
-        } else
-            while (e->next && sc--)
-                if (e->next->pcb == pcb) {
-                    proc_queue_entry_t *oe = e->next;
-                    e->next = e->next->next;
-                    old->count--;
-                    kfree(oe);
-                    break;
-                } else e = e->next;
+    if (old) {
+        CHK(proc_queue_remove(old, pcb), "");
     }
     if (ns) {
-        if (ns->first == NULL) {
-            proc_queue_entry_t *ne = (proc_queue_entry_t *) kmalloc(sizeof(proc_queue_entry_t));
-            ne->pcb = pcb;
-            ne->next = NULL;
-            ns->first = ne;
-            ns->count++;
-            ASSERT(ns->count == 1);
-        } else {
-            proc_queue_entry_t *e = ns->first;
-            while (e && sc--) {
-                if (e->pcb == pcb)break;
-                if (e->next == NULL) {
-                    proc_queue_entry_t *ne = (proc_queue_entry_t *) kmalloc(sizeof(proc_queue_entry_t));
-                    ne->pcb = pcb;
-                    ne->next = NULL;
-                    e->next = ne;
-                    ns->count++;
-                    break;
-                }
-                e = e->next;
-            }
-        }
+        CHK(proc_queue_insert(ns, pcb), "");
     }
-    if (sc == 0) PANIC("Unknown Exception");
     pcb->status = new_status;
-    sti();
+    srestorei(&ints);
+    return;
+    _err:
+    PANIC("error happened when set proc status!");
 }
 
 inline void set_active_user_tss(tss_entry_t *tss) {
@@ -237,7 +206,6 @@ void switch_to_proc_hard(pcb_t *pcb) {
     //set_active_user_ldt(pcb->ldt_table, pcb->ldt_table_count);
     _gdt_flush();
     dprintf("switch(hard) to task %x[PC:%x][ESP:%x]", pcb->pid, pcb->tss.eip, pcb->tss.esp);
-    //k_delay(1);//cause bug...
     struct {
         uint32_t a;
         uint32_t b;
@@ -262,10 +230,11 @@ void switch_to_proc_soft(pcb_t *pcb) {
 
 void switch_to_proc(pcb_t *pcb) {
     ASSERT(pcb->present && (pcb->pid > 1 || pcb->pid == 0));
-    cli();
-
+    int ints;
+    scli(&ints);
     if (pcb->pid == current_pid) {
         if (!pcb->rejmp) {
+            ssti(&ints);
             return;
         }
         dprintf("proc %x rejmp~", pcb->pid);
@@ -333,20 +302,21 @@ int create_user_heap(pcb_t *pcb, uint32_t start, uint32_t size) {
 }
 
 int destory_user_heap(pcb_t *pcb) {
-    ASSERT(pcb->heap_ready);
-    pcb->heap_ready = false;
-    heap_t *heap = &pcb->heap;
-    for (uint32_t x = heap->start_addr; x <= heap->end_addr; x += PAGE_SIZE) {
-        dprintf("free frame:%x %x", x, get_page(x, false, pcb->page_dir)->frame);
-        free_frame(get_page(x, false, pcb->page_dir));
+    if (pcb->heap_ready) {
+        pcb->heap_ready = false;
+        heap_t *heap = &pcb->heap;
+        for (uint32_t x = heap->start_addr; x <= heap->end_addr; x += PAGE_SIZE) {
+            dprintf("free frame:%x %x", x, get_page(x, false, pcb->page_dir)->frame);
+            free_frame(get_page(x, false, pcb->page_dir));
+        }
+        destory_heap(&pcb->heap);
     }
-    destory_heap(&pcb->heap);
     return 0;
 }
 
 pid_t fork(regs_t *r) {
     cli();
-    if (proc_count % 2 == 0) {
+    if (proc_count % 10 == 0) {
         clean_pcb_table();
     }
     pid_t fpid = getpid();
@@ -381,6 +351,7 @@ pid_t fork(regs_t *r) {
         create_user_stack(cpcb, UM_STACK_START, UM_STACK_SIZE, &tss->ebp, &tss->esp, cpcb->page_dir);
         //create_user_heap(cpcb);
         dprintf("new user stack:[%x][%x]", tss->ebp, tss->esp);
+        strcpy(cpcb->dir, "/");
         char neko[256], neko2[256];
         strcpy(neko, "Hello");
         strcpy(neko2, "DCat");

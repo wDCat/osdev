@@ -54,6 +54,8 @@ int elsp_load_need_dynlibs(elf_digested_t *edg);
 
 int elsp_free_edg(elf_digested_t *edg);
 
+int elsp_relocate(elf_digested_t *edg, elf_section_t *shdr);
+
 bool elf_load(pid_t pid, int8_t fd, uint32_t *entry_point, uint32_t *elf_end);
 
 

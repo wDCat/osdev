@@ -73,6 +73,27 @@ pcb_t *proc_queue_next(proc_queue_t *ns) {
     return ns->first->pcb;
 }
 
+int proc_queue_iter_begin(proc_queue_iter_t *iter, proc_queue_t *ns) {
+    ASSERT(iter && ns);
+    iter->queue = ns;
+    iter->current = ns->first;
+    return 0;
+}
+
+pcb_t *proc_queue_iter_next(proc_queue_iter_t *iter) {
+    ASSERT(iter && iter->queue);
+    proc_queue_entry_t *entry = iter->current;
+    if (entry == NULL)return NULL;
+    iter->current = entry->next;
+    return entry->pcb;
+}
+
+int proc_queue_iter_end(proc_queue_iter_t *iter) {
+    iter->queue = NULL;
+    iter->current = NULL;
+    return 0;
+}
+
 int proc_queue_remove(proc_queue_t *old, pcb_t *pcb) {
     ASSERT(old && pcb);
     uint32_t sc = 256;

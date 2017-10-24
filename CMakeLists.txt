@@ -19,6 +19,7 @@ FILE(GLOB MyCSources
 /home/dcat/osdev/w2/main.c
 /home/dcat/osdev/w2/fs_node.c
 /home/dcat/osdev/w2/little_test.c
+/home/dcat/osdev/w2/lib/mem.c
 /home/dcat/osdev/w2/lib/uexec.c
 /home/dcat/osdev/w2/lib/env.c
 /home/dcat/osdev/w2/lib/start.c

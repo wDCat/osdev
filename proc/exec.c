@@ -10,6 +10,7 @@
 #include <umalloc.h>
 #include <elf.h>
 #include <kmalloc.h>
+#include <dynlibs.h>
 #include "exec.h"
 
 int kexec(pid_t pid, const char *path, int argc, char *const argv[], char *const envp[]) {
@@ -74,7 +75,15 @@ int kexec(pid_t pid, const char *path, int argc, char *const argv[], char *const
     dprintf("elf end addr:%x", edg.elf_end_addr);
     uint32_t heap_start = edg.elf_end_addr + (PAGE_SIZE - (edg.elf_end_addr % PAGE_SIZE)) + PAGE_SIZE * 2;
     CHK(create_user_heap(pcb, heap_start, 0x4000), "");
-    uint32_t eip = elsp_get_entry(&edg);
+    uint32_t sym_start;
+    uint32_t eip;
+    if (dynlibs_find_symbol(pcb->pid, "_start", &sym_start)) {
+        eip = elsp_get_entry(&edg);
+        dprintf("redirect eip to elf_entry:%x", eip);
+    } else {
+        dprintf("redirect eip to _start:%x", sym_start);
+        eip = sym_start;
+    }
     pcb->tss.eip = eip;
     uint32_t *esp = (uint32_t *) pcb->tss.esp;
     dprintf("elf load done.new PC:%x", eip);
