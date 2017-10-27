@@ -1,7 +1,7 @@
 include build_kernel.makefile
 include build_lib.makefile
 LD_FLAGS=  -n -m elf_i386 -A elf32-i386 -nostdlib
-LOOP_DEVICE_ID=6
+LOOP_DEVICE_ID=3
 pre:
 	sudo umount /home/dcat/osdev/bgrub/ || echo ""
 	sudo losetup /dev/loop$(LOOP_DEVICE_ID) ../bgrub.img

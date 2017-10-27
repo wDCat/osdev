@@ -85,6 +85,7 @@ bool squeue_isempty(squeue_t *sq) {
 
 
 uint32_t squeue_get(squeue_t *sq, int index) {
+    dprintf("squeue get:%x", index);
     ASSERT(sq && index >= 0);
     uint32_t sc = index;
     squeue_entry_t *e = sq->first;

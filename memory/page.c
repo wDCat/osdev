@@ -35,8 +35,7 @@ uint32_t get_frame_status(uint32_t frame_addr) {
     uint32_t frame_no = frame_addr / 0x1000;//4k=0x1000
     ASSERT(frame_status != NULL);
     if (frame_max_count <= frame_no) {
-        deprintf("Bad frame_no:%x", frame_no);
-        PANIC("");
+        PANIC("Bad frame_no:%x", frame_no);
     }
     return frame_status[frame_no];
 }
@@ -291,15 +290,19 @@ page_table_t *clone_page_table(page_table_t *src, uint32_t *phy_out, uint32_t nu
     dprintf("new table for %x:%x", debug_tno, target);
     for (int x = 0; x < 1024; x++) {
         if (src->pages[x].frame) {//Available
-            alloc_frame(&target->pages[x], false, true);
+            if (src->typeinfo[x].copy_on_fork) {
+                alloc_frame(&target->pages[x], false, true);
+                dprintf("copy[%x][%x]", num * 0x1000 * 0x1000 + x * 0x1000, target->pages[x].frame);
+                copy_frame_physical(src->pages[x].frame, target->pages[x].frame);
+            } else {
+                target->pages[x].frame = src->pages[x].frame;
+            }
             dprintf("page frame:%x --> %x", target->pages[x].frame, x * 0x1000 + debug_tno);
             if (src->pages[x].present)target->pages[x].present = true;
             if (src->pages[x].rw)target->pages[x].rw = true;
             if (src->pages[x].user)target->pages[x].user = true;
             if (src->pages[x].accessed)target->pages[x].accessed = true;
             if (src->pages[x].dirty)target->pages[x].dirty = true;
-            dprintf("copy[%x][%x]", num * 0x1000 * 0x1000 + x * 0x1000, target->pages[x].frame);
-            copy_frame_physical(src->pages[x].frame, target->pages[x].frame);
         }
     }
     page_t *page = get_page(target, false, kernel_dir);

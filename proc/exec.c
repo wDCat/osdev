@@ -14,7 +14,6 @@
 #include "exec.h"
 
 int kexec(pid_t pid, const char *path, int argc, char *const argv[], char *const envp[]) {
-    dprintf("%x try to exec %s", pid, path);
     pcb_t *pcb = getpcb(pid);
     page_directory_t *orig_pd = current_dir;
     int envc = 0;
@@ -22,6 +21,7 @@ int kexec(pid_t pid, const char *path, int argc, char *const argv[], char *const
         for (; envp[envc] != NULL; envc++);
         envc++;
     }
+    dprintf("%x try to exec %s argc:%x envc:%x", pid, path, argc, envc);
     char *targv[argc], *tenvp[envc];
     if (!pcb->present) {
         deprintf("process %x not exist.", pid);
@@ -62,10 +62,15 @@ int kexec(pid_t pid, const char *path, int argc, char *const argv[], char *const
     }
     if (pcb->heap_ready)
         CHK(destory_user_heap(pcb), "fail to release old heap..");
+
     if (pcb->edg) {
         CHK(elsp_free_edg(pcb->edg), "fail to release old edg");
         kfree(pcb->edg);
         pcb->edg = NULL;
+    }
+    if (pcb->dynlibs) {
+        dprintf("try to unload");
+        CHK(dynlibs_unload_all(pcb->pid), "fail to unload old dynlibs");;
     }
     elf_digested_t *edg = (elf_digested_t *) kmalloc(sizeof(elf_digested_t));
     memset(edg, 0, sizeof(elf_digested_t));
@@ -76,7 +81,7 @@ int kexec(pid_t pid, const char *path, int argc, char *const argv[], char *const
     CHK(elsp_load_header(edg), "");
     CHK(elsp_load_sections(edg), "");
     CHK(elsp_load_need_dynlibs(edg), "");
-    CHK(elsp_free_edg(edg), "");
+    //CHK(elsp_free_edg(edg), "");
     dprintf("elf end addr:%x", edg->elf_end_addr);
     uint32_t heap_start = edg->elf_end_addr + (PAGE_SIZE - (edg->elf_end_addr % PAGE_SIZE)) + PAGE_SIZE * 2;
     CHK(create_user_heap(pcb, heap_start, 0x4000), "");
@@ -113,9 +118,9 @@ int kexec(pid_t pid, const char *path, int argc, char *const argv[], char *const
     esp = ((uint32_t *) espptr) - 1;
     uint32_t __envp = NULL, __argvp = NULL;
     uint32_t __env_rs = 0;
-    if (envp && envp[0] != NULL) {
+    if (tenvp && tenvp[0] != NULL) {
         envc = 0;
-        for (; envp[envc] != NULL; envc++);
+        for (; tenvp[envc] != NULL; envc++);
         envc++;
         __env_rs = envc * 2 * sizeof(uint32_t);
         uint32_t *uenvp = umalloc(pid, __env_rs);

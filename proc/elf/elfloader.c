@@ -120,7 +120,8 @@ inline int elsp_rel_386_symtab(elf_digested_t *edg, elf_rel_tmp_t *rtmp, uint32_
             from = 1;
         }
     }
-    dprintf("update symbol %s(at %x) to %x (from:%x)", symname, ptr, addr, from);
+    dprintf("update symbol %s(at %x) to %x (from:%x)[bedg:%x]",
+            symname, ptr, addr, from, pcb->edg);
     *ptr = addr;
     return 0;
     _err:
@@ -151,9 +152,9 @@ int elsp_rel_do(elf_digested_t *edg, elf_rel_tmp_t *rtmp) {
     uint32_t origval = *ptr;
     switch (rtmp->r_type) {
         case R_386_RELATIVE:
-        case R_386_32:
             CHK(elsp_rel_386_add_offset(edg, rtmp, ptr), "");
             break;
+        case R_386_32:
         case R_386_GLOB_DAT:
         case R_386_JMP_SLOT:
             CHK(elsp_rel_386_symtab(edg, rtmp, ptr), "");
@@ -307,15 +308,15 @@ int elsp_load_section_data(elf_digested_t *edg, elf_section_t *shdr) {
             page_typeinfo_t *info = get_page_type(y, pcb->page_dir);
             info->pid = pcb->pid;
             info->free_on_proc_exit = true;
+            info->copy_on_fork = true;
             uint32_t size = MIN(MIN(PAGE_SIZE, les), PAGE_SIZE - (y % PAGE_SIZE));
             uint32_t foffset = shdr->sh_offset + y - shdr->sh_addr;
-
             if (shdr->sh_type == SHT_NOBITS) {
                 alloc_frame(page, false, true);
                 memset(y, 0, size);
                 //swap_insert_empty_page(pcb, pno + y);
             } else {
-                if (size == PAGE_SIZE) {
+                if (size == PAGE_SIZE && false) {//blocked for debug
                     swap_insert_pload_page(pcb, y, edg->fd, foffset);
                 } else {
                     alloc_frame(page, false, true);

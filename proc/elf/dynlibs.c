@@ -36,7 +36,7 @@ int dynlibs_find_symbol(pid_t pid, const char *name, uint32_t *out) {
         dynlib_inctree_t *tree = SQUEUE_GET(&pre_iter, 0, dynlib_inctree_t*);
         if (tree->next)squeue_insert(&pre_iter, (uint32_t) tree->next);
         if (tree->need)squeue_insert(&pre_iter, (uint32_t) tree->need);
-        dynlib_t *lib = tree->loadinfo->lib;
+        dynlib_t *lib = loaded_dynlibs[tree->loadinfo->no];
         elf_digested_t *edg = &lib->edg;
         ASSERT(lib);
         dprintf("searching symbol in %s", lib->path);
@@ -70,9 +70,10 @@ int dynlibs_try_to_write(pid_t pid, uint32_t addr) {
             ninfo->pid = pid;
             ninfo->free_on_proc_exit = true;
             ninfo->type = PT_DYNLIB_DIRTY;
+            ninfo->copy_on_fork = true;
             dprintf("copy on write(%x) %x --> %x", addr, orig_frame, page->frame);
             copy_frame_physical(orig_frame, page->frame);
-            return 0;
+            break;
         }
         case PT_DYNLIB_DIRTY:
             ret = 0;
@@ -115,8 +116,71 @@ int dynlibs_add_to_tree(pid_t pid, dynlib_inctree_t *parent, dynlib_load_t *load
     return 0;
 }
 
-int dynlibs_remove_from_tree(pid_t pid, dynlib_inctree_t *parent, dynlib_t *lib) {
-    dynlibs_add_to_tree(pid, NULL, lib);
+int dynlibs_remove_from_tree(pid_t pid, dynlib_inctree_t *parent, dynlib_load_t *loadinfo) {
+    pcb_t *pcb = getpcb(pid);
+    if (pcb->dynlibs == NULL) {
+        deprintf("try to remove a lib from tree but this tree is null.");
+        return -1;
+    } else {
+        dynlib_inctree_t *sp = (parent == NULL) ? pcb->dynlibs : parent;
+        if (sp->loadinfo == loadinfo) {
+            if (parent != NULL)
+                parent->need = sp->next;
+            else
+                pcb->dynlibs = sp->next;
+            kfree(sp->loadinfo);
+            kfree(sp);
+            return 0;
+        }
+        while (sp->next != NULL && sp->next->loadinfo != loadinfo) {
+            sp = sp->next;
+        }
+        if (sp == NULL) {
+            deprintf("not found:%x", loadinfo);
+            return -1;
+        }
+        dynlib_inctree_t *t = sp->next;
+        sp->next = sp->next->next;
+        sp->next->parent = sp;
+        kfree(t->loadinfo);
+        kfree(t);
+        return 0;
+    }
+}
+
+//NOCHK
+int dynlibs_clone_tree_inner(pid_t pid, dynlib_inctree_t *p, dynlib_inctree_t **out, int *c) {
+    if (p == NULL)return -1;
+    dynlib_inctree_t *tree = (dynlib_inctree_t *) kmalloc(sizeof(dynlib_inctree_t));
+    dynlib_load_t *nload = (dynlib_load_t *) kmalloc(sizeof(dynlib_load_t));
+    nload->no = p->loadinfo->no;
+    nload->pid = pid;
+    nload->start_addr = p->loadinfo->start_addr;
+    tree->loadinfo = nload;
+    if (p->next) {
+        CHK(dynlibs_clone_tree_inner(pid, p->next, &tree->next, c), "");
+    }
+    if (p->need) {
+        CHK(dynlibs_clone_tree_inner(pid, p->need, &tree->need, c), "");
+    }
+    *out = tree;
+    (*c)++;
+    return 0;
+    _err:
+    return -1;
+}
+
+//NOCHK
+int dynlibs_clone_tree(pid_t src, pid_t target) {
+    pcb_t *spcb = getpcb(src);
+    int count = 0;
+    dynlib_inctree_t *sr = spcb->dynlibs;
+    if (dynlibs_clone_tree_inner(target, sr, &(getpcb(target)->dynlibs), &count)) {
+        deprintf("copy dynlibs tree failed!");
+        return -1;
+    }
+    dprintf("clone done.Cloned %x items.", count);
+    return 0;
 }
 
 int dynlibs_freeobj(dynlib_t *lib) {
@@ -150,9 +214,73 @@ bool dynlibs_isloaded_to_proc(const char *path, pid_t pid) {
         dynlib_inctree_t *tree = SQUEUE_GET(&pre_iter, 0, dynlib_inctree_t*);
         if (tree->next)squeue_insert(&pre_iter, (uint32_t) tree->next);
         if (tree->need)squeue_insert(&pre_iter, (uint32_t) tree->need);
-        if (strcmp(tree->loadinfo->lib->path, path))return true;
+        if (strcmp(loaded_dynlibs[tree->loadinfo->no]->path, path))return true;
+        squeue_remove(&pre_iter, 0);
     }
     return false;
+}
+
+int dynlibs_unload_inner(pid_t pid, dynlib_load_t *loadinfo, bool remove_from_tree) {
+    dprintf("unloading %s at %x", loaded_dynlibs[loadinfo->no]->path, loadinfo->start_addr);
+    pcb_t *pcb = getpcb(pid);
+    if (loadinfo->pid != pid) {
+        deprintf("bad dynlib_load_t l->pid:%x pid:%x", loadinfo->pid, pid);
+    }
+    dynlib_t *lib = loaded_dynlibs[loadinfo->no];
+    for (int x = 0; x < lib->frames_count; x++) {
+        uint32_t paddr = loadinfo->start_addr + x;
+        page_t *page = get_page(paddr, false, pcb->page_dir);
+        page_typeinfo_t *pte = get_page_type(paddr, pcb->page_dir);
+        switch (pte->type) {
+            case PT_DYNLIB_ORIG:
+                break;
+            case PT_DYNLIB_DIRTY:
+                free_frame(page);
+                break;
+            default:
+                deprintf("Unknown page type:%x at %x", pte->type, paddr);
+                return -1;
+        }
+        page->frame = NULL;
+    }
+    if (remove_from_tree)
+        dynlibs_remove_from_tree(pid, NULL, loadinfo);
+}
+
+inline int dynlibs_unload(pid_t pid, dynlib_load_t *loadinfo) {
+    dynlibs_unload_inner(pid, loadinfo, true);
+}
+
+//TODO
+int dynlibs_unload_all(pid_t pid) {
+    dprintf("unloading...");
+    pcb_t *pcb = getpcb(pid);
+    dynlib_inctree_t *roottree = getpcb(pid)->dynlibs;
+    squeue_t pre_iter;
+    memset(&pre_iter, 0, sizeof(squeue_t));
+    squeue_insert(&pre_iter, (uint32_t) roottree);
+    while (!squeue_isempty(&pre_iter)) {
+        dynlib_inctree_t *tree = SQUEUE_GET(&pre_iter, 0, dynlib_inctree_t*);
+        if (tree->next)squeue_insert(&pre_iter, (uint32_t) tree->next);
+        if (tree->need)squeue_insert(&pre_iter, (uint32_t) tree->need);
+        squeue_remove(&pre_iter, 0);
+    }
+    int count = 0;
+    squeue_iter_t siter;
+    squeue_iter_begin(&siter, &pre_iter);
+    while (true) {
+        dynlib_inctree_t *tree = (dynlib_inctree_t *) squeue_iter_next(&siter);
+        if (tree == NULL)break;
+        CHK(dynlibs_unload_inner(pid, tree->loadinfo, false), "");
+        kfree(tree->loadinfo);
+        kfree(tree);
+        count++;
+    }
+    pcb->dynlibs_end_addr = 0xA0000000;
+    dprintf("unloaded %x dynlibs", count);
+    return 0;
+    _err:
+    return -1;
 }
 
 int dynlibs_load_section_data(dynlib_t *lib, elf_digested_t *edg,
@@ -178,6 +306,7 @@ int dynlibs_load_section_data(dynlib_t *lib, elf_digested_t *edg,
             info->pid = 0;//shared lib
             info->free_on_proc_exit = false;
             info->type = PT_DYNLIB_ORIG;
+            info->copy_on_fork = false;
             uint32_t size = MIN(MIN(PAGE_SIZE, les), PAGE_SIZE - (y % PAGE_SIZE));
             uint32_t foffset = shdr->sh_offset + y - shdr->sh_addr;
             alloc_frame(page, false, true);
@@ -361,10 +490,13 @@ int dynlibs_fix_shdrs_addr() {
 }
 
 int dynlibs_relocate_all(dynlib_load_t *loadinfo) {
-    dynlib_t *lib = loadinfo->lib;
+    int ret;
+    dynlib_t *lib = loaded_dynlibs[loadinfo->no];
     elf_digested_t *edg = &lib->edg;
+    pid_t orig_pid = edg->pid;
+    edg->pid = loadinfo->pid;
     uint32_t oldoffset = edg->global_offset;
-    dprintf("now relocate dynlib(%x)'s symbols...base:%x", lib->path, lib->edg.global_offset);
+    dprintf("now relocate dynlib(%x)'s symbols...", lib->path);
     edg->global_offset = loadinfo->start_addr;
     for (int x = 0; x < MAX_REL_SECTIONS; x++) {
         if (edg->s_rel[x] && edg->s_rel[x]->sh_addr > oldoffset) {
@@ -374,7 +506,8 @@ int dynlibs_relocate_all(dynlib_load_t *loadinfo) {
         }
         if (edg->s_rel[x] && elsp_relocate(edg, edg->s_rel[x], loadinfo->start_addr)) {
             deprintf("exception happened when relocating code.(section rel[%x])", x);
-            return -1;
+            ret = -1;
+            goto _ret;
         }
     }
     for (int x = 0; x < MAX_REL_SECTIONS; x++) {
@@ -383,10 +516,14 @@ int dynlibs_relocate_all(dynlib_load_t *loadinfo) {
         }
         if (edg->s_rela[x] && elsp_relocate(edg, edg->s_rela[x], loadinfo->start_addr)) {
             deprintf("exception happened when relocating code.(section rela[%x])", x);
-            return -1;
+            ret = -1;
+            goto _ret;
         }
     }
-    return 0;
+    ret = 0;
+    _ret:
+    edg->pid = orig_pid;
+    return ret;
 }
 
 dynlib_t *dynlibs_do_load_to_memory(pid_t pid, const char *path, dynlib_load_t **loadinfo_out) {
@@ -417,15 +554,17 @@ dynlib_t *dynlibs_do_load_to_memory(pid_t pid, const char *path, dynlib_load_t *
     strcpy(lib->path, path);
     mutex_lock(&dynlibs_lock);
     loaded_dynlibs_count++;
-    for (int x = 0; x < MAX_LOADED_LIBS; x++)
+    uint32_t loadno = 0;
+    for (uint32_t x = 0; x < MAX_LOADED_LIBS; x++)
         if (loaded_dynlibs[x] == NULL) {
             loaded_dynlibs[x] = lib;
+            loadno = x;
             break;
         }
     mutex_unlock(&dynlibs_lock);
     dynlib_load_t *loadinfo = (dynlib_load_t *) kmalloc(sizeof(dynlib_load_t));
     loadinfo->pid = pid;
-    loadinfo->lib = lib;
+    loadinfo->no = loadno;
     loadinfo->start_addr = liboffset;
     if (loadinfo_out)*loadinfo_out = loadinfo;
     CHK(dynlibs_add_to_tree(pid, NULL, loadinfo), "");
@@ -436,14 +575,15 @@ dynlib_t *dynlibs_do_load_to_memory(pid_t pid, const char *path, dynlib_load_t *
     return NULL;
 }
 
-int dynlibs_do_load_to_proc(pid_t pid, dynlib_t *lib, dynlib_load_t **loadinfo_out) {
+int dynlibs_do_load_to_proc(pid_t pid, uint32_t loadno, dynlib_load_t **loadinfo_out) {
     //TODO check is loaded.
     pcb_t *pcb = getpcb(pid);
+    dynlib_t *lib = loaded_dynlibs[loadno];
     dprintf("frame count:%x gf:%x", lib->frames_count, lib->edg.global_offset);
     dynlib_load_t *loadinfo = (dynlib_load_t *) kmalloc(sizeof(dynlib_load_t));
     uint32_t startaddr = pcb->dynlibs_end_addr;
     loadinfo->pid = pid;
-    loadinfo->lib = lib;
+    loadinfo->no = loadno;
     loadinfo->start_addr = startaddr;
     for (uint32_t x = 0; x < lib->frames_count; x++) {
         dynlib_frame_t *frame = &lib->frames[x];
@@ -475,7 +615,7 @@ int dynlibs_try_to_load(pid_t pid, const char *path) {
     if (dynlibs_isloaded_to_memory(path, &index)) {
         lib = loaded_dynlibs[index];
         ASSERT(lib);
-        CHK(dynlibs_do_load_to_proc(pid, lib, &loadinfo), "");
+        CHK(dynlibs_do_load_to_proc(pid, index, &loadinfo), "");
     } else {
         lib = dynlibs_do_load_to_memory(pid, path, &loadinfo);
         if (lib == NULL)return -1;

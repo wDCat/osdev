@@ -22,11 +22,12 @@ typedef struct {
 } dynlib_t;
 typedef struct {
     pid_t pid;
-    dynlib_t *lib;
+    uint32_t no;
     uint32_t start_addr;
 } dynlib_load_t;
 typedef struct dynlib_inctree {
     dynlib_load_t *loadinfo;
+    struct dynlib_inctree *parent;//parent
     struct dynlib_inctree *need;//left sub tree
     struct dynlib_inctree *next;//right sub tree
 } dynlib_inctree_t;
@@ -34,6 +35,10 @@ typedef struct dynlib_inctree {
 void dynlibs_install();
 
 int dynlibs_try_to_load(pid_t pid, const char *path);
+
+int dynlibs_unload_all(pid_t pid);
+
+int dynlibs_clone_tree(pid_t src, pid_t target);
 
 dynlib_t *dynlibs_do_load(pid_t pid, const char *path);
 

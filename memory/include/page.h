@@ -24,6 +24,7 @@ typedef struct {
 typedef struct {
     uint8_t type;
     bool free_on_proc_exit;
+    bool copy_on_fork;
     pid_t pid;
 } page_typeinfo_t;
 typedef struct page_table_struct {

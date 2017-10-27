@@ -13,6 +13,7 @@
 #include <procfs.h>
 #include <contious_heap.h>
 #include <page.h>
+#include <dynlibs.h>
 
 extern void _gdt_flush();
 
@@ -112,6 +113,7 @@ void create_user_stack(pcb_t *pcb, uint32_t end_addr, uint32_t size, uint32_t *n
         page_typeinfo_t *info = get_page_type(p, pcb->page_dir);
         info->pid = pcb->pid;
         info->free_on_proc_exit = true;
+        info->copy_on_fork = true;
     }
     if (new_ebp)
         *new_ebp = end_addr - 0x10;
@@ -297,6 +299,7 @@ int create_user_heap(pcb_t *pcb, uint32_t start, uint32_t size) {
         page_typeinfo_t *info = get_page_type(x, pcb->page_dir);
         info->pid = pcb->pid;
         info->free_on_proc_exit = true;
+        info->copy_on_fork = true;
     }
     create_heap(&pcb->heap, start, start + size, start + size);
     return 0;
@@ -336,6 +339,10 @@ pid_t fork(regs_t *r) {
     cpcb->reserved_page = (uint32_t) (kmalloc_paging(0x1000, NULL));
     memset(cpcb->reserved_page, 0, 0x1000);
     cpcb->spages = (struct spage_info *) cpcb->reserved_page;
+    if (fpid > 1 && dynlibs_clone_tree(fpid, cpid)) {
+        PANIC("cannot clone dynlibs tree");
+    }
+    dprintf("new dynlibs tree:%x", cpcb->dynlibs);
     cpcb->dynlibs_end_addr = fpcb->dynlibs_end_addr;
     //Copy open file table...
     memcpy(cpcb->fh, fpcb->fh, sizeof(fpcb->fh));
@@ -354,15 +361,16 @@ pid_t fork(regs_t *r) {
         //create_user_heap(cpcb);
         dprintf("new user stack:[%x][%x]", tss->ebp, tss->esp);
         strcpy(cpcb->dir, "/");
-        char neko[256], neko2[256];
+        char neko[256], neko2[256], neko5[256];
         strcpy(neko, "Hello");
         strcpy(neko2, "DCat");
-        char *args[2] = {neko, neko2};
+        strcpy(neko5, "DCat~~~");
+        char *args[3] = {neko, neko2, neko5};
         char neko3[256], neko4[256];
         strcpy(neko3, "PATH=/:/bin");
         strcpy(neko4, "COLOR=black");
         char *envp[3] = {neko3, neko4, NULL};
-        kexec(cpid, "/init", 2, args, envp);
+        kexec(cpid, "/init", 3, args, envp);
         //extern int little_test2();
         //tss->eip = (uint32_t) little_test2;
         tss->cs = 3 << 3 | 3;

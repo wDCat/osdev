@@ -24,13 +24,13 @@ int create_heap_array_list(heap_array_list_t *al, uint32_t max_size) {
 }
 
 int destory_heap_array_list(heap_array_list_t *al) {
-    dprintf("freeing headers:%x", al->headers);
+    //dprintf("freeing headers:%x", al->headers);
     kfree(al->headers);
     return 0;
 }
 
 int insert_item_ordered(heap_array_list_t *al, header_info_t *info) {
-    dprintf("insert %x %x %x", info->addr, info->used, info->size);
+    //dprintf("insert %x %x %x", info->addr, info->used, info->size);
     ASSERT(al && info);
     bool inserted = false;
     int x = 0;
