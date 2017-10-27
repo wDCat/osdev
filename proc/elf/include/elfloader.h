@@ -8,7 +8,9 @@
 #include <squeue.h>
 #include "elf.h"
 
-typedef struct {
+#define MAX_REL_SECTIONS 2
+typedef struct elf_digested {
+    uint32_t type;
     pid_t pid;
     int8_t fd;
     uint32_t global_offset;
@@ -29,7 +31,9 @@ typedef struct {
     elf_program_t *phdrs;//free
     uint32_t elf_end_addr;
     squeue_t dynlibs_need_queue;
-    elf_section_t *s_rel, *s_rela;
+    elf_section_t *s_rel[MAX_REL_SECTIONS],
+            *s_rela[MAX_REL_SECTIONS];
+    struct elf_digested *base;
 } elf_digested_t;
 
 int elsp_init_edg(elf_digested_t *edg, pid_t pid, int8_t fd);
@@ -54,7 +58,9 @@ int elsp_load_need_dynlibs(elf_digested_t *edg);
 
 int elsp_free_edg(elf_digested_t *edg);
 
-int elsp_relocate(elf_digested_t *edg, elf_section_t *shdr);
+int elsp_relocate(elf_digested_t *edg, elf_section_t *shdr, uint32_t global_offset);
+
+int elsp_find_symbol(elf_digested_t *edg, const char *name, uint32_t *out);
 
 bool elf_load(pid_t pid, int8_t fd, uint32_t *entry_point, uint32_t *elf_end);
 

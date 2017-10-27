@@ -62,23 +62,28 @@ int kexec(pid_t pid, const char *path, int argc, char *const argv[], char *const
     }
     if (pcb->heap_ready)
         CHK(destory_user_heap(pcb), "fail to release old heap..");
-
-    elf_digested_t edg;
-    memset(&edg, 0, sizeof(elf_digested_t));
-    edg.pid = pid;
-    edg.fd = (int8_t) fd;
-    edg.global_offset = 0x8000000;
-    CHK(elsp_load_header(&edg), "");
-    CHK(elsp_load_sections(&edg), "");
-    CHK(elsp_load_need_dynlibs(&edg), "");
-    CHK(elsp_free_edg(&edg), "");
-    dprintf("elf end addr:%x", edg.elf_end_addr);
-    uint32_t heap_start = edg.elf_end_addr + (PAGE_SIZE - (edg.elf_end_addr % PAGE_SIZE)) + PAGE_SIZE * 2;
+    if (pcb->edg) {
+        CHK(elsp_free_edg(pcb->edg), "fail to release old edg");
+        kfree(pcb->edg);
+        pcb->edg = NULL;
+    }
+    elf_digested_t *edg = (elf_digested_t *) kmalloc(sizeof(elf_digested_t));
+    memset(edg, 0, sizeof(elf_digested_t));
+    pcb->edg = edg;
+    edg->pid = pid;
+    edg->fd = (int8_t) fd;
+    edg->global_offset = 0x8000000;
+    CHK(elsp_load_header(edg), "");
+    CHK(elsp_load_sections(edg), "");
+    CHK(elsp_load_need_dynlibs(edg), "");
+    CHK(elsp_free_edg(edg), "");
+    dprintf("elf end addr:%x", edg->elf_end_addr);
+    uint32_t heap_start = edg->elf_end_addr + (PAGE_SIZE - (edg->elf_end_addr % PAGE_SIZE)) + PAGE_SIZE * 2;
     CHK(create_user_heap(pcb, heap_start, 0x4000), "");
     uint32_t sym_start;
     uint32_t eip;
     if (dynlibs_find_symbol(pcb->pid, "_start", &sym_start)) {
-        eip = elsp_get_entry(&edg);
+        eip = elsp_get_entry(edg);
         dprintf("redirect eip to elf_entry:%x", eip);
     } else {
         dprintf("redirect eip to _start:%x", sym_start);

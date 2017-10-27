@@ -80,6 +80,7 @@ typedef struct {
     int32_t r_addend;
     uint8_t r_type;
     uint32_t r_dynsym;
+    uint32_t global_offset;
 } elf_rel_tmp_t;
 
 inline elf_symbol_t *elsp_get_dynsym(elf_digested_t *edg, uint32_t id) {
@@ -92,58 +93,85 @@ inline elf_symbol_t *elsp_get_dynsym(elf_digested_t *edg, uint32_t id) {
 }
 
 
-inline int elsp_rel_386_relative(elf_digested_t *edg, elf_rel_tmp_t *rtmp, uint32_t *ptr) {
-    *ptr = ((uint32_t) *ptr) + edg->global_offset;
+inline int elsp_rel_386_add_offset(elf_digested_t *edg, elf_rel_tmp_t *rtmp, uint32_t *ptr) {
+    *ptr = ((uint32_t) *ptr) + rtmp->global_offset;
     return 0;
 }
 
-inline int elsp_rel_386_slot(elf_digested_t *edg, elf_rel_tmp_t *rtmp, uint32_t *ptr) {
-    *ptr = ((uint32_t) *ptr) + edg->global_offset;
-    return 0;
-}
-
-inline int elsp_rel_386_glob_dat(elf_digested_t *edg, elf_rel_tmp_t *rtmp, uint32_t *ptr) {
+inline int elsp_rel_386_symtab(elf_digested_t *edg, elf_rel_tmp_t *rtmp, uint32_t *ptr) {
     elf_symbol_t *sym = elsp_get_dynsym(edg, rtmp->r_dynsym);
+    pcb_t *pcb = getpcb(edg->pid);
     if (sym == NULL)goto _err;
     const char *symname = elsp_get_dynstring_by_offset(edg, sym->st_name);
     dprintf("glob dat name:%s(%x)(%x)", symname, sym->st_name, symname);
-    uint32_t addr;
+    uint32_t addr = 0x0;
+    int from = 0;
     if (dynlibs_find_symbol(edg->pid, symname, &addr)) {
-        dprintf("symbol %s not found!", symname);
-        goto _err;
+        if (pcb->edg == NULL || elsp_find_symbol(pcb->edg, symname, &addr)) {
+            if (elsp_find_symbol(edg, symname, &addr)) {
+                dprintf("[WARN]symbol %s not found!", symname);
+                goto _err;
+            } else {
+                addr = addr + rtmp->global_offset;
+                from = 2;
+            }
+        } else {
+            addr = addr + pcb->edg->global_offset;
+            from = 1;
+        }
     }
-    dprintf("update symbol %s to %x", symname, addr);
+    dprintf("update symbol %s(at %x) to %x (from:%x)", symname, ptr, addr, from);
     *ptr = addr;
     return 0;
     _err:
+    return 0;//ignored
+}
+
+int elsp_find_symbol(elf_digested_t *edg, const char *name, uint32_t *out) {
+    for (uint32_t x = 0;; x++) {
+        elf_symbol_t *esym = elsp_get_dynsym(edg, x);
+        if (esym == NULL)break;
+        const char *symname = elsp_get_dynstring_by_offset(edg, esym->st_name);
+        if (symname == NULL)continue;
+        if (strcmp(symname, name) && esym->st_value != 0) {
+            if (out) {
+                *out = esym->st_value + 0x0;
+                return 0;
+            }
+        }
+    }
     return -1;
 }
 
 int elsp_rel_do(elf_digested_t *edg, elf_rel_tmp_t *rtmp) {
     uint32_t *ptr = (uint32_t *) (rtmp->r_offset + edg->global_offset);
+    if (edg->ehdr.e_type == ET_DYN) {
+        dynlibs_try_to_write(edg->pid, ptr);
+    }
+    uint32_t origval = *ptr;
     switch (rtmp->r_type) {
         case R_386_RELATIVE:
-            CHK(elsp_rel_386_relative(edg, rtmp, ptr), "");
+        case R_386_32:
+            CHK(elsp_rel_386_add_offset(edg, rtmp, ptr), "");
             break;
         case R_386_GLOB_DAT:
-            CHK(elsp_rel_386_glob_dat(edg, rtmp, ptr), "");
-            break;
         case R_386_JMP_SLOT:
-            CHK(elsp_rel_386_slot(edg, rtmp, ptr), "");
+            CHK(elsp_rel_386_symtab(edg, rtmp, ptr), "");
             break;
         default:
             deprintf("Unsupported relocate type:%x at %x", rtmp->r_type, rtmp->r_offset);
-            deprintf("Last error ignored");
+            PANIC("debug...")
 
     }
+    dprintf("relocate done [%x] %x ==> %x", ptr, origval, *ptr);
     return 0;
     _err:
     return -1;
 }
 
-int elsp_relocate(elf_digested_t *edg, elf_section_t *shdr) {
+int elsp_relocate(elf_digested_t *edg, elf_section_t *shdr, uint32_t global_offset) {
     if (shdr->sh_addr < edg->global_offset) {
-        deprintf("bad rel(a) section:%x", shdr->sh_offset);
+        deprintf("bad rel(a) section:vaddr:%x offset:%x", shdr->sh_addr, shdr->sh_offset);
         return -1;
     }
     switch (shdr->sh_type) {
@@ -156,7 +184,8 @@ int elsp_relocate(elf_digested_t *edg, elf_section_t *shdr) {
                         .r_offset=rel->r_offset,
                         .r_type=(uint8_t) ELF32_R_TYPE(rel->r_info),
                         .r_dynsym=ELF32_R_DYNSYM(rel->r_info),
-                        .r_addend=NULL
+                        .r_addend=NULL,
+                        .global_offset=global_offset
                 };
                 if (elsp_rel_do(edg, &rtmp)) {
                     deprintf("relocated failed.");
@@ -164,6 +193,7 @@ int elsp_relocate(elf_digested_t *edg, elf_section_t *shdr) {
                 }
                 rel = (elf_rel_t *) (((uint32_t) rel) + sizeof(elf_rel_t));
             }
+
             return 0;
         }
 
@@ -176,7 +206,8 @@ int elsp_relocate(elf_digested_t *edg, elf_section_t *shdr) {
                         .r_offset=rel->r_offset,
                         .r_type=(uint8_t) ELF32_R_TYPE(rel->r_info),
                         .r_dynsym=ELF32_R_DYNSYM(rel->r_info),
-                        .r_addend=rel->r_addend
+                        .r_addend=rel->r_addend,
+                        .global_offset=global_offset
                 };
                 if (elsp_rel_do(edg, &rtmp)) {
                     deprintf("relocated failed.");
@@ -352,11 +383,16 @@ int elsp_load_need_dynlibs(elf_digested_t *edg) {
         i = i->next;
     }
     dprintf("now relocate symbols...");
-    if ((edg->s_rel && elsp_relocate(edg, edg->s_rel)) ||
-        (edg->s_rela && elsp_relocate(edg, edg->s_rela))) {
-        deprintf("exception happened when relocating code.");
-        return -1;
-    }
+    for (int x = 0; x < MAX_REL_SECTIONS; x++)
+        if (edg->s_rel[x] && elsp_relocate(edg, edg->s_rel[x], edg->global_offset)) {
+            deprintf("exception happened when relocating code.(section rel[%x])", x);
+            return -1;
+        }
+    for (int x = 0; x < MAX_REL_SECTIONS; x++)
+        if (edg->s_rela[x] && elsp_relocate(edg, edg->s_rela[x], edg->global_offset)) {
+            deprintf("exception happened when relocating code.(section rela[%x])", x);
+            return -1;
+        }
     return 0;
 }
 
@@ -427,11 +463,35 @@ int elsp_load_sections(elf_digested_t *edg) {
                 } else
                     dprintf("ignore strtab:%x", x);
                 break;
-            case SHT_REL:
-                edg->s_rel = shdr;
+            case SHT_REL: {
+                bool inserted = false;
+                for (int i = 0; i < MAX_REL_SECTIONS; i++) {
+                    if (edg->s_rel[i] == NULL) {
+                        inserted = true;
+                        edg->s_rel[i] = shdr;
+                        break;
+                    }
+                }
+                if (!inserted) {
+                    deprintf("too many rel sections!");
+                    return -1;
+                }
+            }
                 break;
-            case SHT_RELA:
-                edg->s_rela = shdr;
+            case SHT_RELA: {
+                bool inserted = false;
+                for (int i = 0; i < MAX_REL_SECTIONS; i++) {
+                    if (edg->s_rela[i] == NULL) {
+                        inserted = true;
+                        edg->s_rela[i] = shdr;
+                        break;
+                    }
+                }
+                if (!inserted) {
+                    deprintf("too many rela sections!");
+                    return -1;
+                }
+            }
                 break;
 
         }

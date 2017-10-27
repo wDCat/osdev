@@ -188,6 +188,7 @@ fun main(args: Array<String>) {
             " echo \"\\033[31m Build Lib Failed!!\\033[0m\" &&" +
             " exit 1;" +
             "fi\n")
+    clibmfout.write("\tcp -f ${ROOT}/libdcat.so /home/dcat/osdev/a_out_test/libdcat.so")
     hFiles.forEach {
         cmout.write("${it}\n")
     }

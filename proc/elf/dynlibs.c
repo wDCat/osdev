@@ -14,7 +14,6 @@
 #include <page.h>
 #include "dynlibs.h"
 
-uint32_t liboffset = 0xA0000000;
 mutex_lock_t dynlibs_lock;
 dynlib_t *loaded_dynlibs[MAX_LOADED_LIBS];
 uint32_t loaded_dynlibs_count = 0;
@@ -26,6 +25,10 @@ void dynlibs_install() {
 
 int dynlibs_find_symbol(pid_t pid, const char *name, uint32_t *out) {
     dynlib_inctree_t *roottree = getpcb(pid)->dynlibs;
+    if (roottree == NULL) {
+        dprintf("tree not found!");
+        return 1;
+    }
     squeue_t pre_iter;
     memset(&pre_iter, 0, sizeof(squeue_t));
     squeue_insert(&pre_iter, (uint32_t) roottree);
@@ -33,31 +36,62 @@ int dynlibs_find_symbol(pid_t pid, const char *name, uint32_t *out) {
         dynlib_inctree_t *tree = SQUEUE_GET(&pre_iter, 0, dynlib_inctree_t*);
         if (tree->next)squeue_insert(&pre_iter, (uint32_t) tree->next);
         if (tree->need)squeue_insert(&pre_iter, (uint32_t) tree->need);
-        dynlib_t *lib = tree->lib;
+        dynlib_t *lib = tree->loadinfo->lib;
         elf_digested_t *edg = &lib->edg;
         ASSERT(lib);
         dprintf("searching symbol in %s", lib->path);
-        for (uint32_t x = 0;; x++) {
-            elf_symbol_t *esym = elsp_get_dynsym(edg, x);
-            if (esym == NULL)break;
-            const char *symname = elsp_get_dynstring_by_offset(edg, esym->st_name);
-            if (symname == NULL)continue;
-            if (strcmp(symname, name)) {
-                if (out) {
-                    *out = edg->global_offset + esym->st_value + 0x0;
-                    return 0;
-                }
-            }
+        if (elsp_find_symbol(edg, name, out) == 0) {
+            dprintf("found %x+%x", tree->loadinfo->start_addr, *out);
+            *out = (uint32_t) *out + tree->loadinfo->start_addr;
+            return 0;
         }
+        squeue_remove(&pre_iter, 0);
     }
     return 1;
 }
 
-int dynlibs_add_to_tree(pid_t pid, dynlib_inctree_t *parent, dynlib_t *lib) {
+int dynlibs_try_to_write(pid_t pid, uint32_t addr) {
+    int ints;
+    scli(&ints);
+    int ret = -1;
+    pcb_t *pcb = getpcb(pid);
+    page_typeinfo_t *info = get_page_type(addr, pcb->page_dir);
+    page_t *page = get_page(addr, false, pcb->page_dir);
+    uint32_t orig_frame = page->frame;
+    if (info == NULL || page == NULL) {
+        deprintf("Bad addr:%x", addr);
+        return -1;
+    }
+    switch (info->type) {
+        case PT_DYNLIB_ORIG: {
+            page->frame = NULL;
+            alloc_frame(page, !page->user, page->rw);
+            page_typeinfo_t *ninfo = get_page_type(addr, pcb->page_dir);
+            ninfo->pid = pid;
+            ninfo->free_on_proc_exit = true;
+            ninfo->type = PT_DYNLIB_DIRTY;
+            dprintf("copy on write(%x) %x --> %x", addr, orig_frame, page->frame);
+            copy_frame_physical(orig_frame, page->frame);
+            return 0;
+        }
+        case PT_DYNLIB_DIRTY:
+            ret = 0;
+            break;
+        default:
+            deprintf("Unknown page type:%x at %x", info->type, addr);
+            ret = 0;
+            break;
+    }
+    _ret:
+    srestorei(&ints);
+    return ret;
+}
+
+int dynlibs_add_to_tree(pid_t pid, dynlib_inctree_t *parent, dynlib_load_t *loadinfo) {
     pcb_t *pcb = getpcb(pid);
     dynlib_inctree_t *nitem = (dynlib_inctree_t *) kmalloc(sizeof(dynlib_inctree_t));
     memset(nitem, 0, sizeof(dynlib_inctree_t));
-    nitem->lib = lib;
+    nitem->loadinfo = loadinfo;
     if (parent == NULL) {
         if (pcb->dynlibs == NULL) {
             dprintf("insert into root");
@@ -116,7 +150,7 @@ bool dynlibs_isloaded_to_proc(const char *path, pid_t pid) {
         dynlib_inctree_t *tree = SQUEUE_GET(&pre_iter, 0, dynlib_inctree_t*);
         if (tree->next)squeue_insert(&pre_iter, (uint32_t) tree->next);
         if (tree->need)squeue_insert(&pre_iter, (uint32_t) tree->need);
-        if (strcmp(tree->lib->path, path))return true;
+        if (strcmp(tree->loadinfo->lib->path, path))return true;
     }
     return false;
 }
@@ -143,6 +177,7 @@ int dynlibs_load_section_data(dynlib_t *lib, elf_digested_t *edg,
             page_typeinfo_t *info = get_page_type(y, pcb->page_dir);
             info->pid = 0;//shared lib
             info->free_on_proc_exit = false;
+            info->type = PT_DYNLIB_ORIG;
             uint32_t size = MIN(MIN(PAGE_SIZE, les), PAGE_SIZE - (y % PAGE_SIZE));
             uint32_t foffset = shdr->sh_offset + y - shdr->sh_addr;
             alloc_frame(page, false, true);
@@ -158,7 +193,6 @@ int dynlibs_load_section_data(dynlib_t *lib, elf_digested_t *edg,
             if (paddr != last_paddr) {
                 last_paddr = paddr;
                 CHK(squeue_set(finfo, 0, paddr), "");
-                frameinfo->start_addr = paddr;
                 frameinfo->dirty = false;
                 frameinfo->frameno = get_frame(page);
                 dprintf("frame info:%x %x", paddr, frameinfo->frameno);
@@ -245,20 +279,52 @@ int dynlibs_load_sections(dynlib_t *lib, elf_digested_t *edg) {
                 } else
                     dprintf("ignore strtab:%x", x);
                 break;
-            case SHT_REL:
-                edg->s_rel = shdr;
+            case SHT_REL: {
+                bool inserted = false;
+                for (int i = 0; i < MAX_REL_SECTIONS; i++) {
+                    if (edg->s_rel[i] == NULL) {
+                        inserted = true;
+                        edg->s_rel[i] = shdr;
+                        break;
+                    }
+                }
+                if (!inserted) {
+                    deprintf("too many rel sections!");
+                    return -1;
+                }
+            }
                 break;
-            case SHT_RELA:
-                edg->s_rela = shdr;
+            case SHT_RELA: {
+                bool inserted = false;
+                for (int i = 0; i < MAX_REL_SECTIONS; i++) {
+                    if (edg->s_rela[i] == NULL) {
+                        inserted = true;
+                        edg->s_rela[i] = shdr;
+                        break;
+                    }
+                }
+                if (!inserted) {
+                    deprintf("too many rela sections!");
+                    return -1;
+                }
+            }
                 break;
 
         }
         shdr = (elf_section_t *) ((uint32_t) shdr + edg->ehdr.e_shentsize);
     }
-    if (edg->s_rel)
-        CHK(elsp_relocate(edg, edg->s_rel), "");
-    if (edg->s_rela)
-        CHK(elsp_relocate(edg, edg->s_rela), "");
+    /*
+    dprintf("relocate elsp's symbols...");
+    for (int x = 0; x < MAX_REL_SECTIONS; x++)
+        if (edg->s_rel[x] && elsp_relocate(edg, edg->s_rel[x])) {
+            deprintf("exception happened when relocating code.(section rel[%x])", x);
+            return -1;
+        }
+    for (int x = 0; x < MAX_REL_SECTIONS; x++)
+        if (edg->s_rela[x] && elsp_relocate(edg, edg->s_rela[x])) {
+            deprintf("exception happened when relocating code.(section rela[%x])", x);
+            return -1;
+        }*/
     //save frame info to dynlib_t
     uint32_t framec = (uint32_t) (squeue_count(&framesinfo) - 1);
     lib->frames = (dynlib_frame_t *) kmalloc(sizeof(dynlib_frame_t) * framec);
@@ -276,7 +342,54 @@ int dynlibs_load_sections(dynlib_t *lib, elf_digested_t *edg) {
     return 1;
 }
 
-dynlib_t *dynlibs_do_load_to_memory(pid_t pid, const char *path) {
+int dynlibs_load_need_dynlibs(dynlib_t *lib) {
+    elf_digested_t *edg = &lib->edg;
+    dprintf("count:%x", edg->dynlibs_need_queue.count);
+    squeue_entry_t *i = edg->dynlibs_need_queue.first;
+    for (int x = 0; x < edg->dynlibs_need_queue.count && i != NULL; x++) {
+        const char *libname = elsp_get_dynstring_by_offset(edg, i->objaddr);
+        dprintf("dynlib need(%x):%s", i->objaddr,
+                libname);
+        if (dynlibs_try_to_load(edg->pid, libname))return -1;
+        i = i->next;
+    }
+    return 0;
+}
+
+int dynlibs_fix_shdrs_addr() {
+
+}
+
+int dynlibs_relocate_all(dynlib_load_t *loadinfo) {
+    dynlib_t *lib = loadinfo->lib;
+    elf_digested_t *edg = &lib->edg;
+    uint32_t oldoffset = edg->global_offset;
+    dprintf("now relocate dynlib(%x)'s symbols...base:%x", lib->path, lib->edg.global_offset);
+    edg->global_offset = loadinfo->start_addr;
+    for (int x = 0; x < MAX_REL_SECTIONS; x++) {
+        if (edg->s_rel[x] && edg->s_rel[x]->sh_addr > oldoffset) {
+            uint32_t naddr = (uint32_t) edg->s_rel[x]->sh_addr - oldoffset + edg->global_offset;
+            dprintf("fix addr %x --> %x", edg->s_rel[x]->sh_addr, naddr);
+            edg->s_rel[x]->sh_addr = naddr;
+        }
+        if (edg->s_rel[x] && elsp_relocate(edg, edg->s_rel[x], loadinfo->start_addr)) {
+            deprintf("exception happened when relocating code.(section rel[%x])", x);
+            return -1;
+        }
+    }
+    for (int x = 0; x < MAX_REL_SECTIONS; x++) {
+        if (edg->s_rela[x] && edg->s_rela[x]->sh_addr > oldoffset) {
+            edg->s_rela[x]->sh_addr = (uint32_t) edg->s_rela[x]->sh_addr - oldoffset + edg->global_offset;
+        }
+        if (edg->s_rela[x] && elsp_relocate(edg, edg->s_rela[x], loadinfo->start_addr)) {
+            deprintf("exception happened when relocating code.(section rela[%x])", x);
+            return -1;
+        }
+    }
+    return 0;
+}
+
+dynlib_t *dynlibs_do_load_to_memory(pid_t pid, const char *path, dynlib_load_t **loadinfo_out) {
     if (loaded_dynlibs_count >= MAX_LOADED_LIBS) {
         deprintf("Out of dynlibs table...");
         return NULL;
@@ -286,16 +399,20 @@ dynlib_t *dynlibs_do_load_to_memory(pid_t pid, const char *path) {
         deprintf("fail to open file:%s", path);
         goto _err;
     }
-    elf_digested_t edg;
+    pcb_t *pcb = getpcb(pid);
     dynlib_t *lib = (dynlib_t *) kmalloc(sizeof(dynlib_t));
+    elf_digested_t *edg = &lib->edg;
     memset(lib, 0, sizeof(dynlib_t));
-    elsp_init_edg(&edg, pid, fd);
-    edg.global_offset = liboffset;
-    CHK(elsp_load_header(&edg), "");
-    CHK(dynlibs_load_sections(lib, &edg), "");
-    ASSERT(edg.elf_end_addr > liboffset);
-    liboffset = edg.elf_end_addr + (PAGE_SIZE - (edg.elf_end_addr % PAGE_SIZE));
-    memcpy(&lib->edg, &edg, sizeof(elf_digested_t));
+    elsp_init_edg(edg, pid, fd);
+    uint32_t liboffset = pcb->dynlibs_end_addr;
+    ASSERT(pcb->dynlibs_end_addr >= 0xA0000000);
+    edg->global_offset = liboffset;
+    CHK(elsp_load_header(edg), "");
+    CHK(dynlibs_load_sections(lib, edg), "");
+    CHK(dynlibs_load_need_dynlibs(lib), "");
+    ASSERT(edg->elf_end_addr > liboffset);
+    pcb->dynlibs_end_addr = edg->elf_end_addr + (PAGE_SIZE - (edg->elf_end_addr % PAGE_SIZE));
+    memcpy(&lib->edg, edg, sizeof(elf_digested_t));
     lib->path = (char *) kmalloc(strlen(path) + 1);
     strcpy(lib->path, path);
     mutex_lock(&dynlibs_lock);
@@ -306,6 +423,12 @@ dynlib_t *dynlibs_do_load_to_memory(pid_t pid, const char *path) {
             break;
         }
     mutex_unlock(&dynlibs_lock);
+    dynlib_load_t *loadinfo = (dynlib_load_t *) kmalloc(sizeof(dynlib_load_t));
+    loadinfo->pid = pid;
+    loadinfo->lib = lib;
+    loadinfo->start_addr = liboffset;
+    if (loadinfo_out)*loadinfo_out = loadinfo;
+    CHK(dynlibs_add_to_tree(pid, NULL, loadinfo), "");
     dprintf("loaded lib %s to %x", lib->path, liboffset);
     return lib;
     _err:
@@ -313,21 +436,33 @@ dynlib_t *dynlibs_do_load_to_memory(pid_t pid, const char *path) {
     return NULL;
 }
 
-int dynlibs_do_load_to_proc(pid_t pid, dynlib_t *lib) {
+int dynlibs_do_load_to_proc(pid_t pid, dynlib_t *lib, dynlib_load_t **loadinfo_out) {
+    //TODO check is loaded.
     pcb_t *pcb = getpcb(pid);
-    dprintf("frame count:%x", lib->frames_count);
+    dprintf("frame count:%x gf:%x", lib->frames_count, lib->edg.global_offset);
+    dynlib_load_t *loadinfo = (dynlib_load_t *) kmalloc(sizeof(dynlib_load_t));
+    uint32_t startaddr = pcb->dynlibs_end_addr;
+    loadinfo->pid = pid;
+    loadinfo->lib = lib;
+    loadinfo->start_addr = startaddr;
     for (uint32_t x = 0; x < lib->frames_count; x++) {
         dynlib_frame_t *frame = &lib->frames[x];
-        page_t *page = get_page(frame->start_addr, true, pcb->page_dir);
+        page_t *page = get_page(startaddr + x * PAGE_SIZE, true, pcb->page_dir);
+        page_typeinfo_t *tinfo = get_page_type(startaddr + x * PAGE_SIZE, pcb->page_dir);
         page->present = true;
         page->accessed = false;
         page->user = true;
         page->rw = true;
         page->dirty = false;
         page->frame = frame->frameno;
-        dprintf("[pid:%x]remapping %x -> %x", pid, frame->frameno, frame->start_addr);
+        tinfo->pid = pid;
+        tinfo->free_on_proc_exit = false;
+        tinfo->type = PT_DYNLIB_ORIG;
+        dprintf("[pid:%x]remapping %x -> %x", pid, frame->frameno, startaddr + x * PAGE_SIZE);
     }
-    CHK(dynlibs_add_to_tree(pid, NULL, lib), "");
+    CHK(dynlibs_add_to_tree(pid, NULL, loadinfo), "");
+    pcb->dynlibs_end_addr = startaddr + (lib->frames_count + 1) * PAGE_SIZE;
+    if (loadinfo_out)*loadinfo_out = loadinfo;
     return 0;
     _err:
     return -1;
@@ -336,14 +471,17 @@ int dynlibs_do_load_to_proc(pid_t pid, dynlib_t *lib) {
 int dynlibs_try_to_load(pid_t pid, const char *path) {
     dynlib_t *lib;
     uint32_t index;
+    dynlib_load_t *loadinfo = NULL;
     if (dynlibs_isloaded_to_memory(path, &index)) {
         lib = loaded_dynlibs[index];
         ASSERT(lib);
+        CHK(dynlibs_do_load_to_proc(pid, lib, &loadinfo), "");
     } else {
-        lib = dynlibs_do_load_to_memory(pid, path);
+        lib = dynlibs_do_load_to_memory(pid, path, &loadinfo);
         if (lib == NULL)return -1;
     }
-    CHK(dynlibs_do_load_to_proc(pid, lib), "");
+    ASSERT(loadinfo != NULL);
+    CHK(dynlibs_relocate_all(loadinfo), "");
     dprintf("proc %x loaded dynlib %s", pid, path);
     return 0;
     _err:

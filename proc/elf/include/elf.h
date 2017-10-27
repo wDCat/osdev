@@ -25,6 +25,11 @@
 #define    ELFMAG2        'L'
 #define    ELFMAG3        'F'
 
+#define ET_NONE   0
+#define ET_REL    1
+#define ET_EXEC   2
+#define ET_DYN    3
+
 #define SHT_NULL    0
 #define SHT_PROGBITS    1
 #define SHT_SYMTAB    2

@@ -18,7 +18,11 @@ typedef struct {
     uint32_t unused     : 7;   // Amalgamation of unused and reserved bits
     uint32_t frame      : 20;  // Frame address (shifted right 12 bits)
 } page_t;
+#define PT_NORMAL 0
+#define PT_DYNLIB_ORIG 2
+#define PT_DYNLIB_DIRTY 3
 typedef struct {
+    uint8_t type;
     bool free_on_proc_exit;
     pid_t pid;
 } page_typeinfo_t;
@@ -98,5 +102,7 @@ bool is_kernel_space(page_directory_t *dir, uint32_t addr);
 int free_page_directory(page_directory_t *src);
 
 void flush_TLB();
+
+void copy_frame_physical(uint32_t src, uint32_t target);
 
 #endif //W2_PAGE_H

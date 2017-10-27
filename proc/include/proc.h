@@ -82,7 +82,9 @@ typedef struct pcb_struct {
     struct pcb_struct *cpcb;
     //same group proc linked list
     struct pcb_struct *next_pcb;
+    struct elf_digested *edg;
     struct dynlib_inctree *dynlibs;
+    uint32_t dynlibs_end_addr;
     file_handle_t fh[MAX_FILE_HANDLES];
     mutex_lock_t lock;
     regs_t *lastreg;//for soft switch

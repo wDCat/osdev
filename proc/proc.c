@@ -45,6 +45,7 @@ void create_first_proc() {
     init_pcb->status = STATUS_RUN;
     init_pcb->pid = 1;
     init_pcb->page_dir = kernel_dir;
+    init_pcb->dynlibs_end_addr = 0xA0000000;
     strcpy(init_pcb->dir, "/");
 
     extern tss_entry_t tss_entry;
@@ -335,6 +336,7 @@ pid_t fork(regs_t *r) {
     cpcb->reserved_page = (uint32_t) (kmalloc_paging(0x1000, NULL));
     memset(cpcb->reserved_page, 0, 0x1000);
     cpcb->spages = (struct spage_info *) cpcb->reserved_page;
+    cpcb->dynlibs_end_addr = fpcb->dynlibs_end_addr;
     //Copy open file table...
     memcpy(cpcb->fh, fpcb->fh, sizeof(fpcb->fh));
     memset(cpcb->spages, 0, 0x1000);

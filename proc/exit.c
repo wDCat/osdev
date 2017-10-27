@@ -8,6 +8,7 @@
 #include <vfs.h>
 #include <kmalloc.h>
 #include <page.h>
+#include <elfloader.h>
 #include "exit.h"
 
 void sys_exit(int32_t ret) {
@@ -59,9 +60,16 @@ void do_exit(pcb_t *pcb, int32_t ret) {
     }
     set_proc_status(pcb, STATUS_DIED);
     destory_user_heap(pcb);
+    if (pcb->edg) {
+        CHK(elsp_free_edg(pcb->edg), "fail to release old edg");
+        kfree(pcb->edg);
+        pcb->edg = NULL;
+    }
     free_proc_frames(pcb);
     uint32_t reserved_page = pcb->reserved_page;
     pcb->reserved_page = 0;
     kfree(reserved_page);//Stack will not available.
     do_schedule(NULL);
+    _err:
+    PANIC("may not happen...");
 }

@@ -11,7 +11,6 @@
 
 #define MAX_LOADED_LIBS 64
 typedef struct {
-    uint32_t start_addr;
     uint32_t frameno;
     bool dirty;
 } dynlib_frame_t;
@@ -20,10 +19,14 @@ typedef struct {
     elf_digested_t edg;
     dynlib_frame_t *frames;
     uint32_t frames_count;
-    proc_queue_t *used_proc;
 } dynlib_t;
-typedef struct dynlib_inctree {
+typedef struct {
+    pid_t pid;
     dynlib_t *lib;
+    uint32_t start_addr;
+} dynlib_load_t;
+typedef struct dynlib_inctree {
+    dynlib_load_t *loadinfo;
     struct dynlib_inctree *need;//left sub tree
     struct dynlib_inctree *next;//right sub tree
 } dynlib_inctree_t;
@@ -34,7 +37,9 @@ int dynlibs_try_to_load(pid_t pid, const char *path);
 
 dynlib_t *dynlibs_do_load(pid_t pid, const char *path);
 
-int dynlibs_add_to_tree(pid_t pid, dynlib_inctree_t *parent, dynlib_t *lib);
+int dynlibs_try_to_write(pid_t pid, uint32_t addr);
+
+int dynlibs_add_to_tree(pid_t pid, dynlib_inctree_t *parent, dynlib_load_t *loadinfo);
 
 int dynlibs_find_symbol(pid_t pid, const char *name, uint32_t *out);
 
