@@ -7,8 +7,6 @@
 #ifndef KERNEL
 extern int main(int argc, char **argv);
 int _start(int argc, char **argv, char **envp, uint32_t env_reserved) {
-    syscall_screen_print("hello dcat");
-    printf("welcome");
     printf("envp:%x(%x) rs:%d\n", envp,&envp, env_reserved);
     __initenv(envp, env_reserved);
     for (int x = 0;; x++) {

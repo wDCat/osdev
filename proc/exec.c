@@ -14,7 +14,9 @@
 #include "exec.h"
 
 int kexec(pid_t pid, const char *path, int argc, char *const argv[], char *const envp[]) {
+    pid_t orig_pid = getpid();
     pcb_t *pcb = getpcb(pid);
+    setpid(pid);
     page_directory_t *orig_pd = current_dir;
     int envc = 0;
     if (envp && envp[0] != NULL) {
@@ -168,11 +170,13 @@ int kexec(pid_t pid, const char *path, int argc, char *const argv[], char *const
     }
     strcpy(pcb->name, path);
     dprintf("kexec done.");
+    setpid(orig_pid);
     if (args_tspace)
         kfree(args_tspace);
     proc_rejmp(pcb);
     return 0;
     _err:
+    setpid(orig_pid);
     if (args_tspace)
         kfree(args_tspace);
     if (current_dir != orig_pd && orig_pd != 0) {

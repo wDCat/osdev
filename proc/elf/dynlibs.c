@@ -43,10 +43,12 @@ int dynlibs_find_symbol(pid_t pid, const char *name, uint32_t *out) {
         if (elsp_find_symbol(edg, name, out) == 0) {
             dprintf("found %x+%x", tree->loadinfo->start_addr, *out);
             *out = (uint32_t) *out + tree->loadinfo->start_addr;
+            squeue_destory(&pre_iter);
             return 0;
         }
         squeue_remove(&pre_iter, 0);
     }
+    squeue_destory(&pre_iter);
     return 1;
 }
 
@@ -93,14 +95,18 @@ int dynlibs_add_to_tree(pid_t pid, dynlib_inctree_t *parent, dynlib_load_t *load
     dynlib_inctree_t *nitem = (dynlib_inctree_t *) kmalloc(sizeof(dynlib_inctree_t));
     memset(nitem, 0, sizeof(dynlib_inctree_t));
     nitem->loadinfo = loadinfo;
+    nitem->next = NULL;
+    nitem->need = NULL;
+    dprintf("nitem addr:%x", nitem);
     if (parent == NULL) {
         if (pcb->dynlibs == NULL) {
             dprintf("insert into root");
             pcb->dynlibs = nitem;
         } else {
             dynlib_inctree_t *sp = pcb->dynlibs;
-            while (sp->next != NULL)
+            while (sp->next != NULL) {
                 sp = sp->next;
+            }
             sp->next = nitem;
         }
     } else {
@@ -152,7 +158,9 @@ int dynlibs_remove_from_tree(pid_t pid, dynlib_inctree_t *parent, dynlib_load_t 
 int dynlibs_clone_tree_inner(pid_t pid, dynlib_inctree_t *p, dynlib_inctree_t **out, int *c) {
     if (p == NULL)return -1;
     dynlib_inctree_t *tree = (dynlib_inctree_t *) kmalloc(sizeof(dynlib_inctree_t));
+    memset(tree, 0, sizeof(dynlib_inctree_t));
     dynlib_load_t *nload = (dynlib_load_t *) kmalloc(sizeof(dynlib_load_t));
+    memset(nload, 0, sizeof(dynlib_load_t));
     nload->no = p->loadinfo->no;
     nload->pid = pid;
     nload->start_addr = p->loadinfo->start_addr;
@@ -179,7 +187,7 @@ int dynlibs_clone_tree(pid_t src, pid_t target) {
         deprintf("copy dynlibs tree failed!");
         return -1;
     }
-    dprintf("clone done.Cloned %x items.", count);
+    dprintf("clone done.Cloned %x items.new dynlibs tree:%x", count, getpcb(target)->dynlibs);
     return 0;
 }
 
@@ -217,6 +225,7 @@ bool dynlibs_isloaded_to_proc(const char *path, pid_t pid) {
         if (strcmp(loaded_dynlibs[tree->loadinfo->no]->path, path))return true;
         squeue_remove(&pre_iter, 0);
     }
+    squeue_destory(&pre_iter);
     return false;
 }
 
@@ -244,7 +253,10 @@ int dynlibs_unload_inner(pid_t pid, dynlib_load_t *loadinfo, bool remove_from_tr
         page->frame = NULL;
     }
     if (remove_from_tree)
-        dynlibs_remove_from_tree(pid, NULL, loadinfo);
+        CHK(dynlibs_remove_from_tree(pid, NULL, loadinfo), "");
+    return 0;
+    _err:
+    return -1;
 }
 
 inline int dynlibs_unload(pid_t pid, dynlib_load_t *loadinfo) {
@@ -256,18 +268,28 @@ int dynlibs_unload_all(pid_t pid) {
     dprintf("unloading...");
     pcb_t *pcb = getpcb(pid);
     dynlib_inctree_t *roottree = getpcb(pid)->dynlibs;
+    if (roottree == NULL)return 0;
     squeue_t pre_iter;
-    memset(&pre_iter, 0, sizeof(squeue_t));
+    squeue_t allitems;
+    squeue_init(&pre_iter);
+    squeue_init(&allitems);
     squeue_insert(&pre_iter, (uint32_t) roottree);
+    squeue_insert(&allitems, (uint32_t) roottree);
     while (!squeue_isempty(&pre_iter)) {
         dynlib_inctree_t *tree = SQUEUE_GET(&pre_iter, 0, dynlib_inctree_t*);
-        if (tree->next)squeue_insert(&pre_iter, (uint32_t) tree->next);
-        if (tree->need)squeue_insert(&pre_iter, (uint32_t) tree->need);
+        if (tree != NULL) {
+            dprintf("obj:%x v:%x(%x) next:%x need:%x", tree, tree->loadinfo, tree->loadinfo->no, tree->next,
+                    tree->need);
+            squeue_insert(&allitems, (uint32_t) tree);
+            if (tree->next)squeue_insert(&pre_iter, (uint32_t) tree->next);
+            if (tree->need)squeue_insert(&pre_iter, (uint32_t) tree->need);
+        }
         squeue_remove(&pre_iter, 0);
     }
     int count = 0;
     squeue_iter_t siter;
-    squeue_iter_begin(&siter, &pre_iter);
+    dprintf("pre iter done count:%x", squeue_count(&allitems));
+    squeue_iter_begin(&siter, &allitems);
     while (true) {
         dynlib_inctree_t *tree = (dynlib_inctree_t *) squeue_iter_next(&siter);
         if (tree == NULL)break;
@@ -276,6 +298,10 @@ int dynlibs_unload_all(pid_t pid) {
         kfree(tree);
         count++;
     }
+    squeue_iter_end(&siter);
+    squeue_destory(&pre_iter);
+    squeue_destory(&allitems);
+    pcb->dynlibs = NULL;
     pcb->dynlibs_end_addr = 0xA0000000;
     dprintf("unloaded %x dynlibs", count);
     return 0;

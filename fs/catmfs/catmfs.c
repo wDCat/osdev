@@ -101,7 +101,7 @@ int32_t catmfs_fs_node_readdir(fs_node_t *node, __fs_special_t *fsp_, uint32_t c
         char *np = (char *) ((uint32_t) dir + 9);
         memcpy(result[x].name, np, dir->name_len);
         result[x].name[dir->name_len] = '\0';
-        dprintf("offset:%x len:%x fn:%s", dir, dir->len, result[x].name);
+        //dprintf("offset:%x len:%x fn:%s", dir, dir->len, result[x].name);
         result[x].type = dir->type;
         result[x].name_len = dir->name_len;
         result[x].node = dir->inode;
@@ -135,7 +135,7 @@ int catmfs_fs_node_finddir(fs_node_t *node, __fs_special_t *fsp_, const char *na
         char *np = (char *) ((uint32_t) dir + 9);
         memcpy(sname, np, dir->name_len);
         sname[dir->name_len] = 0;
-        dprintf("sname:%s name:%s", sname, name);
+        //dprintf("sname:%s name:%s", sname, name);
         if (strcmp(sname, name)) {
             catmfs_get_fs_node(dir->inode, result_out);
             return 0;

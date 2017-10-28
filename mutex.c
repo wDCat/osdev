@@ -31,7 +31,7 @@ void mutex_lock(mutex_lock_t *m) {
             "movb %%al,%1;"::"m"(m->mutex), "m"(al), "ax"(0));
     if (al == 1) {
         m->holdpid = getpid();
-        dprintf("proc %x get lock:%x", pcb->pid, m);
+        //dprintf("proc %x get lock:%x", pcb->pid, m);
         srestorei(&ints);
         return;
     } else {
@@ -51,7 +51,7 @@ void mutex_unlock(mutex_lock_t *m) {
     int ints;
     scli(&ints);
     if (m->holdpid != getpid())goto _ret;
-    dprintf("proc %x release lck:%x", getpid(), m);
+    //dprintf("proc %x release lck:%x", getpid(), m);
     __asm__ __volatile__(""
             "movb $1,%%al;"
             "xchgb %%al,%0;"::"m"(m->mutex), "ax"(0));

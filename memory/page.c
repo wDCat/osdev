@@ -303,6 +303,9 @@ page_table_t *clone_page_table(page_table_t *src, uint32_t *phy_out, uint32_t nu
             if (src->pages[x].user)target->pages[x].user = true;
             if (src->pages[x].accessed)target->pages[x].accessed = true;
             if (src->pages[x].dirty)target->pages[x].dirty = true;
+            if (src->typeinfo[x].type)target->typeinfo[x].type = src->typeinfo[x].type;
+            if (src->typeinfo[x].copy_on_fork)target->typeinfo[x].copy_on_fork = true;
+            if (src->typeinfo[x].free_on_proc_exit)target->typeinfo[x].free_on_proc_exit = true;
         }
     }
     page_t *page = get_page(target, false, kernel_dir);

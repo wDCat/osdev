@@ -320,7 +320,7 @@ int destory_user_heap(pcb_t *pcb) {
 
 pid_t fork(regs_t *r) {
     cli();
-    if (proc_count % 10 == 0) {
+    if (proc_count % 5 == 0) {
         clean_pcb_table();
     }
     pid_t fpid = getpid();

@@ -103,7 +103,7 @@ inline int elsp_rel_386_symtab(elf_digested_t *edg, elf_rel_tmp_t *rtmp, uint32_
     pcb_t *pcb = getpcb(edg->pid);
     if (sym == NULL)goto _err;
     const char *symname = elsp_get_dynstring_by_offset(edg, sym->st_name);
-    dprintf("glob dat name:%s(%x)(%x)", symname, sym->st_name, symname);
+    //dprintf("glob dat name:%s(%x)(%x)", symname, sym->st_name, symname);
     uint32_t addr = 0x0;
     int from = 0;
     if (dynlibs_find_symbol(edg->pid, symname, &addr)) {
@@ -120,8 +120,7 @@ inline int elsp_rel_386_symtab(elf_digested_t *edg, elf_rel_tmp_t *rtmp, uint32_
             from = 1;
         }
     }
-    dprintf("update symbol %s(at %x) to %x (from:%x)[bedg:%x]",
-            symname, ptr, addr, from, pcb->edg);
+    //dprintf("update symbol %s(at %x) to %x (from:%x)[bedg:%x]", symname, ptr, addr, from, pcb->edg);
     *ptr = addr;
     return 0;
     _err:
@@ -164,7 +163,7 @@ int elsp_rel_do(elf_digested_t *edg, elf_rel_tmp_t *rtmp) {
             PANIC("debug...")
 
     }
-    dprintf("relocate done [%x] %x ==> %x", ptr, origval, *ptr);
+    //dprintf("relocate done [%x] %x ==> %x", ptr, origval, *ptr);
     return 0;
     _err:
     return -1;
@@ -179,7 +178,7 @@ int elsp_relocate(elf_digested_t *edg, elf_section_t *shdr, uint32_t global_offs
         case SHT_REL: {
             elf_rel_t *rel = (elf_rel_t *) shdr->sh_addr;
             while ((uint32_t) rel < shdr->sh_addr + shdr->sh_size) {
-                dprintf("rel item: offset:%x", rel->r_offset);
+                //dprintf("rel item: offset:%x", rel->r_offset);
                 elf_rel_tmp_t rtmp = {
                         .r_type=SHT_REL,
                         .r_offset=rel->r_offset,
@@ -201,7 +200,7 @@ int elsp_relocate(elf_digested_t *edg, elf_section_t *shdr, uint32_t global_offs
         case SHT_RELA: {
             elf_rela_t *rel = (elf_rela_t *) shdr->sh_addr;
             while ((uint32_t) rel < shdr->sh_addr + shdr->sh_size) {
-                dprintf("rela item: offset:%x", rel->r_offset);
+                //dprintf("rela item: offset:%x", rel->r_offset);
                 elf_rel_tmp_t rtmp = {
                         .r_type=SHT_RELA,
                         .r_offset=rel->r_offset,

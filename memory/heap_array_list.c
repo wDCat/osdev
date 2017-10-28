@@ -42,6 +42,7 @@ int insert_item_ordered(heap_array_list_t *al, header_info_t *info) {
             memcpy(&al->headers[x], info, sizeof(header_info_t));
             al->size++;
             if (al->size > al->max_size) {
+                dump_al(al);
                 PANIC("Out of array.");
             }
             inserted = true;

@@ -23,6 +23,8 @@ typedef struct {
 
 int squeue_init(squeue_t *sq);
 
+int squeue_destory(squeue_t *sq);
+
 int squeue_set(squeue_t *ns, int index, uint32_t objaddr);
 
 int squeue_insert(squeue_t *ns, uint32_t objaddr);

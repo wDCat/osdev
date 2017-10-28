@@ -97,6 +97,18 @@ uint32_t squeue_get(squeue_t *sq, int index) {
 
 }
 
+int squeue_destory(squeue_t *sq) {
+    squeue_entry_t *e = sq->first;
+    while (e != NULL) {
+        squeue_entry_t *tf = e;
+        e = e->next;
+        kfree(tf);
+    }
+    sq->count = 0;
+    sq->first = NULL;
+    return 0;
+}
+
 int squeue_remove_vout(squeue_t *sq, int index, uint32_t *valout) {
     ASSERT(sq && index >= 0);
     if (index >= sq->count)return -1;
