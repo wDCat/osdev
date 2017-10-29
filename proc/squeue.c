@@ -98,14 +98,17 @@ uint32_t squeue_get(squeue_t *sq, int index) {
 }
 
 int squeue_destory(squeue_t *sq) {
+    int c = 0;
     squeue_entry_t *e = sq->first;
     while (e != NULL) {
+        c++;
         squeue_entry_t *tf = e;
         e = e->next;
         kfree(tf);
     }
     sq->count = 0;
     sq->first = NULL;
+    dprintf("destory %x entrys", c);
     return 0;
 }
 

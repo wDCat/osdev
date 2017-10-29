@@ -98,7 +98,7 @@ void proc_install() {
 }
 
 
-pid_t find_free_pcb() {
+pid_t find_free_pid() {
     for (pid_t x = 0; x < MAX_PROC_COUNT; x++) {
         if (!processes[x].present)return x;
     }
@@ -320,12 +320,12 @@ int destory_user_heap(pcb_t *pcb) {
 
 pid_t fork(regs_t *r) {
     cli();
-    if (proc_count % 5 == 0) {
+    if (proc_count % 6 == 0) {
         clean_pcb_table();
     }
     pid_t fpid = getpid();
     pid_t cpid;
-    cpid = find_free_pcb();
+    cpid = find_free_pid();
     extern tss_entry_t tss_entry;
     if (cpid == 0) PANIC("Out of PCB///");
     pcb_t *fpcb = getpcb(fpid);

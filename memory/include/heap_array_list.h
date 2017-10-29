@@ -13,6 +13,7 @@ typedef struct {
     uint32_t addr;
     uint32_t size;
     bool used;
+    uint32_t trace_eip;
 } header_info_t;
 typedef struct {
     header_info_t *headers;

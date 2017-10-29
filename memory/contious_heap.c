@@ -8,6 +8,7 @@
 #include <str.h>
 #include <contious_heap.h>
 #include <proc.h>
+#include <heap_array_list.h>
 #include "include/contious_heap.h"
 #include "include/kmalloc.h"
 
@@ -62,7 +63,7 @@ int destory_heap(heap_t *heap) {
     return 0;
 }
 
-void *halloc(heap_t *heap, uint32_t size, bool page_align) {
+void *halloc_inter(heap_t *heap, uint32_t size, bool page_align, uint32_t trace_eip) {
     if (page_align) PANIC("Use kmalloc_paging instead.");
     mutex_lock(&heap->lock);
     ASSERT(heap && size >= 0);
@@ -99,15 +100,21 @@ void *halloc(heap_t *heap, uint32_t size, bool page_align) {
     h1info.addr = (uint32_t) header;
     h1info.size = header->size;
     h1info.used = true;
+    h1info.trace_eip = trace_eip;
     h2info.addr = (uint32_t) new_header;
     h2info.size = new_header->size;
     h2info.used = false;
+    h2info.trace_eip = 0;
     insert_item_ordered(&heap->al, &h1info);
     insert_item_ordered(&heap->al, &h2info);
     header->used = true;
     //memset(hinfo->addr + HOLE_HEADER_SIZE, 0, size);
     mutex_unlock(&heap->lock);
     return (void *) ((uint32_t) header + HOLE_HEADER_SIZE);
+}
+
+inline void *halloc(heap_t *heap, uint32_t size, bool page_align) {
+    return halloc_inter(heap, size, page_align, NULL);
 }
 
 hole_header_t *combine_two_hole(heap_t *heap, hole_header_t *h1, hole_header_t *h2) {

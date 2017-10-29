@@ -43,13 +43,15 @@ int dynlibs_find_symbol(pid_t pid, const char *name, uint32_t *out) {
         if (elsp_find_symbol(edg, name, out) == 0) {
             dprintf("found %x+%x", tree->loadinfo->start_addr, *out);
             *out = (uint32_t) *out + tree->loadinfo->start_addr;
-            squeue_destory(&pre_iter);
+            CHK(squeue_destory(&pre_iter), "");
             return 0;
         }
-        squeue_remove(&pre_iter, 0);
+        CHK(squeue_remove(&pre_iter, 0), "");
     }
-    squeue_destory(&pre_iter);
+    CHK(squeue_destory(&pre_iter), "");
     return 1;
+    _err:
+    return -1;
 }
 
 int dynlibs_try_to_write(pid_t pid, uint32_t addr) {
@@ -492,6 +494,7 @@ int dynlibs_load_sections(dynlib_t *lib, elf_digested_t *edg) {
         memcpy(&lib->frames[x], (void *) objaddr, sizeof(dynlib_frame_t));
     }
     CHK(squeue_remove(&framesinfo, 0), "");
+    CHK(squeue_destory(&framesinfo), "");
     return 0;
     _err:
     return 1;

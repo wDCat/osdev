@@ -48,6 +48,7 @@ FILE(GLOB MyCSources
 /home/dcat/osdev/w2/ker/irqs.c
 /home/dcat/osdev/w2/ker/system.c
 /home/dcat/osdev/w2/ker/gdt.c
+/home/dcat/osdev/w2/proc/blkqueue.c
 /home/dcat/osdev/w2/proc/squeue.c
 /home/dcat/osdev/w2/proc/exec.c
 /home/dcat/osdev/w2/proc/wait.c
@@ -114,6 +115,7 @@ FILE(GLOB MyCSources
 /home/dcat/osdev/w2/proc/include/signal.h
 /home/dcat/osdev/w2/proc/include/squeue.h
 /home/dcat/osdev/w2/proc/include/exec.h
+/home/dcat/osdev/w2/proc/include/blkqueue.h
 /home/dcat/osdev/w2/proc/include/wait.h
 /home/dcat/osdev/w2/proc/include/proc.h
 /home/dcat/osdev/w2/proc/include/exit.h

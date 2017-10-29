@@ -20,11 +20,13 @@ void kfree(void *ptr);
 
 uint32_t kmalloc_paging(uint32_t sz, uint32_t *phys);
 
-uint32_t kmalloc_internal(uint32_t sz, bool align, uint32_t *phys, heap_t *heap);
 
-#define kmalloc(sz) kmalloc_internal(sz,false,NULL,kernel_heap)
-#define kmalloc_a(sz) kmalloc_internal(sz,true,NULL,kernel_heap)
-#define kmalloc_p(sz, phy) kmalloc_internal(sz,false,phy,kernel_heap)
-#define kmalloc_ap(sz, phy) kmalloc_internal(sz,true,phy,kernel_heap)
+uint32_t kmalloc_internal(uint32_t sz, bool align,
+                          uint32_t *phys, heap_t *heap, uint32_t trace_eip);
+
+#define kmalloc(sz) kmalloc_internal(sz,false,NULL,kernel_heap,get_eip())
+#define kmalloc_a(sz) kmalloc_internal(sz,true,NULL,kernel_heap,NULL)
+#define kmalloc_p(sz, phy) kmalloc_internal(sz,false,phy,kernel_heap,NULL)
+#define kmalloc_ap(sz, phy) kmalloc_internal(sz,true,phy,kernel_heap,NULL)
 
 #endif //W2_KMALLOC_H

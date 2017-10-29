@@ -26,17 +26,18 @@ uint32_t kmalloc_paging(uint32_t sz, uint32_t *phys) {
         dprintf("allocated space:%x", r);
         return r;
     } else {
-        uint32_t ret = kmalloc_internal(sz, true, phys, NULL);
+        uint32_t ret = kmalloc_internal(sz, true, phys, NULL, NULL);
         dprintf("heap not present.call kmalloc instead,ret:%x", ret);
         return ret;
     }
 }
 
-uint32_t kmalloc_internal(uint32_t sz, bool align, uint32_t *phys, heap_t *heap) {
+uint32_t kmalloc_internal(uint32_t sz, bool align,
+                          uint32_t *phys, heap_t *heap, uint32_t trace_eip) {
     ASSERT(heap_placement_addr != NULL);
     ASSERT(heap_placement_addr >= &end);
     if (heap) {
-        void *ret = halloc(heap, sz, align);
+        void *ret = halloc_inter(heap, sz, align, trace_eip);
         if (!ret) {
             dump_al(&heap->al);
             PANIC("[kmalloc]Out of kernel heap.");

@@ -555,7 +555,10 @@ int elsp_free_edg(elf_digested_t *edg) {
         kfree(edg->strings);
         edg->strings = NULL;
     }
+    CHK(squeue_destory(&edg->dynlibs_need_queue), "");
     return 0;
+    _err:
+    return -1;
 }
 
 uint32_t elsp_get_entry(elf_digested_t *edg) {

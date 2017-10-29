@@ -17,6 +17,8 @@
 #include <swap_disk.h>
 #include <swap.h>
 #include <print.h>
+#include <heap_array_list.h>
+#include <blkqueue.h>
 #include "ker/include/gdt.h"
 #include "ker/include/idt.h"
 #include "ker/include/system.h"
@@ -42,7 +44,8 @@ int putTest(int a) {
 void dump_al(heap_array_list_t *al) {
     dprintf("------------------------");
     for (int x = 0; x < al->size; x++) {
-        dprintf("AL[%x] st:%x size:%x used:%x", x, al->headers[x].addr, al->headers[x].size, al->headers[x].used);
+        dprintf("AL[%x] st:%x size:%x used:%x teip:%x", x, al->headers[x].addr,
+                al->headers[x].size, al->headers[x].used, al->headers[x].trace_eip);
     }
     dprintf("------------------------");
 }
@@ -99,7 +102,7 @@ void catmfs_test(uint32_t addr) {
 void get_phy_test() {
 
     uint32_t phy;
-    uint32_t *a = kmalloc_internal(10, false, &phy, true);
+    uint32_t *a = kmalloc_internal(10, false, &phy, true, NULL);
     uint32_t geted_phy = get_physical_address(a);
     *a = 0xFAFAFAFAF;
     putf_const("get:%x right:%x vm:%x\n", geted_phy, phy, a);
@@ -196,8 +199,22 @@ int sinterrupt_test() {
     dprintf("ic status:%x", get_interrupt_status());
 }
 
-int little_test() {
+int blkqueue_test() {
+    blkqueue_t b;
+    blkqueue_init(&b, 2);
+    for (int x = 0; x < 10; x++) {
+        blkqueue_insert(&b, 0xA000 + x);
+    }
+    for (int x = 0; x < 10; x++) {
+        uint32_t addr = blkqueue_get(&b, x);
+        dprintf("[%x]got addr:%x", x, addr);
+    }
+    dprintf("blkqueue test done~");
+}
 
+int little_test() {
+    blkqueue_test();
+    for (;;);
     usermode();
     for (int x = 0;; x++) {
         dprintf("test time:%x", x);

@@ -35,6 +35,8 @@ heap_t *create_heap(heap_t *ret, uint32_t start_addr, uint32_t end_addr, uint32_
 
 heap_t *clone_heap(heap_t *src, heap_t *target);
 
+void *halloc_inter(heap_t *heap, uint32_t size, bool page_align, uint32_t trace_eip);
+
 void *halloc(heap_t *heap, uint32_t size, bool page_align);
 
 void hfree(heap_t *heap, uint32_t addr);

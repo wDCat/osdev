@@ -9,6 +9,7 @@
 #include <kmalloc.h>
 #include <page.h>
 #include <elfloader.h>
+#include <dynlibs.h>
 #include "exit.h"
 
 void sys_exit(int32_t ret) {
@@ -65,6 +66,7 @@ void do_exit(pcb_t *pcb, int32_t ret) {
         kfree(pcb->edg);
         pcb->edg = NULL;
     }
+    dynlibs_unload_all(pcb->pid);
     free_proc_frames(pcb);
     uint32_t reserved_page = pcb->reserved_page;
     pcb->reserved_page = 0;
