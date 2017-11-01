@@ -12,10 +12,18 @@ int blkqueue_init(blkqueue_t *sq, int perblk_entries_count) {
     sq->count = 0;
     sq->first = NULL;
     sq->perblk_entries_count = perblk_entries_count;
+    sq->fboff = 0;
 }
 
 int blkqueue_destory(blkqueue_t *sq) {
-
+    blkqueue_blk_t *blk = sq->first;
+    while (blk != NULL) {
+        blkqueue_blk_t *tfblk = blk;
+        blk = blk->next;
+        kfree(tfblk);
+    }
+    memset(sq, 0, sizeof(blkqueue_t));
+    return 0;
 }
 
 int blkqueue_set(blkqueue_t *ns, int index, uint32_t objaddr) {
@@ -38,7 +46,7 @@ inline int blkqueue_blk_init(blkqueue_t *ns, blkqueue_blk_t *blk) {
 }
 
 int blkqueue_insert(blkqueue_t *ns, uint32_t objaddr) {
-    uint32_t index = ns->count;
+    uint32_t index = ns->count + ns->fboff;
     uint32_t blkno = index / ns->perblk_entries_count;
     uint32_t inoff = index % ns->perblk_entries_count;
     dprintf("index:%x pec:%x bno:%x inoff:%x", index, ns->perblk_entries_count, blkno, inoff);
@@ -82,6 +90,7 @@ int blkqueue_insert(blkqueue_t *ns, uint32_t objaddr) {
 uint32_t blkqueue_get(blkqueue_t *ns, uint32_t index) {
     if (index >= ns->count)
         return NULL;
+    index += ns->fboff;
     uint32_t blkno = index / ns->perblk_entries_count;
     uint32_t inoff = index % ns->perblk_entries_count;
     blkqueue_blk_t *blk = ns->first;
@@ -103,11 +112,26 @@ uint32_t blkqueue_get(blkqueue_t *ns, uint32_t index) {
     return NULL;
 }
 
-int blkqueue_remove(blkqueue_t *ns, int index) {
-    if (index >= ns->count)
-        return -1;
+int blkqueue_remove_first(blkqueue_t *ns, uint32_t *valout) {
+    blkqueue_blk_t *blk = ns->first;
+    if (blk == NULL || ns->count < 1)return -1;
+    if (*valout)
+        *valout = *((uint32_t *) &blk->next + 1 + ns->fboff);
+    ns->fboff++;
+    ns->count--;
+    if (ns->fboff == ns->perblk_entries_count) {
+        ns->first = blk->next;
+        ns->fboff = 0;
+        kfree(blk);
+    }
+    return 0;
+}
+
+int blkqueue_remove_last(blkqueue_t *ns, uint32_t *valout) {
+    uint32_t index = ns->count + ns->fboff - 1;
     uint32_t blkno = index / ns->perblk_entries_count;
     uint32_t inoff = index % ns->perblk_entries_count;
+    dprintf("index:%x pec:%x bno:%x inoff:%x", index, ns->perblk_entries_count, blkno, inoff);
     blkqueue_blk_t *blk = ns->first;
     for (int x = 0; x < blkno && blk != NULL; x++) {
         if (!blkqueue_blk_chk(ns, blk)) {
@@ -116,16 +140,13 @@ int blkqueue_remove(blkqueue_t *ns, int index) {
         }
         blk = blk->next;
     }
-    if (blk == NULL) {
-        deprintf("blk not found!!");
-        goto _err;
-    }
-    //uint32_t *ptr = (uint32_t *) blk->next + 1 + inoff;
-    memcpy((uint32_t) &blk->next + (1 + inoff) * sizeof(uint32_t),
-           (uint32_t) &blk->next + (2 + inoff) * sizeof(uint32_t),
-           blkqueue_blk_size(ns) - sizeof(blkqueue_blk_t) - (inoff) * sizeof(uint32_t));
+    if (blk == NULL)goto _err;
+    if (valout)
+        *valout = *((uint32_t *) &blk->next + 1 + inoff);
     ns->count--;
-    return 0;
+    if (inoff == 0) {
+        kfree(blk);
+    }
     _err:
     return -1;
 }
@@ -134,18 +155,29 @@ inline bool blkqueue_isempty(blkqueue_t *sq) {
     return sq->count == 0;
 }
 
-int blkqueue_remove_vout(blkqueue_t *sq, int index, uint32_t *valout) {
-
-}
 
 int blkqueue_iter_begin(blkqueue_iter_t *iter, blkqueue_t *ns) {
-
+    iter->queue = ns;
+    iter->current = ns->first;
+    iter->inoff = ns->fboff;
+    iter->count = 0;
 }
 
 uint32_t blkqueue_iter_next(blkqueue_iter_t *iter) {
-
+    if (iter == NULL || iter->queue == NULL || iter->current == NULL || iter->count >= iter->queue->count)
+        return NULL;
+    blkqueue_blk_t *blk = iter->current;
+    uint32_t ret = *((uint32_t *) &blk->next + 1 + iter->inoff);
+    iter->count++;
+    iter->inoff++;
+    if (iter->inoff == iter->queue->perblk_entries_count) {
+        iter->current = iter->current->next;
+        iter->inoff = 0;
+    }
+    return ret;
 }
 
 int blkqueue_iter_end(blkqueue_iter_t *iter) {
-
+    memset(iter, 0, sizeof(blkqueue_iter_t));
+    return 0;
 }

@@ -63,17 +63,6 @@ int elsp_dynamic_section(elf_digested_t *edg, elf_section_t *shdr) {
     return 0;
 }
 
-int elsp_load_strings(elf_digested_t *edg) {
-    if (edg->dyn_entry.dynstrtab == NULL) {
-        deprintf("strtab is not defined in dyn section");
-        goto _err;
-    }
-
-    _err:
-    return 1;
-
-}
-
 typedef struct {
     uint32_t shdrtype;
     uint32_t r_offset;

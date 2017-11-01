@@ -12,6 +12,7 @@
 #include <mutex.h>
 #include <swap.h>
 #include <page.h>
+#include <blkqueue.h>
 #include "dynlibs.h"
 
 mutex_lock_t dynlibs_lock;
@@ -271,38 +272,37 @@ int dynlibs_unload_all(pid_t pid) {
     pcb_t *pcb = getpcb(pid);
     dynlib_inctree_t *roottree = getpcb(pid)->dynlibs;
     if (roottree == NULL)return 0;
-    squeue_t pre_iter;
-    squeue_t allitems;
-    squeue_init(&pre_iter);
-    squeue_init(&allitems);
-    squeue_insert(&pre_iter, (uint32_t) roottree);
-    squeue_insert(&allitems, (uint32_t) roottree);
-    while (!squeue_isempty(&pre_iter)) {
-        dynlib_inctree_t *tree = SQUEUE_GET(&pre_iter, 0, dynlib_inctree_t*);
+    blkqueue_t pre_iter;
+    blkqueue_t allitems;
+    blkqueue_init(&pre_iter, 10);
+    blkqueue_init(&allitems, 10);
+    blkqueue_insert(&pre_iter, (uint32_t) roottree);
+    while (!blkqueue_isempty(&pre_iter)) {
+        dynlib_inctree_t *tree;
+        CHK(blkqueue_remove_first(&pre_iter, (uint32_t *) &tree), "");
         if (tree != NULL) {
             dprintf("obj:%x v:%x(%x) next:%x need:%x", tree, tree->loadinfo, tree->loadinfo->no, tree->next,
                     tree->need);
-            squeue_insert(&allitems, (uint32_t) tree);
-            if (tree->next)squeue_insert(&pre_iter, (uint32_t) tree->next);
-            if (tree->need)squeue_insert(&pre_iter, (uint32_t) tree->need);
+            blkqueue_insert(&allitems, (uint32_t) tree);
+            if (tree->next)blkqueue_insert(&pre_iter, (uint32_t) tree->next);
+            if (tree->need)blkqueue_insert(&pre_iter, (uint32_t) tree->need);
         }
-        squeue_remove(&pre_iter, 0);
     }
     int count = 0;
-    squeue_iter_t siter;
-    dprintf("pre iter done count:%x", squeue_count(&allitems));
-    squeue_iter_begin(&siter, &allitems);
+    blkqueue_iter_t siter;
+    dprintf("pre iter done count:%x", blkqueue_count(&allitems));
+    blkqueue_iter_begin(&siter, &allitems);
     while (true) {
-        dynlib_inctree_t *tree = (dynlib_inctree_t *) squeue_iter_next(&siter);
+        dynlib_inctree_t *tree = (dynlib_inctree_t *) blkqueue_iter_next(&siter);
         if (tree == NULL)break;
         CHK(dynlibs_unload_inner(pid, tree->loadinfo, false), "");
         kfree(tree->loadinfo);
         kfree(tree);
         count++;
     }
-    squeue_iter_end(&siter);
-    squeue_destory(&pre_iter);
-    squeue_destory(&allitems);
+    blkqueue_iter_end(&siter);
+    blkqueue_destory(&pre_iter);
+    blkqueue_destory(&allitems);
     pcb->dynlibs = NULL;
     pcb->dynlibs_end_addr = 0xA0000000;
     dprintf("unloaded %x dynlibs", count);

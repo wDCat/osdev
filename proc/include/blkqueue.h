@@ -17,11 +17,13 @@ typedef struct blkqueue_blk {
 typedef struct {
     uint32_t count;
     int perblk_entries_count;
+    int fboff;
     struct blkqueue_blk *first;
 } blkqueue_t;
 typedef struct {
     blkqueue_t *queue;
     blkqueue_blk_t *current;
+    uint32_t count;
     int inoff;
 } blkqueue_iter_t;
 #define blkqueue_count(sq) ((sq)->count)
@@ -36,11 +38,12 @@ int blkqueue_insert(blkqueue_t *ns, uint32_t objaddr);
 
 uint32_t blkqueue_get(blkqueue_t *sq, uint32_t index);
 
-int blkqueue_remove(blkqueue_t *sq, int index);
+int blkqueue_remove_first(blkqueue_t *ns, uint32_t *valout);
+
+int blkqueue_remove_last(blkqueue_t *ns, uint32_t *valout);
 
 bool blkqueue_isempty(blkqueue_t *sq);
 
-int blkqueue_remove_vout(blkqueue_t *sq, int index, uint32_t *valout);
 
 int blkqueue_iter_begin(blkqueue_iter_t *iter, blkqueue_t *ns);
 

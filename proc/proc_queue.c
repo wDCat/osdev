@@ -17,6 +17,8 @@ proc_queue_t *proc_avali_queue,
 
 int proc_queue_insert(proc_queue_t *ns, pcb_t *pcb) {
     ASSERT(ns && pcb);
+    int ints;
+    scli(&ints);
     uint32_t sc = 256;
     if (ns->first == NULL) {
         proc_queue_entry_t *ne = (proc_queue_entry_t *) kmalloc(sizeof(proc_queue_entry_t));
@@ -43,10 +45,13 @@ int proc_queue_insert(proc_queue_t *ns, pcb_t *pcb) {
     if (sc == 0) {
         PANIC("Unknown Exception");
     }
+    srestorei(&ints);
     return 0;
 }
 
 int proc_queue_wakeupall(proc_queue_t *ns, bool clear_queue) {
+    int ints;
+    scli(&ints);
     if (ns->first != NULL) {
         proc_queue_entry_t *e = ns->first;
         while (e != NULL) {
@@ -64,6 +69,7 @@ int proc_queue_wakeupall(proc_queue_t *ns, bool clear_queue) {
         ns->first = 0;
         ns->count = 0;
     }
+    srestorei(&ints);
     return 0;
 }
 
@@ -96,6 +102,8 @@ int proc_queue_iter_end(proc_queue_iter_t *iter) {
 
 int proc_queue_remove(proc_queue_t *old, pcb_t *pcb) {
     ASSERT(old && pcb);
+    int ints;
+    scli(&ints);
     uint32_t sc = 256;
     bool removed = false;
     proc_queue_entry_t *e = old->first;
@@ -121,5 +129,6 @@ int proc_queue_remove(proc_queue_t *old, pcb_t *pcb) {
     if (sc == 0) {
         PANIC("Unknown Exception");
     }
+    srestorei(&ints);
     return !removed;
 }

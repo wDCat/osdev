@@ -69,7 +69,8 @@ void remove_item(heap_array_list_t *al, int index) {
 header_info_t *find_suit_hole(heap_array_list_t *al, uint32_t size, int *index) {
     ASSERT(al);
     for (int x = 0; x < al->size; x++) {
-        if (!al->headers[x].used && size + HOLE_HEADER_SIZE + HOLE_FOOTER_SIZE < al->headers[x].size) {
+        if (!al->headers[x].used &&
+            (size == al->headers[x].size || size + HOLE_HEADER_SIZE + HOLE_FOOTER_SIZE + 0x8 < al->headers[x].size)) {
             *index = x;
             return &al->headers[x];
         }

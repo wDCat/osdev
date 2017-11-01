@@ -36,10 +36,11 @@ void mutex_lock(mutex_lock_t *m) {
         return;
     } else {
         //suspend it
-        dprintf("proc %x wait lock:%x", getpid(), m);
+        dprintf("proc %x wait lock:%x holding by %x", getpid(), m, m->holdpid);
         set_proc_status(pcb, STATUS_WAIT);
         CHK(proc_queue_insert(&m->wait_queue, pcb), "");
         srestorei(&ints);
+        dprintf("reschedule");
         do_schedule(NULL);
     }
     _err:

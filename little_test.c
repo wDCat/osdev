@@ -205,16 +205,26 @@ int blkqueue_test() {
     for (int x = 0; x < 10; x++) {
         blkqueue_insert(&b, 0xA000 + x);
     }
-    for (int x = 0; x < 10; x++) {
+    uint32_t val;
+    blkqueue_remove_first(&b, &val);
+    dprintf("remove first:%x", val);
+    blkqueue_remove_last(&b, &val);
+    dprintf("remove last:%x", val);
+    for (int x = 0; x < 8; x++) {
         uint32_t addr = blkqueue_get(&b, x);
-        dprintf("[%x]got addr:%x", x, addr);
+        //dprintf("[%x]got addr:%x", x, addr);
+    }
+    blkqueue_iter_t i;
+    blkqueue_iter_begin(&i, &b);
+    while (true) {
+        uint32_t addr = blkqueue_iter_next(&i);
+        if (addr == NULL)break;
+        dprintf("iter got addr:%x", addr);
     }
     dprintf("blkqueue test done~");
 }
 
 int little_test() {
-    blkqueue_test();
-    for (;;);
     usermode();
     for (int x = 0;; x++) {
         dprintf("test time:%x", x);

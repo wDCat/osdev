@@ -66,31 +66,40 @@ int destory_heap(heap_t *heap) {
 void *halloc_inter(heap_t *heap, uint32_t size, bool page_align, uint32_t trace_eip) {
     if (page_align) PANIC("Use kmalloc_paging instead.");
     mutex_lock(&heap->lock);
+    uint32_t ret;
     ASSERT(heap && size >= 0);
     int hinfo_index;
     header_info_t *hinfo = find_suit_hole(&heap->al, size, &hinfo_index);
     if (!hinfo) {
         deprintf("Out of heap.");
+        mutex_unlock(&heap->lock);
         return NULL;
     }
     ASSERT(!hinfo->used);
-    //putf_const("hole[%x][%x][%x]", hinfo->addr, hinfo->size, hinfo->used);
+    ASSERT(hinfo->size >= size);
+    dprintf("hole[%x][%x][%x] <== %x", hinfo->addr, hinfo->size, hinfo->used, size);
     hole_header_t *header = (hole_header_t *) hinfo->addr;
     hole_footer_t *footer = (hole_footer_t *) (hinfo->addr + HOLE_HEADER_SIZE + header->size);
     ASSERT(header->magic == HOLE_HEADER_MAGIC);
     ASSERT(footer->magic == HOLE_FOOTER_MAGIC);
     ASSERT(footer->header == header);
+    if (hinfo->size == size) {
+        header->used = true;
+        hinfo->used = true;
+        ret = ((uint32_t) hinfo->addr + HOLE_HEADER_SIZE);
+        goto _ret;
+    }
     //分配新的头和尾
     hole_header_t *new_header = (hole_header_t *) (hinfo->addr + HOLE_HEADER_SIZE + size + HOLE_FOOTER_SIZE);
     hole_footer_t *new_footer = (hole_footer_t *) (hinfo->addr + HOLE_HEADER_SIZE + size);
-    //dumphex("new_header addr:", new_header);
-    //dumphex("new_footer addr:", new_footer);
+
     new_footer->magic = HOLE_FOOTER_MAGIC;
     new_footer->header = header;
     new_header->magic = HOLE_HEADER_MAGIC;
     new_header->used = false;
     new_header->size = hinfo->size - size - HOLE_HEADER_SIZE - HOLE_FOOTER_SIZE;
-    //dumphex("size:", new_header->size);
+    dprintf("new_header addr:%x size:%x", new_header, new_header->size);
+    dprintf("new_footer addr:%x", new_footer);
     //Update
     header->size = size;
     footer->header = new_header;
@@ -109,8 +118,11 @@ void *halloc_inter(heap_t *heap, uint32_t size, bool page_align, uint32_t trace_
     insert_item_ordered(&heap->al, &h2info);
     header->used = true;
     //memset(hinfo->addr + HOLE_HEADER_SIZE, 0, size);
+    ret = ((uint32_t) header + HOLE_HEADER_SIZE);
+    _ret:
+    dprintf("ret:%x", ret);
     mutex_unlock(&heap->lock);
-    return (void *) ((uint32_t) header + HOLE_HEADER_SIZE);
+    return (void *) ret;
 }
 
 inline void *halloc(heap_t *heap, uint32_t size, bool page_align) {
@@ -125,6 +137,7 @@ hole_header_t *combine_two_hole(heap_t *heap, hole_header_t *h1, hole_header_t *
     ASSERT(footer2->magic == HOLE_FOOTER_MAGIC);
     footer2->header = h1;
     h1->size = h1->size + h2->size + HOLE_HEADER_SIZE + HOLE_FOOTER_SIZE;
+    h2->magic = NULL;
     //从索引中移除
     for (int x = 0; x < heap->al.size; x++) {
         if (heap->al.headers[x].addr == (uint32_t) h1 || heap->al.headers[x].addr == (uint32_t) h2) {
@@ -152,6 +165,11 @@ void hfree(heap_t *heap, uint32_t addr) {
     hole_footer_t *footer = (hole_footer_t *) (addr + header->size);
     ASSERT(header->magic == HOLE_HEADER_MAGIC);
     ASSERT(footer->magic == HOLE_FOOTER_MAGIC);
+    if (!header->used) {
+        PANIC("try to free a unused hole:%x", addr);
+        mutex_unlock(&heap->lock);
+        return;
+    }
     header->used = false;
     bool header_removed = false;
     //检查前一个hole
@@ -167,6 +185,7 @@ void hfree(heap_t *heap, uint32_t addr) {
             footer = NULL;
         }
     }
+
     if ((uint32_t) header + header->size + HOLE_HEADER_SIZE + HOLE_FOOTER_SIZE < heap->end_addr) {
         hole_header_t *next_header = (hole_header_t *) ((uint32_t) header + HOLE_HEADER_SIZE + header->size +
                                                         HOLE_FOOTER_SIZE);
@@ -193,5 +212,6 @@ void hfree(heap_t *heap, uint32_t addr) {
     info.size = header->size;
     info.addr = (uint32_t) header;
     insert_item_ordered(&heap->al, &info);
+    dprintf("new size:%x", info.size);
     mutex_unlock(&heap->lock);
 }

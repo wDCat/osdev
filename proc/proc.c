@@ -174,7 +174,10 @@ void set_proc_status(pcb_t *pcb, proc_status_t new_status) {
     if (pcb < 0x100) PANIC("so silly the cat!");
     int ints;
     scli(&ints);
-    if (pcb->status == new_status || pcb->pid <= 1)return;
+    if (pcb->status == new_status || pcb->pid <= 1) {
+        srestorei(&ints);
+        return;
+    }
     dprintf("Proc %x status %x ==> %x", pcb->pid, pcb->status, new_status);
     proc_queue_t *old = find_pqueue_by_status(pcb->status);
     proc_queue_t *ns = find_pqueue_by_status(new_status);

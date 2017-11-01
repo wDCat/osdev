@@ -17,12 +17,12 @@ typedef struct {
     uint32_t used;
     uint32_t size;
 } hole_header_t;
-#define HOLE_HEADER_SIZE sizeof(hole_header_t)
+#define HOLE_HEADER_SIZE (sizeof(hole_header_t))
 typedef struct {
     uint32_t magic;
     hole_header_t *header;
 } hole_footer_t;
-#define HOLE_FOOTER_SIZE sizeof(hole_footer_t)
+#define HOLE_FOOTER_SIZE (sizeof(hole_footer_t))
 typedef struct {
     mutex_lock_t lock;
     uint32_t start_addr;
