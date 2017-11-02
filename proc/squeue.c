@@ -12,7 +12,9 @@ int squeue_init(squeue_t *sq) {
     memset(sq, 0, sizeof(squeue_t));
     return 0;
 }
+int squeue_init3(squeue_t *sq){
 
+}
 int squeue_set(squeue_t *ns, int index, uint32_t objaddr) {
     ASSERT(ns && index < ns->count);
     int sc = index;

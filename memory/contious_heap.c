@@ -77,7 +77,7 @@ void *halloc_inter(heap_t *heap, uint32_t size, bool page_align, uint32_t trace_
     }
     ASSERT(!hinfo->used);
     ASSERT(hinfo->size >= size);
-    dprintf("hole[%x][%x][%x] <== %x", hinfo->addr, hinfo->size, hinfo->used, size);
+    //dprintf("hole[%x][%x][%x] <== %x", hinfo->addr, hinfo->size, hinfo->used, size);
     hole_header_t *header = (hole_header_t *) hinfo->addr;
     hole_footer_t *footer = (hole_footer_t *) (hinfo->addr + HOLE_HEADER_SIZE + header->size);
     ASSERT(header->magic == HOLE_HEADER_MAGIC);
@@ -98,8 +98,8 @@ void *halloc_inter(heap_t *heap, uint32_t size, bool page_align, uint32_t trace_
     new_header->magic = HOLE_HEADER_MAGIC;
     new_header->used = false;
     new_header->size = hinfo->size - size - HOLE_HEADER_SIZE - HOLE_FOOTER_SIZE;
-    dprintf("new_header addr:%x size:%x", new_header, new_header->size);
-    dprintf("new_footer addr:%x", new_footer);
+    //dprintf("new_header addr:%x size:%x", new_header, new_header->size);
+    //dprintf("new_footer addr:%x", new_footer);
     //Update
     header->size = size;
     footer->header = new_header;
@@ -120,7 +120,7 @@ void *halloc_inter(heap_t *heap, uint32_t size, bool page_align, uint32_t trace_
     //memset(hinfo->addr + HOLE_HEADER_SIZE, 0, size);
     ret = ((uint32_t) header + HOLE_HEADER_SIZE);
     _ret:
-    dprintf("ret:%x", ret);
+    //dprintf("ret:%x", ret);
     mutex_unlock(&heap->lock);
     return (void *) ret;
 }
@@ -212,6 +212,6 @@ void hfree(heap_t *heap, uint32_t addr) {
     info.size = header->size;
     info.addr = (uint32_t) header;
     insert_item_ordered(&heap->al, &info);
-    dprintf("new size:%x", info.size);
+    //dprintf("new size:%x", info.size);
     mutex_unlock(&heap->lock);
 }

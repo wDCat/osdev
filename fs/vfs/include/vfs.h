@@ -113,6 +113,12 @@ int sys_access(const char *path, int mode);
 
 int sys_chdir(const char *path);
 
+int kdup3(pid_t pid, int oldfd, int newfd, int flags);
+
+int sys_dup3(int oldfd, int newfd, int flags);
+
+bool isopenedfd(pid_t pid, int fd);
+
 char *sys_getcwd(char *buff, int len);
 
 char *kgetcwd(pid_t pid);

@@ -99,4 +99,6 @@ _define_syscall1(malloc, 20, uint32_t);
 
 _define_syscall1(free, 21, void*);
 
+_define_syscall3(dup3, 22, int, int, int);
+
 #endif //W2_SYSCALL_H

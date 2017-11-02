@@ -297,7 +297,7 @@ page_table_t *clone_page_table(page_table_t *src, uint32_t *phy_out, uint32_t nu
             } else {
                 target->pages[x].frame = src->pages[x].frame;
             }
-            dprintf("page frame:%x --> %x", target->pages[x].frame, x * 0x1000 + debug_tno);
+            dprintf("page frame{%x}:%x --> %x", src->typeinfo[x].type, target->pages[x].frame, x * 0x1000 + debug_tno);
             if (src->pages[x].present)target->pages[x].present = true;
             if (src->pages[x].rw)target->pages[x].rw = true;
             if (src->pages[x].user)target->pages[x].user = true;

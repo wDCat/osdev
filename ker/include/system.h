@@ -45,10 +45,10 @@ for(;;);\
 
 
 typedef struct regs {
-    unsigned int gs, fs, es, ds;      /* pushed the segs last */
-    unsigned int edi, esi, ebp, esp, ebx, edx, ecx, eax;  /* pushed by 'pusha' */
-    unsigned int int_no, err_code;    /* our 'push byte #' and ecodes do this */
-    unsigned int eip, cs, eflags, useresp, ss;   /* pushed by the processor automatically */
+    uint32_t gs, fs, es, ds;      /* pushed the segs last */
+    uint32_t edi, esi, ebp, esp, ebx, edx, ecx, eax;  /* pushed by 'pusha' */
+    uint32_t int_no, err_code;    /* our 'push byte #' and ecodes do this */
+    uint32_t eip, cs, eflags, useresp, ss;   /* pushed by the processor automatically */
 } regs_t;
 extern uint32_t init_esp;
 extern pid_t current_pid;
@@ -83,6 +83,9 @@ strformatw(serial_write, COM1,str,##args);\
 })
 #define dprintf_end()({\
 strformatw(serial_write, COM1,"\n");\
+})
+#define dwprintf(str, args...) ({\
+strformatw(serial_write, COM1,"[W][%d][%s] " str "\n",current_pid,__func__,##args);\
 })
 #define deprintf(str, args...) ({\
 strformatw(serial_write, COM1,"[ERROR][%d][%s] " str "\n",current_pid,__func__,##args);\

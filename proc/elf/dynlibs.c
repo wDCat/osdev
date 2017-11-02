@@ -84,7 +84,7 @@ int dynlibs_try_to_write(pid_t pid, uint32_t addr) {
             ret = 0;
             break;
         default:
-            deprintf("Unknown page type:%x at %x", info->type, addr);
+            dwprintf("Unknown page type:%x at %x", info->type, addr);
             ret = 0;
             break;
     }
@@ -239,14 +239,18 @@ int dynlibs_unload_inner(pid_t pid, dynlib_load_t *loadinfo, bool remove_from_tr
         deprintf("bad dynlib_load_t l->pid:%x pid:%x", loadinfo->pid, pid);
     }
     dynlib_t *lib = loaded_dynlibs[loadinfo->no];
+    int c0 = 0, c1 = 0;
     for (int x = 0; x < lib->frames_count; x++) {
-        uint32_t paddr = loadinfo->start_addr + x;
+        uint32_t paddr = loadinfo->start_addr + x * 0x1000;
         page_t *page = get_page(paddr, false, pcb->page_dir);
         page_typeinfo_t *pte = get_page_type(paddr, pcb->page_dir);
+        dprintf("%s entry{%x} at %x", loaded_dynlibs[loadinfo->no]->path, pte->type, paddr);
         switch (pte->type) {
             case PT_DYNLIB_ORIG:
+                c0++;
                 break;
             case PT_DYNLIB_DIRTY:
+                c1++;
                 free_frame(page);
                 break;
             default:
@@ -255,6 +259,7 @@ int dynlibs_unload_inner(pid_t pid, dynlib_load_t *loadinfo, bool remove_from_tr
         }
         page->frame = NULL;
     }
+    dprintf("free dirty page:%x orig:%x", c1, c0);
     if (remove_from_tree)
         CHK(dynlibs_remove_from_tree(pid, NULL, loadinfo), "");
     return 0;

@@ -62,7 +62,8 @@ uint32_t syscalls_table[] = {
         &sys_getcwd,
         &sys_lseek,
         &sys_malloc,
-        &sys_free
+        &sys_free,
+        &sys_dup3
 };
 uint32_t syscalls_count = sizeof(syscalls_table) / sizeof(uint32_t);
 
@@ -77,9 +78,9 @@ void syscall_install() {
 typedef uint32_t (*syscall_fun_t)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, regs_t *r);
 
 int syscall_handler(regs_t *r) {
-    dprintf("syscall pid:%x no:%d ebx:%x ecx:%x edx:%x", getpid(), r->eax, r->ebx, r->ecx, r->edx);
+    dprintf("syscall no:%d ebx:%x ecx:%x edx:%x", r->eax, r->ebx, r->ecx, r->edx);
     if (r->eax >= syscalls_count) {
-        r->eax = -1;
+        r->eax = (uint32_t) -1;
         return 0;
     }
     syscall_fun_t fun = (syscall_fun_t) syscalls_table[r->eax];

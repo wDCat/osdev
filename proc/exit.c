@@ -32,7 +32,7 @@ int free_proc_frames(pcb_t *pcb) {
                 bool is_empty = true;
                 for (int y = 0; y < 1024; y++) {
                     if (pt->pages[y].frame) {
-                        if (pt->typeinfo[y].pid == pcb->pid && pt->typeinfo[y].free_on_proc_exit) {
+                        if (pt->typeinfo[y].pid == pcb->pid && pt->typeinfo[y].free_on_proc_exit) {// ?
                             dprintf("freeing frame:%x", pt->pages[y].frame);
                             count++;
                             free_frame(&pt->pages[y]);
@@ -60,13 +60,13 @@ void do_exit(pcb_t *pcb, int32_t ret) {
             sys_close(x);
     }
     set_proc_status(pcb, STATUS_DIED);
+    dynlibs_unload_all(pcb->pid);
     destory_user_heap(pcb);
     if (pcb->edg) {
         CHK(elsp_free_edg(pcb->edg), "fail to release old edg");
         kfree(pcb->edg);
         pcb->edg = NULL;
     }
-    dynlibs_unload_all(pcb->pid);
     free_proc_frames(pcb);
     uint32_t reserved_page = pcb->reserved_page;
     pcb->reserved_page = 0;

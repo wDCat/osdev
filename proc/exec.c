@@ -62,6 +62,23 @@ int kexec(pid_t pid, const char *path, int argc, char *const argv[], char *const
         deprintf("cannot open elf:%s", path);
         goto _err;
     }
+    if (fd < 3) {
+        //not cover stdio
+        for (int x = 3; x < 10; x++) {
+            if (!isopenedfd(pid, x)) {
+                if (kdup3(pid, fd, x, NULL)) {
+                    deprintf("dup failed %d -> %d", fd, x);
+                    goto _err;
+                }
+                fd = x;
+                break;
+            }
+        }
+        if (fd < 3) {
+            deprintf("too much opened files");
+            goto _err;
+        }
+    }
     if (pcb->heap_ready)
         CHK(destory_user_heap(pcb), "fail to release old heap..");
 

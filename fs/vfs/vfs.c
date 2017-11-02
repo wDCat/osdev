@@ -373,11 +373,13 @@ int8_t sys_open(const char *name, uint8_t mode) {
 
 int8_t kclose(uint32_t pid, int8_t fd) {
     pcb_t *pcb = getpcb(pid);
-    if (!pcb->fh[fd].present) {
-        deprintf("cannot close a closed file:%x", fd);
+    file_handle_t *fh = &pcb->fh[fd];
+    if (!fh->present) {
+        dwprintf("cannot close a closed file:%x", fd);
         return -1;
     }
-    pcb->fh[fd].present = 0;
+    fh->present = 0;
+    fh->mp = NULL;
     return 0;
 }
 
@@ -389,15 +391,15 @@ int32_t kread(uint32_t pid, int8_t fd, int32_t size, uchar_t *buff) {
     pcb_t *pcb = getpcb(pid);
     file_handle_t *fh = &pcb->fh[fd];
     if (!fh->present) {
-        deprintf("fd %x not present.", fd);
+        dwprintf("fd %x not present.", fd);
         return -1;
     }
     if (fh->mp == 0) {
-        deprintf("[%x]mount point not found.", fd);
+        dwprintf("[%x]mount point not found.", fd);
         return -1;
     }
     if (fh->mp->fs->read == 0) {
-        deprintf("fs operator is not implemented.");
+        dwprintf("fs operator is not implemented.");
         return -1;
     }
     int32_t ret = fh->mp->fs->read(&fh->node, fh->mp->fsp, size,
@@ -408,6 +410,10 @@ int32_t kread(uint32_t pid, int8_t fd, int32_t size, uchar_t *buff) {
 int32_t sys_read(int8_t fd, int32_t size, uchar_t *buff) {
     pcb_t *pcb = getpcb(getpid());
     file_handle_t *fh = &pcb->fh[fd];
+    if (!fh->present) {
+        dwprintf("fd %x not present.", fd);
+        return -1;
+    }
     int32_t ret = kread(getpid(), fd, size, buff);
     fh->node.offset += ret;
     return ret;
@@ -417,11 +423,11 @@ off_t klseek(uint32_t pid, int8_t fd, off_t offset, int where) {
     pcb_t *pcb = getpcb(pid);
     file_handle_t *fh = &pcb->fh[fd];
     if (!fh->present) {
-        deprintf("fd %x not present.", fd);
+        dwprintf("fd %x not present.", fd);
         return -1;
     }
     if (fh->mp == 0) {
-        deprintf("[%x]mount point not found.", fd);
+        dwprintf("[%x]mount point not found.", fd);
         return -1;
     }
     switch (where) {
@@ -435,11 +441,11 @@ off_t klseek(uint32_t pid, int8_t fd, off_t offset, int where) {
             fh->node.offset = (uint32_t) offset;
             break;
         default:
-            deprintf("Bad where!");
+            dwprintf("Bad where!");
             return -1;
     }
     if (fh->mp->fs->lseek == 0) {
-        deprintf("fs operator is not implemented.");
+        dwprintf("fs operator is not implemented.");
         return -1;
     }
     fh->mp->fs->lseek(&fh->node, fh->mp->fsp, fh->node.offset);
@@ -454,11 +460,11 @@ int32_t kwrite(uint32_t pid, int8_t fd, int32_t size, uchar_t *buff) {
     pcb_t *pcb = getpcb(pid);
     file_handle_t *fh = &pcb->fh[fd];
     if (!fh->present) {
-        deprintf("fd %x not present.", fd);
+        dwprintf("fd %x not present.", fd);
         return -1;
     }
     if (fh->mp == 0) {
-        deprintf("[%x]mount point not found.", fd);
+        dwprintf("[%x]mount point not found.", fd);
         return -1;
     }
     int32_t ret = fh->mp->fs->write(&fh->node, fh->mp->fsp, size,
@@ -470,8 +476,13 @@ int32_t kwrite(uint32_t pid, int8_t fd, int32_t size, uchar_t *buff) {
 int32_t sys_write(int8_t fd, int32_t size, uchar_t *buff) {
     pcb_t *pcb = getpcb(getpid());
     file_handle_t *fh = &pcb->fh[fd];
+    if (!fh->present) {
+        dwprintf("fd %x not present.", fd);
+        return -1;
+    }
     int32_t ret = kwrite(getpid(), fd, size, buff);
-    fh->node.offset += ret;
+    if (ret > 0)
+        fh->node.offset += ret;
     return ret;
 }
 
@@ -527,6 +538,29 @@ int sys_chdir(const char *name) {
     return -1;
 }
 
+int kdup3(pid_t pid, int oldfd, int newfd, int flags) {
+    pcb_t *pcb = getpcb(pid);
+    if (!pcb->fh[oldfd].present) {
+        dwprintf("fd %x not opened.", oldfd);
+        return -1;
+    }
+    if (pcb->fh[newfd].present) {
+        dwprintf("fd %x opened.", newfd);
+        return -1;
+    }
+    memcpy(&pcb->fh[newfd], &pcb->fh[oldfd], sizeof(file_handle_t));
+    pcb->fh[oldfd].present = 0;
+    return 0;
+}
+
+int sys_dup3(int oldfd, int newfd, int flags) {
+    return kdup3(getpid(), oldfd, newfd, flags);
+}
+
+inline bool isopenedfd(pid_t pid, int fd) {
+    return getpcb(pid)->fh[fd].present;
+}
+
 char *kgetcwd(pid_t pid) {
     return getpcb(pid)->dir;
 }
@@ -573,21 +607,6 @@ void mount_rootfs(uint32_t initrd) {
         vfs_mount(&vfs, ttyfn, &ttyfs, x);
     }
     stdio_install();
-    dprintf("little test about ext2...");
-    CHK(vfs_cd(&vfs, "/data/"), "");
-    dirent_t *dirs = (dirent_t *) kmalloc_paging(0x2000, NULL);
-    int count = vfs_ls(&vfs, dirs, 200);
-    putf("[vfs]there are %x files in / [%x]\n", count, vfs.current.inode);
-    for (int x = 0; x < count; x++) {
-        putf("[file]%s type:%x inode:%x\n", dirs[x].name, dirs[x].type, dirs[x].node);
-    }
-    memset(dirs, 0, 0x2000);
-    count = sys_ls("/data", dirs, 20);
-    putf("[vfs]there are %x files in / [%x]\n", count, vfs.current.inode);
-    for (int x = 0; x < count; x++) {
-        putf("[file]%s type:%x inode:%x\n", dirs[x].name, dirs[x].type, dirs[x].node);
-    }
-    kfree(dirs);
     dprintf("rootfs mounted.");
     return;
     _err:

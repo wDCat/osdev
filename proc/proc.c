@@ -323,7 +323,7 @@ int destory_user_heap(pcb_t *pcb) {
 
 pid_t fork(regs_t *r) {
     cli();
-    if (proc_count % 6 == 0) {
+    if (proc_count % 8 == 0) {
         clean_pcb_table();
     }
     pid_t fpid = getpid();
@@ -383,6 +383,10 @@ pid_t fork(regs_t *r) {
         tss->fs =
         tss->gs = 4 << 3 | 3;
     } else {
+        for (uint32_t x = UM_STACK_START; x >= UM_STACK_START - UM_STACK_SIZE; x -= 0x1000) {
+            page_typeinfo_t *tinfo = get_page_type(x, cpcb->page_dir);
+            tinfo->pid = cpcb->pid;
+        }
         tss->eip = r->eip;
         tss->ebp = r->ebp;
         tss->esp = r->useresp;
