@@ -13,6 +13,7 @@
 #include <elfloader.h>
 #include <squeue.h>
 #include <dynlibs.h>
+#include <umalloc.h>
 #include "elfloader.h"
 
 inline const char *elsp_get_string_by_offset(elf_digested_t *edg, uint32_t offset) {
@@ -524,7 +525,7 @@ int elsp_init_edg(elf_digested_t *edg, pid_t pid, int8_t fd) {
     memset(edg, 0, sizeof(elf_digested_t));
     edg->pid = pid;
     edg->fd = fd;
-    squeue_init(&edg->dynlibs_need_queue);
+    squeue_init4(&edg->dynlibs_need_queue, pid, umalloc, ufree);
 }
 
 int elsp_free_edg(elf_digested_t *edg) {

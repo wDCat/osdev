@@ -10,6 +10,7 @@ void *umalloc(pid_t pid, uint32_t size) {
     pcb_t *pcb = getpcb(pid);
     if (current_dir != pcb->page_dir) {
         deprintf("wrong page dir....");
+        PANIC("")
         return NULL;
     }
     return halloc(&pcb->heap, size, false);
@@ -17,6 +18,10 @@ void *umalloc(pid_t pid, uint32_t size) {
 
 void ufree(pid_t pid, void *ptr) {
     pcb_t *pcb = getpcb(pid);
+    if (current_dir != pcb->page_dir) {
+        deprintf("wrong page dir....");
+        PANIC("")
+    }
     hfree(&pcb->heap, ptr);
 }
 

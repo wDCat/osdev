@@ -94,8 +94,7 @@ int kexec(pid_t pid, const char *path, int argc, char *const argv[], char *const
     elf_digested_t *edg = (elf_digested_t *) kmalloc(sizeof(elf_digested_t));
     memset(edg, 0, sizeof(elf_digested_t));
     pcb->edg = edg;
-    edg->pid = pid;
-    edg->fd = (int8_t) fd;
+    CHK(elsp_init_edg(edg, pid, fd), "");
     edg->global_offset = 0x8000000;
     CHK(elsp_load_header(edg), "");
     CHK(elsp_load_sections(edg), "");

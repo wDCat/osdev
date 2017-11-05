@@ -10,11 +10,20 @@
 
 int squeue_init(squeue_t *sq) {
     memset(sq, 0, sizeof(squeue_t));
+    sq->malloc = kmalloc_type_impl;
+    sq->mfree = kfree_type_impl;
     return 0;
 }
-int squeue_init3(squeue_t *sq){
 
+int squeue_init4(squeue_t *sq, void *extern_data,
+                 malloc_t malloc, mfree_t mfree) {
+    memset(sq, 0, sizeof(squeue_t));
+    sq->malloc = malloc;
+    sq->mfree = mfree;
+    sq->med = extern_data;
+    return 0;
 }
+
 int squeue_set(squeue_t *ns, int index, uint32_t objaddr) {
     ASSERT(ns && index < ns->count);
     int sc = index;
@@ -49,11 +58,11 @@ int squeue_iter_end(squeue_iter_t *iter) {
 }
 
 int squeue_insert(squeue_t *ns, uint32_t objaddr) {
-    ASSERT(ns);
+    ASSERT(ns && ns->malloc);
     dprintf("insert item %x to %x current cound:%x", objaddr, ns, ns->count);
     uint32_t sc = 256;
     if (ns->first == NULL) {
-        squeue_entry_t *ne = (squeue_entry_t *) kmalloc(sizeof(squeue_entry_t));
+        squeue_entry_t *ne = (squeue_entry_t *) ns->malloc(ns->med, sizeof(squeue_entry_t));
         ns->first = ne;
         ne->next = NULL;
         ne->objaddr = objaddr;
@@ -64,7 +73,7 @@ int squeue_insert(squeue_t *ns, uint32_t objaddr) {
             if (e->objaddr == objaddr)break;
             dprintf("iter next:%x", e->next);
             if (e->next == NULL) {
-                squeue_entry_t *ne = (squeue_entry_t *) kmalloc(sizeof(squeue_entry_t));
+                squeue_entry_t *ne = (squeue_entry_t *) ns->malloc(ns->med, sizeof(squeue_entry_t));
                 ne->objaddr = objaddr;
                 ne->next = NULL;
                 e->next = ne;
@@ -106,7 +115,7 @@ int squeue_destory(squeue_t *sq) {
         c++;
         squeue_entry_t *tf = e;
         e = e->next;
-        kfree(tf);
+        sq->mfree(sq->med, tf);
     }
     sq->count = 0;
     sq->first = NULL;
@@ -115,7 +124,7 @@ int squeue_destory(squeue_t *sq) {
 }
 
 int squeue_remove_vout(squeue_t *sq, int index, uint32_t *valout) {
-    ASSERT(sq && index >= 0);
+    ASSERT(sq && index >= 0 && sq->mfree);
     if (index >= sq->count)return -1;
     squeue_entry_t *e = sq->first;
     if (index == 0) {
@@ -134,7 +143,7 @@ int squeue_remove_vout(squeue_t *sq, int index, uint32_t *valout) {
             *valout = oe->objaddr;
         e->next = e->next->next;
         sq->count--;
-        kfree(oe);
+        sq->mfree(sq->med, oe);
     }
     return 0;
 }

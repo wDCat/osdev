@@ -95,4 +95,8 @@ deprintf("CHK::" #fun " Failed:" msg,##args);\
 goto _err;\
 }
 
+typedef void *(*malloc_t)(void *extern_data, uint32_t size);
+
+typedef void(*mfree_t)(void *extern_data, void *addr);
+
 #endif

@@ -13,6 +13,7 @@
 #include <swap.h>
 #include <page.h>
 #include <blkqueue.h>
+#include <umalloc.h>
 #include "dynlibs.h"
 
 mutex_lock_t dynlibs_lock;
@@ -31,7 +32,7 @@ int dynlibs_find_symbol(pid_t pid, const char *name, uint32_t *out) {
         return 1;
     }
     squeue_t pre_iter;
-    memset(&pre_iter, 0, sizeof(squeue_t));
+    squeue_init4(&pre_iter, pid, umalloc, ufree);
     squeue_insert(&pre_iter, (uint32_t) roottree);
     while (!squeue_isempty(&pre_iter)) {
         dynlib_inctree_t *tree = SQUEUE_GET(&pre_iter, 0, dynlib_inctree_t*);
@@ -219,7 +220,7 @@ bool dynlibs_isloaded_to_memory(const char *path, uint32_t *index_out) {
 bool dynlibs_isloaded_to_proc(const char *path, pid_t pid) {
     dynlib_inctree_t *roottree = getpcb(pid)->dynlibs;
     squeue_t pre_iter;
-    memset(&pre_iter, 0, sizeof(squeue_t));
+    squeue_init4(&pre_iter,pid, umalloc, ufree);
     squeue_insert(&pre_iter, (uint32_t) roottree);
     while (!squeue_isempty(&pre_iter)) {
         dynlib_inctree_t *tree = SQUEUE_GET(&pre_iter, 0, dynlib_inctree_t*);

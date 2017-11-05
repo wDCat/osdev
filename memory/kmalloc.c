@@ -32,8 +32,17 @@ uint32_t kmalloc_paging(uint32_t sz, uint32_t *phys) {
     }
 }
 
-uint32_t kmalloc_internal(uint32_t sz, bool align,
-                          uint32_t *phys, heap_t *heap, uint32_t trace_eip) {
+void *kmalloc_type_impl(void *nouse, uint32_t sz) {
+    return kmalloc_internal(sz, false, NULL, kernel_heap, 0x2333);
+}
+
+void kfree_type_impl(void *nouse, void *addr) {
+    dprintf("-------------------------%x", addr);
+    kfree(addr);
+}
+
+void *kmalloc_internal(uint32_t sz, bool align,
+                       uint32_t *phys, heap_t *heap, uint32_t trace_eip) {
     ASSERT(heap_placement_addr != NULL);
     ASSERT(heap_placement_addr >= &end);
     if (heap) {
