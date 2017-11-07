@@ -71,7 +71,6 @@ int squeue_insert(squeue_t *ns, uint32_t objaddr) {
         squeue_entry_t *e = ns->first;
         while (e && sc--) {
             if (e->objaddr == objaddr)break;
-            dprintf("iter next:%x", e->next);
             if (e->next == NULL) {
                 squeue_entry_t *ne = (squeue_entry_t *) ns->malloc(ns->med, sizeof(squeue_entry_t));
                 ne->objaddr = objaddr;

@@ -98,16 +98,21 @@ int kexec(pid_t pid, const char *path, int argc, char *const argv[], char *const
     edg->global_offset = 0x8000000;
     CHK(elsp_load_header(edg), "");
     CHK(elsp_load_sections(edg), "");
-    CHK(elsp_load_need_dynlibs(edg), "");
-    //CHK(elsp_free_edg(edg), "");
     dprintf("elf end addr:%x", edg->elf_end_addr);
     uint32_t heap_start = edg->elf_end_addr + (PAGE_SIZE - (edg->elf_end_addr % PAGE_SIZE)) + PAGE_SIZE * 2;
     CHK(create_user_heap(pcb, heap_start, 0x4000), "");
+    CHK(elsp_load_need_dynlibs(edg), "");
+    CHK(elsp_free_edg(edg), "");
     uint32_t sym_start;
     uint32_t eip;
     if (dynlibs_find_symbol(pcb->pid, "_start", &sym_start)) {
-        eip = elsp_get_entry(edg);
-        dprintf("redirect eip to elf_entry:%x", eip);
+        if (dynlibs_find_symbol(pcb->pid, "_start_c", &sym_start)) {
+            eip = elsp_get_entry(edg);
+            dprintf("redirect eip to elf_entry:%x", eip);
+        } else {
+            dprintf("redirect eip to _start_c:%x", sym_start);
+            eip = sym_start;
+        }
     } else {
         dprintf("redirect eip to _start:%x", sym_start);
         eip = sym_start;
@@ -179,7 +184,8 @@ int kexec(pid_t pid, const char *path, int argc, char *const argv[], char *const
     *esp = (uint32_t) argc;
     esp -= 1;
     pcb->tss.esp = (uint32_t) esp;
-
+    uint32_t *tls = (uint32_t *) (UM_STACK_START - UM_STACK_SIZE + 0x100);
+    *tls = UM_STACK_START - UM_STACK_SIZE + 0x200;
     if (current_dir != orig_pd) {
         dprintf("switch back pd:%x", orig_pd);
         switch_page_directory(orig_pd);

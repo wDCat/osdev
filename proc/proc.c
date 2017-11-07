@@ -380,8 +380,9 @@ pid_t fork(regs_t *r) {
         tss->es =
         tss->ss =
         tss->ds =
-        tss->fs =
-        tss->gs = 4 << 3 | 3;
+        tss->fs = 4 << 3 | 3;
+        //tss->gs = 4 << 3 | 3;
+        tss->gs = 8 << 3 | 3;
     } else {
         for (uint32_t x = UM_STACK_START; x >= UM_STACK_START - UM_STACK_SIZE; x -= 0x1000) {
             page_typeinfo_t *tinfo = get_page_type(x, cpcb->page_dir);

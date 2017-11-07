@@ -2,9 +2,10 @@
 // Created by dcat on 3/12/17.
 //
 
+#include <proc.h>
 #include "include/gdt.h"
 
-gdt_entry_t gdt[8];
+gdt_entry_t gdt[9];
 gdt_ptr_t gp;
 
 /* Setup a descriptor in the Global Descriptor Table */
@@ -38,9 +39,10 @@ void gdt_install() {
     gdt_set_gate(2, 0, 0xFFFFFFFF, 0x92, 0xCF);// Kernel Data
     gdt_set_gate(3, 0, 0xFFFFFFFF, 0xFA, 0xCF); // User mode code segment
     gdt_set_gate(4, 0, 0xFFFFFFFF, 0xF2, 0xCF); // User mode data segment
+    gdt_set_gate(8, UM_STACK_START - UM_STACK_SIZE + 0x100, 0xFFFFFFFF, 0xF2, 0xCF);
     write_tss(TSS_ID, 0x10, 0);
     extern uint32_t _sys_stack;
     set_kernel_stack(_sys_stack);
-    gdt_flush(gdt, 8);
+    gdt_flush(gdt, 9);
     tss_flush();
 }

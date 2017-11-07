@@ -37,7 +37,6 @@ void *kmalloc_type_impl(void *nouse, uint32_t sz) {
 }
 
 void kfree_type_impl(void *nouse, void *addr) {
-    dprintf("-------------------------%x", addr);
     kfree(addr);
 }
 

@@ -93,13 +93,13 @@ inline int elsp_rel_386_symtab(elf_digested_t *edg, elf_rel_tmp_t *rtmp, uint32_
     pcb_t *pcb = getpcb(edg->pid);
     if (sym == NULL)goto _err;
     const char *symname = elsp_get_dynstring_by_offset(edg, sym->st_name);
-    //dprintf("glob dat name:%s(%x)(%x)", symname, sym->st_name, symname);
+    dprintf("glob dat name:%s(%x)(%x)", symname, sym->st_name, symname);
     uint32_t addr = 0x0;
     int from = 0;
     if (dynlibs_find_symbol(edg->pid, symname, &addr)) {
         if (pcb->edg == NULL || elsp_find_symbol(pcb->edg, symname, &addr)) {
             if (elsp_find_symbol(edg, symname, &addr)) {
-                dprintf("[WARN]symbol %s not found!", symname);
+                dwprintf("[WARN]symbol %s not found!", symname);
                 goto _err;
             } else {
                 addr = addr + rtmp->global_offset;
@@ -110,7 +110,7 @@ inline int elsp_rel_386_symtab(elf_digested_t *edg, elf_rel_tmp_t *rtmp, uint32_
             from = 1;
         }
     }
-    //dprintf("update symbol %s(at %x) to %x (from:%x)[bedg:%x]", symname, ptr, addr, from, pcb->edg);
+    dprintf("update symbol %s(at %x) to %x (from:%x)[bedg:%x]", symname, ptr, addr, from, pcb->edg);
     *ptr = addr;
     return 0;
     _err:
@@ -525,7 +525,7 @@ int elsp_init_edg(elf_digested_t *edg, pid_t pid, int8_t fd) {
     memset(edg, 0, sizeof(elf_digested_t));
     edg->pid = pid;
     edg->fd = fd;
-    squeue_init4(&edg->dynlibs_need_queue, pid, umalloc, ufree);
+    squeue_init(&edg->dynlibs_need_queue);
 }
 
 int elsp_free_edg(elf_digested_t *edg) {
