@@ -74,11 +74,13 @@ FILE(GLOB MyCSources
 /home/dcat/osdev/w2/fs/catmfs/catmfs.c
 /home/dcat/osdev/w2/fs/catmfs/catrfmt.c
 /home/dcat/osdev/w2/fs/vfs/vfs.c
+/home/dcat/osdev/w2/fs/vfs/iov.c
 /home/dcat/osdev/w2/fs/procfs/procfs.c
 /home/dcat/osdev/w2/fs/ext2/ext2.c
 /home/dcat/osdev/w2/fs/ext2/ext2_fs_node.c
 /home/dcat/osdev/w2/lib/include/malloc.h
 /home/dcat/osdev/w2/lib/include/umem.h
+/home/dcat/osdev/w2/lib/include/syscallno.h
 /home/dcat/osdev/w2/lib/include/syscall.h
 /home/dcat/osdev/w2/lib/include/print.h
 /home/dcat/osdev/w2/lib/include/uexec.h
@@ -139,6 +141,7 @@ FILE(GLOB MyCSources
 /home/dcat/osdev/w2/fs/catmfs/include/catrfmt_def.h
 /home/dcat/osdev/w2/fs/catmfs/include/catmfs.h
 /home/dcat/osdev/w2/fs/vfs/include/vfs.h
+/home/dcat/osdev/w2/fs/vfs/include/iov.h
 /home/dcat/osdev/w2/fs/procfs/include/procfs.h
 /home/dcat/osdev/w2/fs/ext2/include/ext2_fs_node.h
 /home/dcat/osdev/w2/fs/ext2/include/ext2.h

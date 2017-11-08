@@ -98,7 +98,7 @@ inline int elsp_rel_386_symtab(elf_digested_t *edg, elf_rel_tmp_t *rtmp, uint32_
     int from = 0;
     if (dynlibs_find_symbol(edg->pid, symname, &addr)) {
         if (pcb->edg == NULL || elsp_find_symbol(pcb->edg, symname, &addr)) {
-            if (elsp_find_symbol(edg, symname, &addr)) {
+            if (elsp_find_dynsymbol(edg, symname, &addr)) {
                 dwprintf("[WARN]symbol %s not found!", symname);
                 goto _err;
             } else {
@@ -117,12 +117,29 @@ inline int elsp_rel_386_symtab(elf_digested_t *edg, elf_rel_tmp_t *rtmp, uint32_
     return 0;//ignored
 }
 
-int elsp_find_symbol(elf_digested_t *edg, const char *name, uint32_t *out) {
+int elsp_find_dynsymbol(elf_digested_t *edg, const char *name, uint32_t *out) {
     for (uint32_t x = 0;; x++) {
         elf_symbol_t *esym = elsp_get_dynsym(edg, x);
         if (esym == NULL)break;
         const char *symname = elsp_get_dynstring_by_offset(edg, esym->st_name);
         if (symname == NULL)continue;
+        if (strcmp(symname, name) && esym->st_value != 0) {
+            if (out) {
+                *out = esym->st_value + 0x0;
+                return 0;
+            }
+        }
+    }
+    return -1;
+}
+
+int elsp_find_symbol(elf_digested_t *edg, const char *name, uint32_t *out) {
+    for (uint32_t x = 0; x < edg->symbols_size; x += sizeof(elf_symbol_t)) {
+        elf_symbol_t *esym = (elf_symbol_t *) ((uint32_t) edg->symbols + x);
+        if (esym == NULL)break;
+        const char *symname = elsp_get_string_by_offset(edg, esym->st_name);
+        if (symname == NULL)continue;
+        dprintf("sym:%s %x", symname, esym->st_value);
         if (strcmp(symname, name) && esym->st_value != 0) {
             if (out) {
                 *out = esym->st_value + 0x0;

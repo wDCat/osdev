@@ -38,7 +38,7 @@
 #define SIG_CLEAR(obj, sig) obj&=~(1<<(sig-1))
 #define SIG_TEST(obj, sig) (obj&(1<<(sig-1)))
 
-int do_signal(regs_t *r);
+int do_signal(pcb_t *pcb, regs_t *r);
 
 void send_sig(pcb_t *pcb, int sig);
 

@@ -64,5 +64,6 @@ int elsp_find_symbol(elf_digested_t *edg, const char *name, uint32_t *out);
 
 bool elf_load(pid_t pid, int8_t fd, uint32_t *entry_point, uint32_t *elf_end);
 
+int elsp_find_dynsymbol(elf_digested_t *edg, const char *name, uint32_t *out);
 
 #endif //W2_ELFLOADER_H

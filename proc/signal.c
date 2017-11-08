@@ -21,8 +21,7 @@ void signal_print_proc(pcb_t *pcb) {
     }
 }
 
-int do_signal_inner(int signal) {
-    pcb_t *pcb = getpcb(getpid());
+int do_signal_inner(pcb_t *pcb, int signal) {
     switch (pcb->signal_handler[signal]) {
         case 1:
             goto _after;
@@ -51,12 +50,11 @@ int do_signal_inner(int signal) {
     return 0;
 }
 
-int do_signal(regs_t *r) {
-    pcb_t *pcb = getpcb(getpid());
+int do_signal(pcb_t *pcb, regs_t *r) {
     for (int x = 0; x < 32; x++) {
         if (BIT_GET(pcb->signal, x) && !BIT_GET(pcb->blocked, x)) {
             dprintf("do signal:%x", x + 1);
-            if (do_signal_inner(x + 1))
+            if (do_signal_inner(pcb, x + 1))
                 break;
         }
     }

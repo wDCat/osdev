@@ -42,7 +42,7 @@ int dynlibs_find_symbol(pid_t pid, const char *name, uint32_t *out) {
         elf_digested_t *edg = &lib->edg;
         ASSERT(lib);
         dprintf("searching symbol in %s", lib->path);
-        if (elsp_find_symbol(edg, name, out) == 0) {
+        if (elsp_find_dynsymbol(edg, name, out) == 0) {
             dprintf("found %x+%x", tree->loadinfo->start_addr, *out);
             *out = (uint32_t) *out + tree->loadinfo->start_addr;
             CHK(squeue_destory(&pre_iter), "");

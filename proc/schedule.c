@@ -39,6 +39,7 @@ void do_schedule(regs_t *r) {
             if (pcb->signal & ~pcb->blocked) {
                 dprintf_cont("[%x wake up by signal]", getpid());
                 set_proc_status(pcb, STATUS_READY);
+                do_signal(pcb, r);
             }
             pcb = proc_queue_iter_next(&iter);
         }

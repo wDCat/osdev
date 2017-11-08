@@ -14,6 +14,8 @@ typedef unsigned long int uint32_t;
 typedef unsigned int uint;
 typedef _Bool bool;
 typedef unsigned char uchar_t;
+typedef unsigned int size_t;
+typedef int ssize_t;
 #define true 1
 #define false 0
 #define NULL 0

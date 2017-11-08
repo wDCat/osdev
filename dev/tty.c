@@ -139,6 +139,7 @@ int32_t tty_write(tty_t *tty, pid_t pid, int32_t size, uchar_t *buff) {
     ASSERT(tty->console);
     console_putns(tty->console, buff, size);
     mutex_unlock(&queue->mutex);
+    return size;
 }
 
 pcb_t *tty_queue_next_pcb(tty_queue_t *target, bool remove) {

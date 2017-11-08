@@ -9,6 +9,7 @@
 #include "uproc.h"
 #include "uvfs.h"
 #include "stat.h"
+#include "syscallno.h"
 
 #define _define_syscall0(fn, num) long syscall_##fn()
 #define _define_syscall1(fn, num, P1) long syscall_##fn(P1 p1)
@@ -55,50 +56,54 @@ long syscall_##fn(P1 p1, P2 p2, P3 p3,P4 p4) \
   return a; \
 }
 
-_define_syscall0(helloworld, 0);
+_define_syscall0(helloworld, SYS_restart_syscall);
 
-_define_syscall1(screen_print, 1, const char*);
+_define_syscall1(screen_print, SYS_screen_print, const char*);
 
-_define_syscall1(delay, 2, uint32_t);
+_define_syscall1(delay, SYS_delay, uint32_t);
 
-_define_syscall0(fork, 3);
+_define_syscall0(fork, SYS_fork);
 
-_define_syscall0(getpid, 4);
+_define_syscall0(getpid, SYS_getpid);
 
-_define_syscall1(hello_switcher, 5, pid_t);
+_define_syscall1(hello_switcher, SYS_hello_switcher, pid_t);
 
-_define_syscall1(exit, 6, uint32_t);
+_define_syscall1(exit, SYS_exit, uint32_t);
 
-_define_syscall2(open, 7, const char*, uint8_t);
+_define_syscall2(open, SYS_open, const char*, uint8_t);
 
-_define_syscall1(close, 8, int8_t);
+_define_syscall1(close, SYS_close, int8_t);
 
-_define_syscall3(read, 9, int8_t, int32_t, uchar_t*);
+_define_syscall3(read, SYS_read, int8_t, int32_t, uchar_t*);
 
-_define_syscall3(write, 10, int8_t, int32_t, uchar_t*);
+_define_syscall3(write, SYS_write, int8_t, int32_t, uchar_t*);
 
-_define_syscall2(stat, 11, const char*, stat_t*);
+_define_syscall2(stat, SYS_stat, const char*, stat_t*);
 
-_define_syscall3(ls, 12, const char*, dirent_t*, uint32_t);
+_define_syscall3(ls, SYS_ls, const char*, dirent_t*, uint32_t);
 
-_define_syscall4(exec, 13, const char*, int, char*const*, char*const*);
+_define_syscall4(exec, SYS_exec, const char*, int, char*const*, char*const*);
 
-_define_syscall3(waitpid, 14, pid_t, int*, int);
+_define_syscall3(waitpid, SYS_waitpid, pid_t, int*, int);
 
-_define_syscall2(kill, 15, pid_t, int);
+_define_syscall2(kill, SYS_kill, pid_t, int);
 
-_define_syscall2(access, 16, const char*, int);
+_define_syscall2(access, SYS_access, const char*, int);
 
-_define_syscall1(chdir, 17, const char*);
+_define_syscall1(chdir, SYS_chdir, const char*);
 
-_define_syscall2(getcwd, 18, char*, int);
+_define_syscall2(getcwd, SYS_getcwd, char*, int);
 
-_define_syscall3(lseek, 19, int8_t, off_t, int);
+_define_syscall3(lseek, SYS_lseek, int8_t, off_t, int);
 
-_define_syscall1(malloc, 20, uint32_t);
+_define_syscall1(malloc, SYS_malloc, uint32_t);
 
-_define_syscall1(free, 21, void*);
+_define_syscall1(free, SYS_free, void*);
 
-_define_syscall3(dup3, 22, int, int, int);
+_define_syscall3(dup3, SYS_dup3, int, int, int);
+
+_define_syscall3(readv, SYS_readv, int, const struct iovec*, int);
+
+_define_syscall3(writev, SYS_writev, int, const struct iovec*, int);
 
 #endif //W2_SYSCALL_H

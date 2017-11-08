@@ -91,6 +91,7 @@ int kexec(pid_t pid, const char *path, int argc, char *const argv[], char *const
         dprintf("try to unload");
         CHK(dynlibs_unload_all(pcb->pid), "fail to unload old dynlibs");;
     }
+    bool musl_libc = false;
     elf_digested_t *edg = (elf_digested_t *) kmalloc(sizeof(elf_digested_t));
     memset(edg, 0, sizeof(elf_digested_t));
     pcb->edg = edg;
@@ -102,16 +103,22 @@ int kexec(pid_t pid, const char *path, int argc, char *const argv[], char *const
     uint32_t heap_start = edg->elf_end_addr + (PAGE_SIZE - (edg->elf_end_addr % PAGE_SIZE)) + PAGE_SIZE * 2;
     CHK(create_user_heap(pcb, heap_start, 0x4000), "");
     CHK(elsp_load_need_dynlibs(edg), "");
-    CHK(elsp_free_edg(edg), "");
     uint32_t sym_start;
+    uint32_t sym_main;
     uint32_t eip;
     if (dynlibs_find_symbol(pcb->pid, "_start", &sym_start)) {
-        if (dynlibs_find_symbol(pcb->pid, "_start_c", &sym_start)) {
+        if (dynlibs_find_symbol(pcb->pid, "__libc_start_main", &sym_start)) {
             eip = elsp_get_entry(edg);
             dprintf("redirect eip to elf_entry:%x", eip);
         } else {
-            dprintf("redirect eip to _start_c:%x", sym_start);
+            musl_libc = true;
             eip = sym_start;
+            if (elsp_find_symbol(pcb->edg, "main", &sym_main)) {
+                dwprintf("main not found!");
+                sym_main = 0x0;
+            }
+            sym_main += edg->global_offset;
+            dprintf("redirect eip to __libc_start_main:%x main:%x", sym_start, sym_main);
         }
     } else {
         dprintf("redirect eip to _start:%x", sym_start);
@@ -171,9 +178,11 @@ int kexec(pid_t pid, const char *path, int argc, char *const argv[], char *const
         esp -= argc;
         __argvp = (uint32_t) (esp + 1);
     }
-    //push envp_reserved
-    *esp = __env_rs;
-    esp -= 1;
+    if (!musl_libc) {
+        //push envp_reserved
+        *esp = __env_rs;
+        esp -= 1;
+    }
     //push envp
     *esp = __envp;
     esp -= 1;
@@ -183,6 +192,11 @@ int kexec(pid_t pid, const char *path, int argc, char *const argv[], char *const
     //push argc
     *esp = (uint32_t) argc;
     esp -= 1;
+    if (musl_libc) {
+        //push main
+        *esp = sym_main;
+        esp -= 1;
+    }
     pcb->tss.esp = (uint32_t) esp;
     uint32_t *tls = (uint32_t *) (UM_STACK_START - UM_STACK_SIZE + 0x100);
     *tls = UM_STACK_START - UM_STACK_SIZE + 0x200;

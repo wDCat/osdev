@@ -111,13 +111,13 @@ void fault_handler(struct regs *r) {
                 create_idle_proc();
             }
             //handle signal~
-            do_signal(r);
+            do_signal(getpcb(getpid()), r);
             do_schedule(NULL);
         }
         for (;;);
     }
     //handle signal~
-    do_signal(r);
+    do_signal(getpcb(getpid()), r);
 }
 
 void isrs_install() {
