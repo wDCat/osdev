@@ -20,9 +20,9 @@ typedef int32_t (*read_type_t)(struct fs_node *, __fs_special_t *fsp, uint32_t, 
 
 typedef int32_t (*write_type_t)(struct fs_node *, __fs_special_t *fsp, uint32_t, uint8_t *);
 
-typedef void (*open_type_t)(struct fs_node *, __fs_special_t *fsp);
+typedef int (*open_type_t)(struct file_handle *handler);
 
-typedef void (*close_type_t)(struct fs_node *, __fs_special_t *fsp);
+typedef int (*close_type_t)(struct file_handle *handler);
 
 //typedef dirent_t *(*readdir_type_t)(struct fs_node *, uint32_t);
 typedef int32_t (*readdir_type_t)(struct fs_node *node, __fs_special_t *fsp, uint32_t count, struct dirent *result);

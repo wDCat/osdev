@@ -13,6 +13,7 @@ include_directories(/home/dcat/osdev/w2/fs/catmfs/include)
 include_directories(/home/dcat/osdev/w2/fs/vfs/include)
 include_directories(/home/dcat/osdev/w2/fs/procfs/include)
 include_directories(/home/dcat/osdev/w2/fs/ext2/include)
+include_directories(/home/dcat/osdev/w2/fs/devfs/include)
 FILE(GLOB MyCSources 
 /home/dcat/osdev/w2/syscall_handler.c
 /home/dcat/osdev/w2/mutex.c
@@ -78,6 +79,7 @@ FILE(GLOB MyCSources
 /home/dcat/osdev/w2/fs/procfs/procfs.c
 /home/dcat/osdev/w2/fs/ext2/ext2.c
 /home/dcat/osdev/w2/fs/ext2/ext2_fs_node.c
+/home/dcat/osdev/w2/fs/devfs/devfs.c
 /home/dcat/osdev/w2/lib/include/malloc.h
 /home/dcat/osdev/w2/lib/include/umem.h
 /home/dcat/osdev/w2/lib/include/syscallno.h
@@ -86,6 +88,7 @@ FILE(GLOB MyCSources
 /home/dcat/osdev/w2/lib/include/uexec.h
 /home/dcat/osdev/w2/lib/include/str.h
 /home/dcat/osdev/w2/lib/include/file.h
+/home/dcat/osdev/w2/lib/include/errno.h
 /home/dcat/osdev/w2/lib/include/va.h
 /home/dcat/osdev/w2/lib/include/uvfs.h
 /home/dcat/osdev/w2/lib/include/intdef.h
@@ -146,5 +149,6 @@ FILE(GLOB MyCSources
 /home/dcat/osdev/w2/fs/ext2/include/ext2_fs_node.h
 /home/dcat/osdev/w2/fs/ext2/include/ext2.h
 /home/dcat/osdev/w2/fs/ext2/include/superblk.h
+/home/dcat/osdev/w2/fs/devfs/include/devfs.h
 )
 ADD_EXECUTABLE(MyExecutable ${MyCSources})

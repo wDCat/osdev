@@ -86,6 +86,7 @@ typedef struct pcb_struct {
     struct dynlib_inctree *dynlibs;
     uint32_t dynlibs_end_addr;
     file_handle_t fh[MAX_FILE_HANDLES];
+    void *tls;
     mutex_lock_t lock;
     regs_t *lastreg;//for soft switch
 } pcb_t;
@@ -115,5 +116,7 @@ int destory_user_heap(pcb_t *pcb);
 int create_user_heap(pcb_t *pcb, uint32_t start, uint32_t size);
 
 void save_cur_proc_reg(regs_t *r);
+
+uint32_t *get_errno_location(pcb_t *pcb);
 
 #endif //W2_PROC_H

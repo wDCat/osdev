@@ -10,18 +10,24 @@
 
 #define CATMFS_MAGIC 0x3366
 #define CATMFS_BLK 0xAA32
+
 #define CATMFS_ERR_NONE 0
 #define CATMFS_ERR_GEN 1
 #define CATMFS_ERR_IO 2
 #define CATMFS_ERR_NO_EMPTY_DIR 3
+
+#define CATMFS_STYPE_ORIG 0
+#define CATMFS_STYPE_RFMT 1
+#define CATMFS_STYPE_OVERLAY 2
 typedef struct catmfs_inode {
     uint16_t magic;
     uint8_t type;/*FS_** */
+    uint8_t stype;
     uint16_t permission;
     uint32_t size;
     uint32_t uid;
     uint32_t gid;
-    uint32_t reserved;/*DIR:child inodes count;FILE:undefined*/
+    uint32_t reserved;/*DIR:child inodes count;FILE:fops or undefined*/
     struct catmfs_inode *finode;
     uint32_t singly_block;
     //data;
@@ -42,6 +48,13 @@ typedef struct {
     uint32_t max_singly_blks;
     int8_t errno;
 } catmfs_special_t;
+typedef struct file_operations {
+    read_type_t read;
+    write_type_t write;
+    lseek_type_t lseek;
+    open_type_t open;
+    close_type_t close;
+} file_operations_t;
 
 int catmfs_fs_node_load_catrfmt(fs_node_t *node, __fs_special_t *fsp_, uint32_t start_addr);
 
@@ -68,5 +81,11 @@ int catmfs_fs_node_rm(fs_node_t *node, __fs_special_t *fsp_);
 __fs_special_t *catmfs_fs_node_mount(void *dev, fs_node_t *node);
 
 int catmfs_fs_node_lseek(fs_node_t *node, __fs_special_t *fsp_, uint32_t offset);
+
+int catmfs_make_rfmt_file(catmfs_special_t *fsp, catmfs_inode_t *inode,
+                          char *name, fs_node_t *rfmt_node);
+
+int catmfs_make_overlay_file(catmfs_special_t *fsp, catmfs_inode_t *inode,
+                             char *name, file_operations_t *fop);
 
 #endif //W2_CATMFS_H

@@ -66,7 +66,8 @@ uint32_t syscalls_table[] = {
         &sys_free,
         &sys_dup3,
         &sys_readv,
-        &sys_writev
+        &sys_writev,
+        &sys_stat64
 };
 uint32_t syscalls_count = sizeof(syscalls_table) / sizeof(uint32_t);
 
@@ -83,6 +84,7 @@ typedef uint32_t (*syscall_fun_t)(uint32_t, uint32_t, uint32_t, uint32_t, uint32
 int syscall_handler(regs_t *r) {
     dprintf("syscall no:%d ebx:%x ecx:%x edx:%x", r->eax, r->ebx, r->ecx, r->edx);
     if (r->eax >= syscalls_count) {
+        dwprintf("syscall not found:%d", r->eax);
         r->eax = (uint32_t) -1;
         return 0;
     }

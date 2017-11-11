@@ -125,7 +125,7 @@ int kexec(pid_t pid, const char *path, int argc, char *const argv[], char *const
         eip = sym_start;
     }
     pcb->tss.eip = eip;
-    uint32_t *esp = (uint32_t *) pcb->tss.esp;
+    uint32_t *esp = (uint32_t *) (UM_STACK_START - 0x10 * sizeof(uint32_t));
     dprintf("elf load done.new PC:%x", eip);
     uint8_t *espptr = (uint8_t *) esp;
     strcpy(pcb->cmdline, path);
@@ -197,9 +197,26 @@ int kexec(pid_t pid, const char *path, int argc, char *const argv[], char *const
         *esp = sym_main;
         esp -= 1;
     }
+    /**
+     * -------------------
+     * TLS Pointer
+     * -------------------
+     * nouse
+     * -------------------
+     * *argv ~
+     * -------------------
+     * envp
+     * -------------------
+     * argv
+     * -------------------
+     * argc
+     * -------------------
+     *  <--esp
+     * */
     pcb->tss.esp = (uint32_t) esp;
-    uint32_t *tls = (uint32_t *) (UM_STACK_START - UM_STACK_SIZE + 0x100);
-    *tls = UM_STACK_START - UM_STACK_SIZE + 0x200;
+    uint32_t *tls = (uint32_t *) (UM_STACK_START - sizeof(uint32_t));
+    *tls = (uint32_t) umalloc(pid, sizeof(uint32_t) * 0xA);
+    pcb->tls = tls;
     if (current_dir != orig_pd) {
         dprintf("switch back pd:%x", orig_pd);
         switch_page_directory(orig_pd);

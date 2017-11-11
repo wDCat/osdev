@@ -381,8 +381,7 @@ pid_t fork(regs_t *r) {
         tss->ss =
         tss->ds =
         tss->fs = 4 << 3 | 3;
-        //tss->gs = 4 << 3 | 3;
-        tss->gs = 8 << 3 | 3;
+        tss->gs = GDT_TLS_ID << 3 | 3;
     } else {
         for (uint32_t x = UM_STACK_START; x >= UM_STACK_START - UM_STACK_SIZE; x -= 0x1000) {
             page_typeinfo_t *tinfo = get_page_type(x, cpcb->page_dir);
@@ -428,6 +427,9 @@ pid_t fork(regs_t *r) {
     return cpid;
 }
 
+inline uint32_t *get_errno_location(pcb_t *pcb) {
+    return pcb->tls;
+}
 
 void
 copy_current_stack(uint32_t start_addr, uint32_t size, uint32_t *new_ebp, uint32_t *new_esp, uint32_t start_esp,

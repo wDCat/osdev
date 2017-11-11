@@ -16,6 +16,8 @@
 #define SYS_read 9
 #define SYS_write 10
 #define SYS_stat 11
+#define SYS_lstat 11
+#define SYS_fstat 11
 #define SYS_ls 12
 #define SYS_exec 13
 #define SYS_waitpid 14
@@ -29,4 +31,7 @@
 #define SYS_dup3 22
 #define SYS_readv 23
 #define SYS_writev 24
+#define SYS_stat64 25
+#define SYS_lstat64 25
+#define SYS_fstat64 25
 #endif //W2_SYSCALLNO_H

@@ -24,6 +24,89 @@ catmfs_inode_t *catmfs_alloc_inode() {
     return inode;
 }
 
+inline int catmfs_init_inode(catmfs_inode_t *inode) {
+    ASSERT(inode);
+    inode->magic = CATMFS_MAGIC;
+    return 0;
+}
+
+int catmfs_do_make(catmfs_special_t *fsp, catmfs_inode_t *pinode, char *name, catmfs_inode_t *new_inode) {
+    uint8_t *raw = (uint8_t *) ((uint32_t) pinode + sizeof(catmfs_inode_t));
+    while (true) {
+        catmfs_dir_t *dir = (catmfs_dir_t *) raw;
+        if (dir->inode == 0) {
+            dprintf("offset:%x name:%s", dir, name);
+            uint8_t len = strlen(name);
+            dir->name_len = len;
+            dir->type = new_inode->type;
+            dir->inode = new_inode;
+            dir->len = 8 + dir->name_len;
+            dir->len += 4 - (dir->len % 4);//4 align
+            char *np = (char *) ((uint32_t) dir + 9);
+            memcpy(np, name, len);
+            pinode->reserved++;
+            if (new_inode->type == FS_DIRECTORY && !(name[0] == '.' && name[1] == 0) &&
+                !(len == 2 && strstr(name, "..") == 0)) {
+                CHK(catmfs_make(fsp, new_inode, FS_DIRECTORY, ".", new_inode), "");
+                CHK(catmfs_make(fsp, new_inode, FS_DIRECTORY, "..", pinode), "");
+            }
+            return 0;
+        }
+        raw = (uint8_t *) ((uint32_t) raw + dir->len);
+        if ((uint32_t) raw - (uint32_t) pinode > 0x1000) {
+            deprintf("Out of space.last:[%x]", raw);
+            return 1;
+        }
+    }
+    _err:
+    deprintf("make failed.unexpected exception..");
+    return -1;
+}
+
+int catmfs_make_overlay_file(catmfs_special_t *fsp, catmfs_inode_t *inode,
+                             char *name, file_operations_t *fop) {
+    if (inode->magic != CATMFS_MAGIC) {
+        deprintf("not a catmfs node[%x][%x].", inode, inode->magic);
+        return 1;
+    }
+    catmfs_inode_t *ninode = kmalloc(sizeof(catmfs_inode_t));
+    CHK(catmfs_init_inode(ninode), "");
+    ninode->type = FS_FILE;
+    ninode->stype = CATMFS_STYPE_OVERLAY;
+    ninode->size = 0;
+    ninode->reserved = (uint32_t) fop;
+    ninode->finode = inode;
+    CHK(catmfs_do_make(fsp, inode, name, ninode), "");
+    return 0;
+    _err:
+    if (ninode)
+        kfree(ninode);
+    return -1;
+}
+
+
+int catmfs_make_rfmt_file(catmfs_special_t *fsp, catmfs_inode_t *inode,
+                          char *name, fs_node_t *rfmt_node) {
+    if (inode->magic != CATMFS_MAGIC) {
+        deprintf("not a catmfs node[%x][%x].", inode, inode->magic);
+        return 1;
+    }
+    catmfs_inode_t *ninode = kmalloc(sizeof(catmfs_inode_t));
+    CHK(catmfs_init_inode(ninode), "");
+    ninode->type = FS_FILE;
+    ninode->stype = CATMFS_STYPE_RFMT;
+    ninode->size = rfmt_node->length;
+    ninode->reserved = (uint32_t) rfmt_node;
+    ninode->finode = inode;
+    CHK(catmfs_do_make(fsp, inode, name, ninode), "");
+    return 0;
+    _err:
+    if (ninode)
+        kfree(ninode);
+    return -1;
+}
+
+
 int catmfs_make(catmfs_special_t *fsp, catmfs_inode_t *inode, uint8_t type, char *name, uint32_t reserved2) {
     if (inode->magic != CATMFS_MAGIC) {
         deprintf("not a catmfs node[%x][%x].", inode, inode->magic);
@@ -32,41 +115,23 @@ int catmfs_make(catmfs_special_t *fsp, catmfs_inode_t *inode, uint8_t type, char
     catmfs_inode_t *ninode;
     if (type == FS_DIRECTORY && reserved2 != 0) {
         ninode = (catmfs_inode_t *) reserved2;
+        ninode->stype = CATMFS_STYPE_ORIG;
     } else {
         ninode = catmfs_alloc_inode();
         ninode->type = type;
         ninode->size = type == FS_DIRECTORY ? 1024 : 0;
         ninode->reserved = 0;
         ninode->finode = inode;
-        if (type == FS_FILE && reserved2 != 0)
+        if (type == FS_FILE && reserved2 != 0) {
+            dprintf("make a rfmt file....");
+            ninode->stype = CATMFS_STYPE_RFMT;
             ninode->reserved = reserved2;
-    }
-    uint8_t *raw = (uint8_t *) ((uint32_t) inode + sizeof(catmfs_inode_t));
-    while (true) {
-        catmfs_dir_t *dir = (catmfs_dir_t *) raw;
-        if (dir->inode == 0) {
-            dprintf("offset:%x name:%s", dir, name);
-            uint8_t len = strlen(name);
-            dir->name_len = len;
-            dir->type = type;
-            dir->inode = ninode;
-            dir->len = 8 + dir->name_len;
-            dir->len += 4 - (dir->len % 4);//4 align
-            char *np = (char *) ((uint32_t) dir + 9);
-            memcpy(np, name, len);
-            inode->reserved++;
-            if (type == FS_DIRECTORY && reserved2 == 0) {
-                CHK(catmfs_make(fsp, ninode, FS_DIRECTORY, ".", ninode), "");
-                CHK(catmfs_make(fsp, ninode, FS_DIRECTORY, "..", inode), "");
-            }
-            return 0;
-        }
-        raw = (uint8_t *) ((uint32_t) raw + dir->len);
-        if ((uint32_t) raw - (uint32_t) inode > 0x1000) {
-            deprintf("Out of space.last:[%x]", raw);
-            return 1;
+        } else {
+            ninode->stype = CATMFS_STYPE_ORIG;
         }
     }
+    CHK(catmfs_do_make(fsp, inode, name, ninode), "");
+    return 0;
     _err:
     deprintf("make failed.unexpected exception..");
     return 1;
@@ -164,16 +229,22 @@ int catmfs_get_fs_node(uint32_t inode_id, fs_node_t *node) {
 
 int32_t catmfs_fs_node_read(fs_node_t *node, __fs_special_t *fsp_, uint32_t size, uint8_t *buff) {
     uint32_t offset = node->offset;
-    dprintf("read %x", node->inode);
     catmfs_inode_t *inode = (catmfs_inode_t *) node->inode;
+    dprintf("read %x{%x}", node->inode, inode->stype);
     catmfs_special_t *fsp = fsp_;
     if (inode->magic != CATMFS_MAGIC) {
         deprintf("not a catmfs node[%x][%x].", inode, inode->magic);
         return 1;
     }
-    if (inode->type == FS_FILE && inode->reserved != 0) {
-        dprintf("a catrfmt file,redirect it.");
-        return catrfmt_read(inode->reserved, offset, size, buff);
+    switch (inode->stype) {
+        case CATMFS_STYPE_RFMT:
+            dprintf("a catrfmt file,redirect it.");
+            return catrfmt_read((fs_node_t *) inode->reserved, offset, size, buff);
+        case CATMFS_STYPE_OVERLAY: {
+            file_operations_t *oper = (file_operations_t *) inode->reserved;
+            if (oper == NULL || oper->read == NULL)return -1;
+            return oper->read(node, fsp_, size, buff);
+        }
     }
     uint8_t *raw = (uint8_t *) ((uint32_t) inode + sizeof(catmfs_inode_t));
     uint32_t off = 0, les = size, blkno = 0;
@@ -223,9 +294,15 @@ int32_t catmfs_fs_node_write(fs_node_t *node, __fs_special_t *fsp_, uint32_t siz
         deprintf("not a catmfs node[%x][%x].", inode, inode->magic);
         return 1;
     }
-    if (inode->type == FS_FILE && inode->reserved != 0) {
-        dprintf("a catrfmt file,redirect it.");
-        return catrfmt_write(inode->reserved, offset, size, buff);
+    switch (inode->stype) {
+        case CATMFS_STYPE_RFMT:
+            dprintf("a catrfmt file,redirect it.");
+            return catrfmt_write((fs_node_t *) inode->reserved, offset, size, buff);
+        case CATMFS_STYPE_OVERLAY: {
+            file_operations_t *oper = (file_operations_t *) inode->reserved;
+            if (oper == NULL || oper->write == NULL)return -1;
+            return oper->write(node, fsp_, size, buff);
+        }
     }
     uint8_t *raw = (uint8_t *) ((uint32_t) inode + sizeof(catmfs_inode_t));
     uint32_t off = 0, les = size, blkno = 0;
@@ -339,7 +416,6 @@ int catmfs_fs_node_rm(fs_node_t *node, __fs_special_t *fsp_) {
     blkc++;
     dprintf("rm done.free %x blks", blkc);
     return 0;
-
 }
 
 int catmfs_fs_node_load_catrfmt(fs_node_t *node, __fs_special_t *fsp_, uint32_t start_addr) {
@@ -356,8 +432,8 @@ int catmfs_fs_node_load_catrfmt(fs_node_t *node, __fs_special_t *fsp_, uint32_t 
         catrfmt_obj_table_t *table = fs->tables + sizeof(catrfmt_obj_table_t) * cur_table_no;
         for (int x = 0; x < table->count; x++) {
             catrfmt_obj_t *obj = &table->objects[x];
-            uint32_t rfmtnode = (uint32_t) catrfmt_create_fs_node(obj);
-            catmfs_make(fsp, inode, FS_FILE, obj->name, rfmtnode);
+            fs_node_t *rfmtnode = catrfmt_create_fs_node(obj);
+            catmfs_make_rfmt_file(fsp, inode, obj->name, rfmtnode);
             dprintf("[*]file:%s len:%d offset:%d", obj->name, obj->length, obj->offset);
         }
         dprintf("table[%d] end.", cur_table_no);
@@ -368,7 +444,52 @@ int catmfs_fs_node_load_catrfmt(fs_node_t *node, __fs_special_t *fsp_, uint32_t 
 }
 
 int catmfs_fs_node_lseek(fs_node_t *node, __fs_special_t *fsp_, uint32_t offset) {
+    catmfs_inode_t *inode = (catmfs_inode_t *) node->inode;
+    catmfs_special_t *fsp = fsp_;
+    if (inode->magic != CATMFS_MAGIC) {
+        deprintf("not a catmfs node[%x][%x].", inode, inode->magic);
+        return 1;
+    }
+    switch (inode->stype) {
+        case CATMFS_STYPE_OVERLAY: {
+            file_operations_t *oper = (file_operations_t *) inode->reserved;
+            if (oper == NULL || oper->lseek == NULL)return -1;
+            return oper->lseek(node, fsp_, offset);
+        }
+    }
     node->offset = offset;
+    return 0;
+}
+
+int catmfs_fs_node_open(file_handle_t *handler) {
+    catmfs_inode_t *inode = (catmfs_inode_t *) handler->node.inode;
+    if (inode->magic != CATMFS_MAGIC) {
+        deprintf("not a catmfs node[%x][%x].", inode, inode->magic);
+        return 1;
+    }
+    switch (inode->stype) {
+        case CATMFS_STYPE_OVERLAY: {
+            file_operations_t *oper = (file_operations_t *) inode->reserved;
+            if (oper == NULL || oper->open == NULL)return -1;
+            return oper->open(handler);
+        }
+    }
+    return 0;
+}
+
+int catmfs_fs_node_close(file_handle_t *handler) {
+    catmfs_inode_t *inode = (catmfs_inode_t *) handler->node.inode;
+    if (inode->magic != CATMFS_MAGIC) {
+        deprintf("not a catmfs node[%x][%x].", inode, inode->magic);
+        return 1;
+    }
+    switch (inode->stype) {
+        case CATMFS_STYPE_OVERLAY: {
+            file_operations_t *oper = (file_operations_t *) inode->reserved;
+            if (oper == NULL || oper->close == NULL)return -1;
+            return oper->open(handler);
+        }
+    }
     return 0;
 }
 
@@ -400,4 +521,6 @@ void catmfs_create_fstype() {
     catmfs.write = catmfs_fs_node_write;
     catmfs.rm = catmfs_fs_node_rm;
     catmfs.lseek = catmfs_fs_node_lseek;
+    catmfs.open = catmfs_fs_node_open;
+    catmfs.close = catmfs_fs_node_close;
 }

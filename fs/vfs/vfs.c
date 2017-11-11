@@ -343,14 +343,19 @@ int8_t kopen(uint32_t pid, const char *name, uint8_t mode) {
         goto _ret;
     }
     if (vfs_find_mount_point(&pcb->vfs, path, &mp, NULL)) {
-        dprintf("mount point not found:%s", path);
+        deprintf("mount point not found:%s", path);
         fd = -1;
         goto _ret;
     }
+
     fh->present = 1;
     fh->mode = mode;
     fh->mp = mp;
     fh->node.offset = 0;
+    if (mp->fs->open && mp->fs->open(fh)) {
+        deprintf("fs's open callback failed.");
+        goto _ret;
+    }
     dprintf("proc %x open %s fd:%x", pid, path, fd);
     _ret:
     kfree(path);
@@ -376,6 +381,11 @@ int8_t kclose(uint32_t pid, int8_t fd) {
     file_handle_t *fh = &pcb->fh[fd];
     if (!fh->present) {
         dwprintf("cannot close a closed file:%x", fd);
+        return -1;
+    }
+    mount_point_t *mp = fh->mp;
+    if (mp->fs->close && mp->fs->close(fh)) {
+        deprintf("fs's close callback failed.");
         return -1;
     }
     fh->present = 0;
@@ -500,8 +510,9 @@ int sys_stat(const char *name, stat_t *stat) {
     char *path = (char *) kmalloc(MAX_PATH_LEN);
     vfs_fix_path(getpid(), name, path, MAX_PATH_LEN);
     CHK(vfs_cd(&vfs, path), "No such file or directory.");
+    dprintf("debug:::st:%x", stat);
     fs_node_t *n = &vfs.current;
-    stat->st_dev = 0;
+    stat->st_dev = 30;
     stat->st_ino = n->inode;
     stat->st_mode = n->flags;
     stat->st_nlink = 1;
@@ -509,6 +520,35 @@ int sys_stat(const char *name, stat_t *stat) {
     stat->st_gid = n->gid;
     stat->st_rdev = 0;
     stat->st_size = n->length;
+    dprintf("debug:::%x", stat->st_size);
+    stat->st_blksize = 0;
+    stat->st_blocks = 0;
+    stat->st_atime = 0;
+    stat->st_mtime = 0;
+    stat->st_ctime = 0;
+    kfree(path);
+    return 0;
+    _err:
+    kfree(path);
+    return -1;
+}
+
+int sys_stat64(const char *name, stat64_t *stat) {
+    char *path = (char *) kmalloc(MAX_PATH_LEN);
+    vfs_fix_path(getpid(), name, path, MAX_PATH_LEN);
+    CHK(vfs_cd(&vfs, path), "No such file or directory.");
+    dprintf("debug:::st64:%x", stat);
+    memset(stat, 0xFF, sizeof(stat64_t));
+    fs_node_t *n = &vfs.current;
+    stat->st_dev = 20;
+    stat->st_ino = n->inode;
+    stat->st_mode = n->flags;
+    stat->st_nlink = 1;
+    stat->st_uid = n->uid;
+    stat->st_gid = n->gid;
+    stat->st_rdev = 0;
+    stat->st_size = n->length;
+    dprintf("debug:::%x", stat->st_size);
     stat->st_blksize = 0;
     stat->st_blocks = 0;
     stat->st_atime = 0;

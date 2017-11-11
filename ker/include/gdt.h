@@ -7,7 +7,11 @@
 
 #include "system.h"
 #include "tss.h"
-
+#define GDT_KERNEL_CODE 1
+#define GDT_KERNEL_DATA 2
+#define GDT_USER_CODE 3
+#define GDT_USER_DATA 4
+#define GDT_TLS_ID 8
 struct gdt_entry {
     unsigned short limit_low;
     unsigned short base_low;
