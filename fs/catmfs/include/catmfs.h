@@ -28,6 +28,7 @@ typedef struct catmfs_inode {
     uint32_t uid;
     uint32_t gid;
     uint32_t reserved;/*DIR:child inodes count;FILE:fops or undefined*/
+    uint32_t reserved2;
     struct catmfs_inode *finode;
     uint32_t singly_block;
     //data;
@@ -62,9 +63,9 @@ void catmfs_create_fstype();
 
 catmfs_inode_t *catmfs_alloc_inode();
 
-int catmfs_make(catmfs_special_t *fsp, catmfs_inode_t *inode, uint8_t type, char *name, uint32_t catrfmt_inode);
+int catmfs_make(catmfs_special_t *fsp, catmfs_inode_t *inode, uint8_t type, const char *name, uint32_t catrfmt_inode);
 
-int catmfs_fs_node_make(fs_node_t *node, __fs_special_t *fsp_, uint8_t type, char *name);
+int catmfs_fs_node_make(fs_node_t *node, __fs_special_t *fsp_, uint8_t type, const char *name);
 
 int32_t catmfs_fs_node_readdir(fs_node_t *node, __fs_special_t *fsp_, uint32_t count, struct dirent *result);
 
@@ -83,9 +84,9 @@ __fs_special_t *catmfs_fs_node_mount(void *dev, fs_node_t *node);
 int catmfs_fs_node_lseek(fs_node_t *node, __fs_special_t *fsp_, uint32_t offset);
 
 int catmfs_make_rfmt_file(catmfs_special_t *fsp, catmfs_inode_t *inode,
-                          char *name, fs_node_t *rfmt_node);
+                          const char *name, fs_node_t *rfmt_node);
 
 int catmfs_make_overlay_file(catmfs_special_t *fsp, catmfs_inode_t *inode,
-                             char *name, file_operations_t *fop);
+                             const char *name, file_operations_t *fop, void *extern_data);
 
 #endif //W2_CATMFS_H

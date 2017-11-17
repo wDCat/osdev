@@ -41,7 +41,7 @@ fun colorprint(log: Any, fg: Int, bg: Int) {
 fun prettyOutputName(path: String): String {
     var result = path
     if (result.startsWith(ROOT))
-        result = path.substring(ROOT.length + 1)
+        result = path.substring(ROOT.size + 1)
     return result.replace("[/?]".toRegex(), "_").replace("c$|asm$|s$".toRegex(), "o")
 }
 

@@ -4,7 +4,7 @@
 ```
 .header begin
 32 catmfs magic const=0xCACAACAC;
-32 length;
+32 size;
 32 obj_table_count;
 (obj_table_count*sizeof(camfs_obj_table_t)) obj_tables;
 32 data start magic const=0xACCACCDD;

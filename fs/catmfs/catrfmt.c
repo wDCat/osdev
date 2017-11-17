@@ -61,7 +61,7 @@ fs_node_t *catrfmt_create_fs_node(catrfmt_obj_t *fs_obj) {
     fs_node_t *node = (fs_node_t *) kmalloc(sizeof(fs_node_t));
     memset(node, 0, sizeof(fs_node_t));
     memcpy(node->name, fs_obj->name, 256);
-    node->length = fs_obj->length;
+    node->size = fs_obj->length;
     node->inode = (uint32_t) fs_obj;
     fs_obj->node = node;
     return node;

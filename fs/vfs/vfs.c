@@ -12,6 +12,8 @@
 #include <stat.h>
 #include <tty.h>
 #include <procfs.h>
+#include <devfs.h>
+#include <devfile.h>
 #include "proc.h"
 
 mount_point_t mount_points[MAX_MOUNT_POINTS];
@@ -19,22 +21,29 @@ uint32_t mount_points_count;
 file_handle_t global_fh_table[MAX_FILE_HANDLES];
 fs_node_t fs_root;
 vfs_t vfs;
+mutex_lock_t vfs_lock;
 extern fs_t ext2_fs;
 extern fs_t catmfs;
 extern blk_dev_t dev;
+bool __vfs_ready = false;
+
+inline bool vfs_ready() {
+    return __vfs_ready;
+}
 
 void stdio_install() {
     pcb_t *pcb = getpcb(1);
     kclose_all(1);
-    ASSERT(sys_open("/dev/tty0", 0) == 0);//STDIN
-    ASSERT(sys_open("/dev/tty0", 0) == 1);//STDOUT
-    ASSERT(sys_open("/dev/tty0", 0) == 2);//STDERR
+    ASSERT(kopen(1, "/dev/tty0", 0) == 0);//STDIN
+    ASSERT(kopen(1, "/dev/tty0", 0) == 1);//STDOUT
+    ASSERT(kopen(1, "/dev/tty0", 0) == 2);//STDERR
 }
 
 void vfs_install() {
     memset(mount_points, 0, sizeof(mount_point_t) * MAX_MOUNT_POINTS);
     mount_points_count = 0;
     memset(global_fh_table, 0, sizeof(file_handle_t) * MAX_FILE_HANDLES);
+    mutex_init(&vfs_lock);
 }
 
 void vfs_init(vfs_t *vfs) {
@@ -425,8 +434,29 @@ int32_t sys_read(int8_t fd, int32_t size, uchar_t *buff) {
         return -1;
     }
     int32_t ret = kread(getpid(), fd, size, buff);
-    fh->node.offset += ret;
+    //fh->node.offset += ret;
     return ret;
+}
+
+off_t ktell(uint32_t pid, int8_t fd) {
+    pcb_t *pcb = getpcb(pid);
+    file_handle_t *fh = &pcb->fh[fd];
+    if (!fh->present) {
+        dwprintf("fd %x not present.", fd);
+        return -1;
+    }
+    if (fh->mp == 0) {
+        dwprintf("[%x]mount point not found.", fd);
+        return -1;
+    }
+    if (fh->mp->fs->tell == 0) {
+        return fh->node.offset;
+    }
+    return fh->mp->fs->tell(&fh->node, fh->mp->fsp);
+}
+
+off_t sys_tell(int8_t fd) {
+    return ktell(getpid(), fd);
 }
 
 off_t klseek(uint32_t pid, int8_t fd, off_t offset, int where) {
@@ -440,15 +470,16 @@ off_t klseek(uint32_t pid, int8_t fd, off_t offset, int where) {
         dwprintf("[%x]mount point not found.", fd);
         return -1;
     }
+    uint32_t noffset = ktell(pid, fd);
     switch (where) {
         case SEEK_CUR:
-            fh->node.offset += offset;
+            noffset += offset;
             break;
         case SEEK_END:
-            fh->node.offset = fh->node.length + offset;
+            noffset = fh->node.size + offset;
             break;
         case SEEK_SET:
-            fh->node.offset = (uint32_t) offset;
+            noffset = (uint32_t) offset;
             break;
         default:
             dwprintf("Bad where!");
@@ -458,8 +489,8 @@ off_t klseek(uint32_t pid, int8_t fd, off_t offset, int where) {
         dwprintf("fs operator is not implemented.");
         return -1;
     }
-    fh->mp->fs->lseek(&fh->node, fh->mp->fsp, fh->node.offset);
-    return fh->node.offset;
+    fh->mp->fs->lseek(&fh->node, fh->mp->fsp, noffset);
+    return noffset;
 }
 
 off_t sys_lseek(int8_t fd, off_t offset, int where) {
@@ -519,7 +550,7 @@ int sys_stat(const char *name, stat_t *stat) {
     stat->st_uid = n->uid;
     stat->st_gid = n->gid;
     stat->st_rdev = 0;
-    stat->st_size = n->length;
+    stat->st_size = n->size;
     dprintf("debug:::%x", stat->st_size);
     stat->st_blksize = 0;
     stat->st_blocks = 0;
@@ -547,7 +578,7 @@ int sys_stat64(const char *name, stat64_t *stat) {
     stat->st_uid = n->uid;
     stat->st_gid = n->gid;
     stat->st_rdev = 0;
-    stat->st_size = n->length;
+    stat->st_size = n->size;
     dprintf("debug:::%x", stat->st_size);
     stat->st_blksize = 0;
     stat->st_blocks = 0;
@@ -564,13 +595,14 @@ int sys_stat64(const char *name, stat64_t *stat) {
 int sys_chdir(const char *name) {
     char *path = (char *) kmalloc(MAX_PATH_LEN);
     vfs_fix_path(getpid(), name, path, MAX_PATH_LEN);
+    vfs_pretty_path(path, path);
     pcb_t *pcb = getpcb(getpid());
     int len = strlen(path);
     if (path[len - 1] != '/')
         strcat(path, "/");
-    vfs_pretty_path(path, pcb->dir);
-    CHK(vfs_cd(&pcb->vfs, pcb->dir), "");
-    //strcpy(pcb->dir, path);
+
+    CHK(vfs_cd(&pcb->vfs, path), "");
+    strcpy(pcb->dir, path);
     kfree(path);
     return 0;
     _err:
@@ -626,6 +658,8 @@ void mount_rootfs(uint32_t initrd) {
     catmfs_create_fstype();
     tty_create_fstype();
     procfs_create_type();
+    devfs_create_fstype();
+    mutex_lock(&vfs_lock);
     CHK(vfs_mount(&vfs, "/", &catmfs, NULL), "");
     CHK(vfs_cd(&vfs, "/"), "");
     mount_point_t *mp;
@@ -638,16 +672,13 @@ void mount_rootfs(uint32_t initrd) {
     CHK(vfs_mount(&vfs, "/proc", &procfs, NULL), "");
     CHK(vfs_cd(&vfs, "/"), "");
     CHK(vfs_mkdir(&vfs, "dev"), "");
-    CHK(vfs_cd(&vfs, "/dev"), "");
-    for (int x = 0; x < TTY_MAX_COUNT; x++) {
-        char ttyfn[20];
-        strformat(ttyfn, "tty%d", x);
-        CHK(vfs_touch(&vfs, ttyfn), "");
-        strformat(ttyfn, "/dev/tty%d", x);
-        vfs_mount(&vfs, ttyfn, &ttyfs, x);
-    }
+    CHK(vfs_mount(&vfs, "/dev", &devfs, NULL), "");
+    CHK(tty_register_self(), "");
+    CHK(devfile_register_self(), "");
     stdio_install();
+    mutex_unlock(&vfs_lock);
     dprintf("rootfs mounted.");
+    __vfs_ready = true;
     return;
     _err:
     PANIC("Failed to mount rootfs.");

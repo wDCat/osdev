@@ -10,7 +10,7 @@
 #include "stat.h"
 #include "uvfs.h"
 #include "uproc.h"
-
+#include "mutex.h"
 
 #define MAX_FILENAME_LEN 256
 #define MAX_PATH_LEN 1024
@@ -32,6 +32,8 @@ typedef int (*rm_type_t)(struct fs_node *, __fs_special_t *fsp);
 
 typedef int (*lseek_type_t)(struct fs_node *, __fs_special_t *fsp, uint32_t offset);
 
+typedef uint32_t (*tell_type_t)(struct fs_node *, __fs_special_t *fsp);
+
 typedef struct fs__ {
     char name[256];
     mount_type_t mount;
@@ -45,6 +47,7 @@ typedef struct fs__ {
     finddir_type_t finddir;
     rm_type_t rm;
     lseek_type_t lseek;
+    tell_type_t tell;
 } fs_t;
 typedef struct {
     char path[256];
@@ -57,7 +60,7 @@ typedef struct {
     fs_node_t current;
     fs_node_t current_dir;
 } vfs_t;
-typedef struct  file_handle {
+typedef struct file_handle {
     //char path[MAX_PATH_LEN];
     bool present;
     fs_node_t node;
@@ -70,6 +73,9 @@ extern mount_point_t mount_points[MAX_MOUNT_POINTS];
 extern uint32_t mount_points_count;
 extern file_handle_t global_fh_table[MAX_FILE_HANDLES];
 extern vfs_t vfs;
+extern mutex_lock_t vfs_lock;
+
+bool vfs_ready();
 
 void vfs_install();
 
@@ -130,5 +136,9 @@ int vfs_pretty_path(const char *path, char *out);
 off_t klseek(uint32_t pid, int8_t fd, off_t offset, int where);
 
 off_t sys_lseek(int8_t fd, off_t offset, int where);
+
+off_t ktell(uint32_t pid, int8_t fd);
+
+off_t sys_tell(int8_t fd);
 
 #endif //W2_VFS_H

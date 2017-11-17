@@ -49,6 +49,7 @@ int32_t ext2_fs_node_write(fs_node_t *node, __fs_special_t *fsp, uint32_t len, u
         inode.i_size = offset + len;
         CHK(ext2_update_inode(fs, node->inode, &inode), "");
     }
+    node->offset += ret;
     return ret;
     _err:
     return -1;
@@ -61,6 +62,7 @@ int32_t ext2_fs_node_read(fs_node_t *node, __fs_special_t *fsp, uint32_t len, ui
     ext2_inode_t inode;
     CHK(ext2_find_inote(fs, node->inode, &inode), "inode not exist");
     int32_t ret = ext2_read_file(fs, &inode, offset, len, buff);
+    node->offset += ret;
     return ret;
     _err:
     return -1;
@@ -83,7 +85,7 @@ int ext2_get_fs_node(ext2_t *fs, uint32_t inode_id, const char *fn, fs_node_t *n
         node->flags = FS_FILE;
     } else node->flags = 0;//?
 
-    node->length = inode.i_size;
+    node->size = inode.i_size;
     node->fsp = fs;
     node->inode = inode_id;
     return 0;

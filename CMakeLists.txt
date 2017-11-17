@@ -46,7 +46,9 @@ FILE(GLOB MyCSources
 /home/dcat/osdev/w2/ker/idt.c
 /home/dcat/osdev/w2/ker/isrs.c
 /home/dcat/osdev/w2/ker/tss.c
+/home/dcat/osdev/w2/ker/random.c
 /home/dcat/osdev/w2/ker/irqs.c
+/home/dcat/osdev/w2/ker/cpuid.c
 /home/dcat/osdev/w2/ker/system.c
 /home/dcat/osdev/w2/ker/gdt.c
 /home/dcat/osdev/w2/proc/blkqueue.c
@@ -79,6 +81,7 @@ FILE(GLOB MyCSources
 /home/dcat/osdev/w2/fs/procfs/procfs.c
 /home/dcat/osdev/w2/fs/ext2/ext2.c
 /home/dcat/osdev/w2/fs/ext2/ext2_fs_node.c
+/home/dcat/osdev/w2/fs/devfs/devfile.c
 /home/dcat/osdev/w2/fs/devfs/devfs.c
 /home/dcat/osdev/w2/lib/include/malloc.h
 /home/dcat/osdev/w2/lib/include/umem.h
@@ -108,7 +111,9 @@ FILE(GLOB MyCSources
 /home/dcat/osdev/w2/include/bochs_debug.h
 /home/dcat/osdev/w2/include/mutex.h
 /home/dcat/osdev/w2/include/syscall_handler.h
+/home/dcat/osdev/w2/ker/include/random.h
 /home/dcat/osdev/w2/ker/include/system.h
+/home/dcat/osdev/w2/ker/include/cpuid.h
 /home/dcat/osdev/w2/ker/include/gdt.h
 /home/dcat/osdev/w2/ker/include/isrs.h
 /home/dcat/osdev/w2/ker/include/idt.h
@@ -149,6 +154,7 @@ FILE(GLOB MyCSources
 /home/dcat/osdev/w2/fs/ext2/include/ext2_fs_node.h
 /home/dcat/osdev/w2/fs/ext2/include/ext2.h
 /home/dcat/osdev/w2/fs/ext2/include/superblk.h
+/home/dcat/osdev/w2/fs/devfs/include/devfile.h
 /home/dcat/osdev/w2/fs/devfs/include/devfs.h
 )
 ADD_EXECUTABLE(MyExecutable ${MyCSources})

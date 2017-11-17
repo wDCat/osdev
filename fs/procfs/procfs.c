@@ -72,9 +72,9 @@ int procfs_insert_item(const char *fn, procfs_precall_t precall) {
     procfs_items_count++;
 }
 
-int32_t procfs_fs_node_read(fs_node_t *node, __fs_special_t *fsp_, uint32_t size, uint8_t *buff) {
-    uint32_t offset = node->offset;
-    __fs_special_t *catfsp = ((procfs_special_t *) fsp_)->catfsp;
+int procfs_fs_node_open(file_handle_t *handler) {
+    fs_node_t *node = &handler->node;
+    __fs_special_t *catfsp = ((procfs_special_t *) handler->mp->fsp)->catfsp;
     procfs_snode_t snode;
     catmfs_fs_node_lseek(node, catfsp, 0);
     if (catmfs_fs_node_read(node, catfsp, sizeof(snode), &snode) != sizeof(snode)) {
@@ -85,6 +85,18 @@ int32_t procfs_fs_node_read(fs_node_t *node, __fs_special_t *fsp_, uint32_t size
         dprintf("calling precall:%x for %s", procfs_items[snode.id].precall, procfs_items[snode.id].fn);
         procfs_items[snode.id].precall(node, catfsp, &snode);
     }
+    catmfs_fs_node_lseek(node, catfsp, 0);
+    return 0;
+}
+
+int procfs_fs_node_close(file_handle_t *handler) {
+    return 0;
+}
+
+int32_t procfs_fs_node_read(fs_node_t *node, __fs_special_t *fsp_, uint32_t size, uint8_t *buff) {
+    uint32_t offset = node->offset;
+    __fs_special_t *catfsp = ((procfs_special_t *) fsp_)->catfsp;
+    procfs_snode_t snode;
     catmfs_fs_node_lseek(node, catfsp, sizeof(snode) + offset);
     return catmfs_fs_node_read(node, catfsp, size, buff);
 }
@@ -105,6 +117,15 @@ __fs_special_t *procfs_fs_node_mount(void *dev, fs_node_t *node) {
     psp.catfsp = catmfs_fs_node_mount(NULL, node);
     *psp.catrnode = node;
     return (void *) &psp;
+}
+
+int procfs_fs_node_lseek(fs_node_t *node, __fs_special_t *fsp_, uint32_t offset) {
+    node->offset = offset;
+    return 0;
+}
+
+uint32_t procfs_fs_node_tell(fs_node_t *node, __fs_special_t *fsp_) {
+    return node->offset;
 }
 
 int procfs_item_status(fs_node_t *node, __fs_special_t *fsp_, procfs_snode_t *snode) {
@@ -140,6 +161,19 @@ int procfs_item_cmdline(fs_node_t *node, __fs_special_t *fsp_, procfs_snode_t *s
     return 0;
 }
 
+int procfs_item_mounts(fs_node_t *node, __fs_special_t *fsp_, procfs_snode_t *snode) {
+    catmfs_fs_node_lseek(node, fsp_, sizeof(procfs_snode_t));
+    for (int x = 0; x < mount_points_count; x++) {
+        mount_point_t *mp = &mount_points[x];
+        char buff[256];
+        strformat(buff, "%s\t%s\n", mp->fs->name, mp->path);
+        catmfs_fs_node_write(node, fsp_, strlen(buff), buff);
+
+    }
+    catmfs_fs_node_lseek(node, fsp_, 0);
+    return 0;
+}
+
 void procfs_create_type() {
     memset(procfs_items, 0, sizeof(procfs_items));
     memset(&procfs, 0, sizeof(fs_t));
@@ -150,6 +184,11 @@ void procfs_create_type() {
     procfs.finddir = procfs_fs_node_finddir;
     procfs.read = procfs_fs_node_read;
     procfs.write = procfs_fs_node_write;
+    procfs.lseek = procfs_fs_node_lseek;
+    procfs.tell = procfs_fs_node_tell;
+    procfs.open = procfs_fs_node_open;
+    procfs.close = procfs_fs_node_close;
     procfs_insert_item("status", procfs_item_status);
     procfs_insert_item("cmdline", procfs_item_cmdline);
+    procfs_insert_item("mounts", procfs_item_mounts);
 }

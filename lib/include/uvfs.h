@@ -14,7 +14,7 @@
 typedef int32_t off_t;
 typedef struct dirent {
     uint32_t node;
-    unsigned short name_len; /* length of this d_name 文件名长 */
+    unsigned short name_len; /* size of this d_name 文件名长 */
     unsigned char type; /* the type of d_name 文件类型 */
     char name[256]; /* file name (null-terminated) 文件名，最长255字符 */
 } dirent_t;

@@ -36,20 +36,11 @@ typedef struct fs_node {
     uint32_t gid;
     uint32_t flags;       // Includes the node type. See #defines above.
     uint32_t inode;       // This is device-specific - provides a way for a filesystem to identify files.
-    uint32_t length;      // Size of the file, in bytes.
-    uint32_t impl;        // An implementation-defined number.
+    uint32_t size;      // Size of the file, in bytes.
     uint32_t mount_point;
     __fs_special_t *fsp;
     uint32_t offset;
-    /*
-    read_type_t read;
-    write_type_t write;
-    open_type_t open;
-    close_type_t close;
-    readdir_type_t readdir;
-    finddir_type_t finddir;
-    */
-    struct fs_node *ptr;
+    void *reserved;
 } fs_node_t;
 
 #include "uvfs.h"

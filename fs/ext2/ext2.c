@@ -318,10 +318,10 @@ int ext2_make(ext2_t *fs, uint16_t type,
                 01140860   F6 0F 00 00 0C 00 02 01  63 34 00 00 F7 0F 00 00   ö       c4  ÷
                 01140870   94 03 02 02 73 32 00 00  00 00 00 00 00 00 00 00   ”   s2
                  */
-                //fix length
+                //fix size
                 uint32_t old_len = dir->size;
                 dir->size = tsize;
-                dprintf("[**] fix length:[%x] -->[%x]", old_len, dir->size);
+                dprintf("[**] fix size:[%x] -->[%x]", old_len, dir->size);
                 dir = (ext2_dir_t *) ((uint32_t) dir + dir->size);
                 found = true;
                 break;

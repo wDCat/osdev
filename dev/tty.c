@@ -10,30 +10,11 @@
 #include <keyboard.h>
 #include <vfs.h>
 #include <signal.h>
+#include <devfs.h>
 
 tty_t ttys[TTY_MAX_COUNT];
 uint8_t cur_tty_id;
 fs_t ttyfs;
-
-void tty_install() {
-    memset(ttys, 0, sizeof(tty_t) * TTY_MAX_COUNT);
-    for (int x = 0; x < TTY_MAX_COUNT; x++) {
-        ttys[x].console = console_alloc();
-        if (ttys[x].console == NULL) {
-            PANIC("fail to alloc console for tty%s", x);
-        }
-        ttys[x].read = (tty_queue_t *) kmalloc(sizeof(tty_queue_t));
-        memset(ttys[x].read, 0, sizeof(tty_queue_t));
-        ttys[x].write = (tty_queue_t *) kmalloc(sizeof(tty_queue_t));
-        memset(ttys[x].write, 0, sizeof(tty_queue_t));
-        ttys[x].kinput = (tty_queue_t *) kmalloc(sizeof(tty_queue_t));
-        memset(ttys[x].kinput, 0, sizeof(tty_queue_t));
-        mutex_init(&ttys[x].read->mutex);
-        mutex_init(&ttys[x].write->mutex);
-        mutex_init(&ttys[x].kinput->mutex);
-    }
-    cur_tty_id = 0;
-}
 
 inline bool tty_queue_isempty(tty_queue_t *queue) {
     return queue->head == queue->foot;
@@ -218,7 +199,7 @@ void tty_kb_handler(int code, kb_status_t *kb_status) {
 }
 
 int32_t tty_fs_node_read(fs_node_t *node, __fs_special_t *fsp_, uint32_t size, uint8_t *buff) {
-    uint8_t ttyid = (uint8_t) node->inode;
+    uint8_t ttyid = (uint8_t) fsp_;
     if (ttyid > TTY_MAX_COUNT) {
         deprintf("tty not exist:%x", ttyid);
         return -1;
@@ -227,7 +208,7 @@ int32_t tty_fs_node_read(fs_node_t *node, __fs_special_t *fsp_, uint32_t size, u
 }
 
 int32_t tty_fs_node_write(fs_node_t *node, __fs_special_t *fsp_, uint32_t size, uint8_t *buff) {
-    uint8_t ttyid = (uint8_t) node->inode;
+    uint8_t ttyid = (uint8_t) fsp_;
     if (ttyid > TTY_MAX_COUNT) {
         deprintf("tty not exist:%x", ttyid);
         return 1;
@@ -256,4 +237,43 @@ void tty_create_fstype() {
     ttyfs.mount = (mount_type_t) tty_fs_node_mount;
     ttyfs.read = tty_fs_node_read;
     ttyfs.write = tty_fs_node_write;
+}
+
+file_operations_t ttydev = {
+        .read=tty_fs_node_read,
+        .write=tty_fs_node_write
+};
+
+void tty_install() {
+    memset(ttys, 0, sizeof(tty_t) * TTY_MAX_COUNT);
+    for (int x = 0; x < TTY_MAX_COUNT; x++) {
+        ttys[x].console = console_alloc();
+        if (ttys[x].console == NULL) {
+            PANIC("fail to alloc console for tty%s", x);
+        }
+        ttys[x].read = (tty_queue_t *) kmalloc(sizeof(tty_queue_t));
+        memset(ttys[x].read, 0, sizeof(tty_queue_t));
+        ttys[x].write = (tty_queue_t *) kmalloc(sizeof(tty_queue_t));
+        memset(ttys[x].write, 0, sizeof(tty_queue_t));
+        ttys[x].kinput = (tty_queue_t *) kmalloc(sizeof(tty_queue_t));
+        memset(ttys[x].kinput, 0, sizeof(tty_queue_t));
+        mutex_init(&ttys[x].read->mutex);
+        mutex_init(&ttys[x].write->mutex);
+        mutex_init(&ttys[x].kinput->mutex);
+    }
+    cur_tty_id = 0;
+
+
+}
+
+int tty_register_self() {
+    for (int x = 0; x < TTY_MAX_COUNT; x++) {
+        char ttyfn[20];
+        strformat(ttyfn, "tty%d", x);
+        CHK(devfs_register_dev(ttyfn, &ttydev, (void *) x), "");
+    }
+    return 0;
+    _err:
+    deprintf("failed");
+    return 1;
 }

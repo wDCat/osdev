@@ -45,4 +45,6 @@ int32_t tty_write(tty_t *tty, pid_t pid, int32_t size, uchar_t *buff);
 
 void tty_fg_switch(uint8_t ttyid);
 
+int tty_register_self();
+
 #endif //W2_TTY_H

@@ -20,6 +20,8 @@
 #include <swap.h>
 #include <print.h>
 #include <dynlibs.h>
+#include <devfs.h>
+#include <cpuid.h>
 
 uint32_t init_esp;
 #ifndef _BUILD_TIME
@@ -46,6 +48,7 @@ void install_step0() {
 }
 
 void install_step1() {
+    cpuid_install();
     timer_install();
     keyboard_install();
     syscall_install();
@@ -55,9 +58,9 @@ void install_step1() {
     ide_install();
     vga_install();
     console_install();
-    tty_install();
     swap_install();
     dynlibs_install();
+    tty_install();
 }
 
 int kernel_init() {
