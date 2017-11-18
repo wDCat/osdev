@@ -37,7 +37,7 @@ typedef struct fs_node {
     uint32_t flags;       // Includes the node type. See #defines above.
     uint32_t inode;       // This is device-specific - provides a way for a filesystem to identify files.
     uint32_t size;      // Size of the file, in bytes.
-    uint32_t mount_point;
+    void *vfs_mp;
     __fs_special_t *fsp;
     uint32_t offset;
     void *reserved;

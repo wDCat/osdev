@@ -203,7 +203,7 @@ __fs_special_t *ext2_fs_node_mount(blk_dev_t *dev, fs_node_t *rootnode) {
 }
 
 void ext2_create_fstype() {
-    strcpy(ext2_fs.name, STR("EXT2_TEST"));
+    strcpy(ext2_fs.name, STR("ext2"));
     ext2_fs.mount = ext2_fs_node_mount;
     ext2_fs.read = ext2_fs_node_read;
     ext2_fs.write = ext2_fs_node_write;

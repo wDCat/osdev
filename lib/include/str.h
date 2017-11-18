@@ -27,7 +27,7 @@ int strcats(char *target, const char *src, int maxlen);
 
 uint strncpy(char *target, const char *src, int len);
 
-bool strcmp(const char *s1, const char *s2);
+bool str_compare(const char *s1, const char *s2);
 
 char *strfmt_insspace(char *out, int tok_pos, int tok_len, int buff_len);
 

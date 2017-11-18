@@ -50,6 +50,15 @@ void vfs_init(vfs_t *vfs) {
     memset(vfs, 0, sizeof(vfs_t));
 }
 
+int vfs_cloneobj(vfs_t *src, vfs_t *target) {
+    memcpy(target, src, sizeof(vfs_t));
+    return 0;
+}
+
+inline mount_point_t *vfs_get_mount_point(vfs_t *vfs, fs_node_t *node) {
+    return node->vfs_mp;
+}
+
 int vfs_find_mount_point(vfs_t *vfs, const char *path, mount_point_t **mp_out, char **relatively_path) {
     dprintf("mount point count:%x", mount_points_count);
     int maxpathlen = 0, mx = -1;
@@ -83,15 +92,32 @@ inline int vfs_cpynode(fs_node_t *target, fs_node_t *src) {
     memcpy(target, src, sizeof(fs_node_t));
 }
 
+int vfs_resolve_symlink(vfs_t *vfs, mount_point_t *mp, fs_node_t *node, fs_node_t *node_out) {
+    if (node->flags != FS_SYMLINK) {
+        deprintf("not a symlink node!");
+        return -1;
+    }
+    if (mp->fs->readlink == 0) {
+        deprintf("fs operator not implemented");
+        return -1;
+    }
+    char *buff = kmalloc(MAX_PATH_LEN);
+    CHK(mp->fs->readlink(node, mp->fsp, buff, MAX_PATH_LEN), "");
+    dprintf("symlink %x===>%s", node->inode, buff);
+    CHK(vfs_get_node(vfs, buff, node_out), "");
+    return 0;
+    _err:
+    deprintf("fail to resolve symlink!");
+    return -1;
+}
 
-int vfs_get_node(vfs_t *vfs, const char *path, fs_node_t *node) {
-    dprintf("target:%s", path);
+int vfs_get_node4(vfs_t *vfs, const char *path, fs_node_t *node, bool follow_link) {
+    dprintf("target:%s follow_link:%x", path, follow_link);
     fs_node_t cur;
     int x = 0;
     char *p = 0;
     char *rpath;
     int tlen = strlen(path);
-
     mount_point_t *mp;
     if (vfs_find_mount_point(vfs, path, &mp, &rpath)) {
         dprintf("mount point not found:%s", path);
@@ -132,6 +158,27 @@ int vfs_get_node(vfs_t *vfs, const char *path, fs_node_t *node) {
                 dprintf("obj not found:%s", name);
                 return 1;
             }
+            tmp.vfs_mp = mp;
+            if (tmp.flags == FS_SYMLINK && follow_link) {
+                char *buff = kmalloc(MAX_PATH_LEN);
+                if (mp->fs->readlink(&tmp, mp->fsp, buff, MAX_PATH_LEN)) {
+                    deprintf("fail to resolve symlink:%s", name);
+                    return 1;
+                }
+                dprintf("symlink following to %s", buff);
+                //generate new path
+                //FIXME //////
+                if (buff[0] != '/') {
+                    memcpy(&buff[x], buff, strlen(buff));
+                    memcpy(buff, rpath, x);
+                }
+                strcat(buff, "/");
+                strcat(buff, &rpath[x + len]);
+                dprintf("new path:%s", buff);
+                int ret = vfs_get_node(vfs, buff, node);
+                kfree(buff);
+                return ret;
+            }
             vfs_cpynode(&cur, &tmp);
             x += len + 1;
         }
@@ -139,6 +186,10 @@ int vfs_get_node(vfs_t *vfs, const char *path, fs_node_t *node) {
     if (node)
         vfs_cpynode(node, &cur);
     return 0;
+}
+
+inline int vfs_get_node(vfs_t *vfs, const char *path, fs_node_t *node) {
+    return vfs_get_node4(vfs, path, node, true);
 }
 
 int vfs_cd(vfs_t *vfs, const char *path) {
@@ -171,16 +222,47 @@ int vfs_mount(vfs_t *vfs, const char *path, fs_t *fs, void *dev) {
         return 1;
     }
     mp->fs = fs;
+    mp->root.vfs_mp = mp;
     strcpy(mp->path, path);
     mount_points_count++;
+
+    if (!str_compare(path, "/")) {
+        //create .. and .
+        vfs_t tmpvfs;
+        vfs_cloneobj(vfs, &tmpvfs);
+        vfs_cd(&tmpvfs, path);
+        vfs_symlink(&tmpvfs, "..", "..");
+        vfs_symlink(&tmpvfs, ".", ".");
+    }
     dprintf("%s mount to %s", fs->name, path);
     return 0;
 }
 
+int32_t vfs_symlink(vfs_t *vfs, const char *name, const char *target) {
+    mount_point_t *mp;
+    fs_node_t srcnode;
+    mp = vfs_get_mount_point(vfs, &vfs->current);
+    if (mp == NULL) {
+        deprintf("mount point not found");
+        return -1;
+    }
+    if (mp->fs->symlink == 0 || mp->fs->make == 0) {
+        deprintf("fs operator not implemented");
+        return -1;
+    }
+    if (mp->fs->make(&vfs->current_dir, mp->fsp, FS_SYMLINK, name) ||
+        mp->fs->finddir(&vfs->current_dir, mp->fsp, name, &srcnode)) {
+        deprintf("fail to make symbol file.");
+        return -1;
+    }
+    return mp->fs->symlink(&srcnode, mp->fsp, target);
+
+}
+
 int32_t vfs_ls(vfs_t *vfs, dirent_t *dirs, uint32_t max_count) {
     mount_point_t *mp;
-    char *rpath;
-    if (vfs_find_mount_point(vfs, vfs->path, &mp, &rpath)) {
+    mp = vfs_get_mount_point(vfs, &vfs->current);
+    if (mp == NULL) {
         dprintf("mount point not found:%s", vfs->path);
         return 1;
     }
@@ -195,8 +277,8 @@ int32_t vfs_ls(vfs_t *vfs, dirent_t *dirs, uint32_t max_count) {
 
 int vfs_make(vfs_t *vfs, uint8_t type, const char *name) {
     mount_point_t *mp;
-    char *rpath;
-    if (vfs_find_mount_point(vfs, vfs->path, &mp, &rpath)) {
+    mp = vfs_get_mount_point(vfs, &vfs->current);
+    if (mp == NULL) {
         dprintf("mount point not found:%s", vfs->path);
         return 1;
     }
@@ -217,8 +299,8 @@ inline int vfs_touch(vfs_t *vfs, const char *name) {
 
 int32_t vfs_read(vfs_t *vfs, uint32_t size, uchar_t *buff) {
     mount_point_t *mp;
-    char *rpath;
-    if (vfs_find_mount_point(vfs, vfs->path, &mp, &rpath)) {
+    mp = vfs_get_mount_point(vfs, &vfs->current);
+    if (mp == NULL) {
         deprintf("mount point not found:%s", vfs->path);
         return -1;
     }
@@ -235,8 +317,8 @@ int32_t vfs_read(vfs_t *vfs, uint32_t size, uchar_t *buff) {
 
 int32_t vfs_write(vfs_t *vfs, uint32_t size, uchar_t *buff) {
     mount_point_t *mp;
-    char *rpath;
-    if (vfs_find_mount_point(vfs, vfs->path, &mp, &rpath)) {
+    mp = vfs_get_mount_point(vfs, &vfs->current);
+    if (mp == NULL) {
         deprintf("mount point not found:%s", vfs->path);
         return -1;
     }
@@ -252,6 +334,7 @@ int32_t vfs_write(vfs_t *vfs, uint32_t size, uchar_t *buff) {
 }
 
 int vfs_rm(vfs_t *vfs) {
+    //TODO rm a symlink or a true file.
     mount_point_t *mp;
     char *rpath;
     if (vfs_find_mount_point(vfs, vfs->path, &mp, &rpath)) {
@@ -271,25 +354,32 @@ int vfs_pretty_path(const char *path, char *out) {
     while (true) {
         if (off > strlen(out))break;
         char *o = strchr(&out[off], '/');
-        if (o == NULL)break;
-        int ol = (int) (o - out - off);
-        //dprintf("ol:%d", ol);
+        int ol;
+        if (o == NULL) {
+            ol = strlen(out) - off;
+        } else {
+            ol = (int) (o - out - off);
+        }
         if (ol == 2 && out[off] == '.' && out[off + 1] == '.') {
             int y = off - 2;
             for (; y >= 0; y--) {
                 if (out[y] == '/')break;
             }
-            int len = strlen(o);
-            memcpy(&out[y], o, len);
-            out[y + len] = 0;
-            //dprintf("cpy %d %s", y, &o[1]);
+            if (o != NULL) {
+                int len = strlen(o);
+                memcpy(&out[y], o, len);
+                out[y + len] = 0;
+            } else out[y] = 0;
             off = y + 1;
         } else if (ol == 1 && out[off] == '.') {
             int len = strlen(&out[off + 2]);
             memcpy(&out[off], &out[off + 2], len);
             out[off + len] = 0;
         } else off += ol + 1;
+        if (o == NULL)break;
     }
+
+    dprintf("pretty path: %s", out);
 }
 
 int vfs_fix_path(uint32_t pid, const char *name, char *out, int max_len) {
@@ -351,7 +441,8 @@ int8_t kopen(uint32_t pid, const char *name, uint8_t mode) {
         fd = -1;
         goto _ret;
     }
-    if (vfs_find_mount_point(&pcb->vfs, path, &mp, NULL)) {
+    mp = vfs_get_mount_point(&pcb->vfs, &fh->node);
+    if (mp == NULL) {
         deprintf("mount point not found:%s", path);
         fd = -1;
         goto _ret;
@@ -675,6 +766,11 @@ void mount_rootfs(uint32_t initrd) {
     CHK(vfs_mount(&vfs, "/dev", &devfs, NULL), "");
     CHK(tty_register_self(), "");
     CHK(devfile_register_self(), "");
+    CHK(procfs_after_vfs_inited(), "");
+    //symlink test
+    CHK(vfs_cd(&vfs, "/"), "");
+    CHK(vfs_symlink(&vfs, "link", "/data"), "");
+    //end symlink test
     stdio_install();
     mutex_unlock(&vfs_lock);
     dprintf("rootfs mounted.");

@@ -17,7 +17,7 @@
 
 #define TTY_IS_EOF(x) ((x)=='\n')
 typedef struct {
-    bool inited;
+    uint16_t used;
     uint32_t head;
     uint32_t foot;
     mutex_lock_t mutex;

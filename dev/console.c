@@ -33,7 +33,7 @@ console_t *console_alloc() {
 
 void console_switch(console_t *con) {
     //TODO fast switch
-    uint16_t offset = con->start_addr - SCREEN_MEMORY_BASE;
+    uint16_t offset = (uint16_t) (con->start_addr - SCREEN_MEMORY_BASE);
     uint temp = (con->y) * SCREEN_MAX_X + con->x + 1;
     outportb(0x3D4, 0xC);
     outportb(0x3D5, offset >> 9);
@@ -47,7 +47,7 @@ void console_switch(console_t *con) {
 }
 
 void console_clear(console_t *con) {
-    memset(con->start_addr, 0, SCREEN_MAX_Y * SCREEN_MAX_X * 2);
+    memset((void *) con->start_addr, 0, SCREEN_MAX_Y * SCREEN_MAX_X * 2);
     con->x = 0;
     con->y = 0;
     console_switch(con);
@@ -55,10 +55,10 @@ void console_clear(console_t *con) {
 
 void console_scroll(console_t *con) {
     if (con->y >= SCREEN_MAX_Y) {
-        memcpy((unsigned char *) con->start_addr,
-               (const unsigned char *) (con->start_addr + (1 * SCREEN_MAX_X) * 2),
+        memcpy((void *) con->start_addr,
+               (void *) (con->start_addr + (1 * SCREEN_MAX_X) * 2),
                ((SCREEN_MAX_Y - 1) * SCREEN_MAX_X) * 2);
-        memset((con->start_addr + ((SCREEN_MAX_Y - 1) * SCREEN_MAX_X) * 2), 0, SCREEN_MAX_X * 2);
+        memset((void *) (con->start_addr + ((SCREEN_MAX_Y - 1) * SCREEN_MAX_X) * 2), 0, SCREEN_MAX_X * 2);
         con->y -= 1;
     }
 }
@@ -70,14 +70,14 @@ void console_putc(console_t *con, const uchar_t c) {
     }
 
     uint8_t data;
-    uint8_t *where = (con->start_addr + ((con->y * SCREEN_MAX_X) + con->x) * 2);
+    uint8_t *where = (uint8_t *) (con->start_addr + ((con->y * SCREEN_MAX_X) + con->x) * 2);
     switch (c) {
         case '\b'://Backspace
-            con->x -= 1;
-            if (con->x < 0) {
+            if (con->x == 0) {
                 con->y -= 1;
-                con->y += SCREEN_MAX_X;
+                con->x = SCREEN_MAX_X;
             }
+            con->x -= 1;
             *(where - 2) = 0;
             break;
         case '\n'://Enter

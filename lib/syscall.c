@@ -3,8 +3,6 @@
 //
 
 
-
-#include <iov.h>
 #include "syscall.h"
 
 _impl_syscall0(helloworld, SYS_restart_syscall);
@@ -53,6 +51,6 @@ _impl_syscall1(free, SYS_free, void*);
 
 _impl_syscall3(dup3, SYS_dup3, int, int, int);
 
-_impl_syscall3(readv, SYS_readv, int, const iovec_t*, int);
+_impl_syscall3(readv, SYS_readv, int, void*, int);
 
-_impl_syscall3(writev, SYS_writev, int, const struct iovec*, int);
+_impl_syscall3(writev, SYS_writev, int, void*, int);

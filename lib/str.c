@@ -145,7 +145,11 @@ uint itohexs(uint32_t num, char *out) {
     return 0;
 }
 
-bool strcmp(const char *s1, const char *s2) {
+/**
+ * different from strcmp()
+ * @return true if they are same
+ * */
+bool str_compare(const char *s1, const char *s2) {
     return strlen(s1) == strlen(s2) && strstr(s1, s2) == 0;
 }
 

@@ -24,15 +24,19 @@
 
 typedef __fs_special_t *(*mount_type_t)(void *dev, fs_node_t *node);
 
-typedef int (*get_node_by_id_type_t)(__fs_special_t *fsp, uint32_t id, fs_node_t *node);
+typedef int (*get_node_by_id_type_t)(__fs_special_t *, uint32_t id, fs_node_t *node);
 
-typedef int (*make_type_t)(struct fs_node *, __fs_special_t *fsp, uint8_t type, char *name);
+typedef int (*make_type_t)(struct fs_node *, __fs_special_t *, uint8_t type, char *name);
 
-typedef int (*rm_type_t)(struct fs_node *, __fs_special_t *fsp);
+typedef int (*rm_type_t)(struct fs_node *, __fs_special_t *);
 
-typedef int (*lseek_type_t)(struct fs_node *, __fs_special_t *fsp, uint32_t offset);
+typedef int (*lseek_type_t)(struct fs_node *, __fs_special_t *, uint32_t offset);
 
-typedef uint32_t (*tell_type_t)(struct fs_node *, __fs_special_t *fsp);
+typedef uint32_t (*tell_type_t)(struct fs_node *, __fs_special_t *);
+
+typedef int (*symlink_type_t)(struct fs_node *, __fs_special_t *, const char *);
+
+typedef int (*readlink_type_t)(struct fs_node *, __fs_special_t *, char *, int);
 
 typedef struct fs__ {
     char name[256];
@@ -48,6 +52,8 @@ typedef struct fs__ {
     rm_type_t rm;
     lseek_type_t lseek;
     tell_type_t tell;
+    symlink_type_t symlink;
+    readlink_type_t readlink;
 } fs_t;
 typedef struct {
     char path[256];
@@ -81,6 +87,8 @@ void vfs_install();
 
 void mount_rootfs(uint32_t initrd);
 
+int vfs_get_node(vfs_t *vfs, const char *path, fs_node_t *node);
+
 void vfs_init(vfs_t *vfs);
 
 int vfs_cd(vfs_t *vfs, const char *path);
@@ -92,6 +100,8 @@ int32_t vfs_ls(vfs_t *vfs, dirent_t *dirs, uint32_t max_count);
 int vfs_make(vfs_t *vfs, uint8_t type, const char *name);
 
 int32_t vfs_read(vfs_t *vfs, uint32_t size, uchar_t *buff);
+
+int32_t vfs_symlink(vfs_t *vfs, const char *name, const char *target);
 
 int8_t sys_open(const char *name, uint8_t mode);
 

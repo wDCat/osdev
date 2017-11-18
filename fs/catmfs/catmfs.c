@@ -202,7 +202,7 @@ int catmfs_fs_node_finddir(fs_node_t *node, __fs_special_t *fsp_, const char *na
         memcpy(sname, np, dir->name_len);
         sname[dir->name_len] = 0;
         //dprintf("sname:%s name:%s", sname, name);
-        if (strcmp(sname, name)) {
+        if (str_compare(sname, name)) {
             catmfs_get_fs_node(dir->inode, result_out);
             return 0;
         }
@@ -225,7 +225,7 @@ int catmfs_get_fs_node(uint32_t inode_id, fs_node_t *node) {
     node->gid = inode->gid;
     node->size = inode->size;
     node->flags = inode->type;
-
+    return 0;
 }
 
 int32_t catmfs_fs_node_read(fs_node_t *node, __fs_special_t *fsp_, uint32_t size, uint8_t *buff) {
@@ -504,6 +504,41 @@ int catmfs_fs_node_close(file_handle_t *handler) {
     return 0;
 }
 
+int catmfs_fs_node_symlink(struct fs_node *node, __fs_special_t *fsp_, const char *target) {
+    catmfs_inode_t *inode = (catmfs_inode_t *) node->inode;
+    catmfs_special_t *fsp = fsp_;
+    if (inode->magic != CATMFS_MAGIC) {
+        deprintf("not a catmfs node[%x][%x].", inode, inode->magic);
+        return 1;
+    }
+    if (inode->type != FS_SYMLINK) {
+        deprintf("not a symlink file!");
+        return -1;
+    }
+    int len = strlen(target);
+    CHK(catmfs_fs_node_lseek(node, fsp_, 0), "");
+    if (catmfs_fs_node_write(node, fsp_, len, target) != len) {
+        deprintf("fail to write symlink...");
+        goto _err;
+    }
+    return 0;
+    _err:
+    deprintf("failed to make symlink!");
+    return -1;
+}
+
+int catmfs_fs_node_readlink(fs_node_t *node, __fs_special_t *fsp_,
+                            char *buff, int max_len) {
+    catmfs_inode_t *inode = (catmfs_inode_t *) node->inode;
+    CHK(catmfs_fs_node_lseek(node, fsp_, 0), "");
+    if (catmfs_fs_node_read(node, fsp_, max_len, buff) < 0)
+        goto _err;
+    return 0;
+    _err:
+    deprintf("failed to read symlink!");
+    return -1;
+}
+
 __fs_special_t *catmfs_fs_node_mount(void *dev, fs_node_t *node) {
     catmfs_special_t *fsp = (catmfs_special_t *) kmalloc(sizeof(catmfs_special_t));
     catmfs_inode_t *root = catmfs_alloc_inode();
@@ -517,14 +552,13 @@ __fs_special_t *catmfs_fs_node_mount(void *dev, fs_node_t *node) {
     root->finode = 0;
     root->reserved = 0;
     catmfs_get_fs_node(fsp->root_inode_id, node);
-    //putf_const("[catmfs_fs_node_mount]root inode:%x\n", fsp->root_inode_id);
     return fsp;
 }
 
 void catmfs_create_fstype() {
     memset(&catmfs, 0, sizeof(fs_t));
-    strcpy(catmfs.name, "CATMFS_TEST");
-    catmfs.make = catmfs_fs_node_make;
+    strcpy(catmfs.name, "catmfs");
+    catmfs.make = (make_type_t) catmfs_fs_node_make;
     catmfs.readdir = catmfs_fs_node_readdir;
     catmfs.mount = catmfs_fs_node_mount;
     catmfs.finddir = catmfs_fs_node_finddir;
@@ -535,4 +569,6 @@ void catmfs_create_fstype() {
     catmfs.tell = catmfs_fs_node_tell;
     catmfs.open = catmfs_fs_node_open;
     catmfs.close = catmfs_fs_node_close;
+    catmfs.symlink = catmfs_fs_node_symlink;
+    catmfs.readlink = catmfs_fs_node_readlink;
 }

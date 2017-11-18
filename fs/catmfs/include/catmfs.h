@@ -89,4 +89,9 @@ int catmfs_make_rfmt_file(catmfs_special_t *fsp, catmfs_inode_t *inode,
 int catmfs_make_overlay_file(catmfs_special_t *fsp, catmfs_inode_t *inode,
                              const char *name, file_operations_t *fop, void *extern_data);
 
+int catmfs_fs_node_symlink(struct fs_node *node, __fs_special_t *fsp_, const char *target);
+
+int catmfs_fs_node_readlink(fs_node_t *node, __fs_special_t *fsp_,
+                            char *buff, int max_len);
+
 #endif //W2_CATMFS_H

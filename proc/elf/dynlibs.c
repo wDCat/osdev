@@ -208,7 +208,7 @@ bool dynlibs_isloaded_to_memory(const char *path, uint32_t *index_out) {
     for (uint32_t x = 0, y = 0; x < MAX_LOADED_LIBS, y < loaded_dynlibs_count; x++) {
         if (loaded_dynlibs[x] != NULL) {
             y++;
-            if (strcmp(loaded_dynlibs[x]->path, path)) {
+            if (str_compare(loaded_dynlibs[x]->path, path)) {
                 if (index_out)*index_out = x;
                 return true;
             }
@@ -226,7 +226,7 @@ bool dynlibs_isloaded_to_proc(const char *path, pid_t pid) {
         dynlib_inctree_t *tree = SQUEUE_GET(&pre_iter, 0, dynlib_inctree_t*);
         if (tree->next)squeue_insert(&pre_iter, (uint32_t) tree->next);
         if (tree->need)squeue_insert(&pre_iter, (uint32_t) tree->need);
-        if (strcmp(loaded_dynlibs[tree->loadinfo->no]->path, path))return true;
+        if (str_compare(loaded_dynlibs[tree->loadinfo->no]->path, path))return true;
         squeue_remove(&pre_iter, 0);
     }
     squeue_destory(&pre_iter);

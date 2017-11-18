@@ -123,7 +123,7 @@ int elsp_find_dynsymbol(elf_digested_t *edg, const char *name, uint32_t *out) {
         if (esym == NULL)break;
         const char *symname = elsp_get_dynstring_by_offset(edg, esym->st_name);
         if (symname == NULL)continue;
-        if (strcmp(symname, name) && esym->st_value != 0) {
+        if (str_compare(symname, name) && esym->st_value != 0) {
             if (out) {
                 *out = esym->st_value + 0x0;
                 return 0;
@@ -140,7 +140,7 @@ int elsp_find_symbol(elf_digested_t *edg, const char *name, uint32_t *out) {
         const char *symname = elsp_get_string_by_offset(edg, esym->st_name);
         if (symname == NULL)continue;
         dprintf("sym:%s %x", symname, esym->st_value);
-        if (strcmp(symname, name) && esym->st_value != 0) {
+        if (str_compare(symname, name) && esym->st_value != 0) {
             if (out) {
                 *out = esym->st_value + 0x0;
                 return 0;
@@ -354,7 +354,7 @@ int elsp_relocate_got(elf_digested_t *edg) {
         for (int x = 0; x * sizeof(elf_symbol_t) < edg->symbols_size; x++) {
             dprintf("name[%d]:%d %x %x", x, symbol->st_name, symbol->st_value, symbol);
             char *name = edg->strings + symbol->st_name;
-            if (strcmp(name, "_GLOBAL_OFFSET_TABLE_")) {
+            if (str_compare(name, "_GLOBAL_OFFSET_TABLE_")) {
                 got = (uint32_t *) symbol->st_value;
                 dprintf("found GOT:%x", got);
                 break;

@@ -102,8 +102,8 @@ _define_syscall1(free, SYS_free, void*);
 
 _define_syscall3(dup3, SYS_dup3, int, int, int);
 
-_define_syscall3(readv, SYS_readv, int, const struct iovec*, int);
+_define_syscall3(readv, SYS_readv, int, void*, int);
 
-_define_syscall3(writev, SYS_writev, int, const struct iovec*, int);
+_define_syscall3(writev, SYS_writev, int,  void*, int);
 
 #endif //W2_SYSCALL_H

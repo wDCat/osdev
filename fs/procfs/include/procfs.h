@@ -9,6 +9,7 @@
 
 #include "catmfs.h"
 
+#define PROC_SELF_SYMLINK_STUB "stub_self!!"
 extern fs_t procfs;
 typedef struct {
     catmfs_special_t *catfsp;
@@ -31,5 +32,7 @@ void procfs_create_type();
 int procfs_insert_proc(pid_t pid);
 
 int procfs_remove_proc(pid_t pid);
+
+int procfs_after_vfs_inited();
 
 #endif //W2_PROCFS_H

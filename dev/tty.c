@@ -17,11 +17,23 @@ uint8_t cur_tty_id;
 fs_t ttyfs;
 
 inline bool tty_queue_isempty(tty_queue_t *queue) {
-    return queue->head == queue->foot;
+    return queue->used == 0;
 }
 
 inline bool tty_queue_isfull(tty_queue_t *queue) {
-    return queue->head == queue->foot && queue->inited;
+    return queue->used >= TTY_BUFF_SIZE;
+}
+
+inline bool tty_queue_remove_last(tty_queue_t *queue, uchar_t *c_out) {
+    if (tty_queue_isempty(queue)) {
+        return false;
+    }
+    if (c_out)
+        *c_out = queue->buff[queue->foot];
+    queue->foot--;
+    queue->used--;
+    queue->buff[queue->foot] = 0;
+    return true;
 }
 
 inline bool tty_queue_putc(tty_queue_t *queue, uchar_t c) {
@@ -30,9 +42,15 @@ inline bool tty_queue_putc(tty_queue_t *queue, uchar_t c) {
         LOOP();//debug
         return false;
     }
-    queue->inited = true;
-    queue->buff[queue->foot] = c;
-    queue->foot++;
+    switch (c) {
+        case '\b':
+            tty_queue_remove_last(queue, NULL);
+            break;
+        default:
+            queue->used++;
+            queue->buff[queue->foot] = c;
+            queue->foot++;
+    }
     if (queue->foot >= TTY_BUFF_SIZE)
         queue->foot = 0;
     return true;
@@ -44,25 +62,15 @@ inline bool tty_queue_getc(tty_queue_t *queue, uchar_t *c_out) {
     }
     if (c_out)
         *c_out = queue->buff[queue->head];
+    queue->used--;
     queue->head++;
     if (queue->head >= TTY_BUFF_SIZE)
         queue->head = 0;
     if (tty_queue_isempty(queue)) {
-        queue->inited = false;
     }
     return true;
 }
 
-inline bool tty_queue_remove_last(tty_queue_t *queue, uchar_t *c_out) {
-    if (tty_queue_isempty(queue)) {
-        return false;
-    }
-    if (c_out)
-        *c_out = queue->buff[queue->foot];
-    queue->foot--;
-    queue->buff[queue->foot] = 0;
-    return true;
-}
 
 void tty_empty_wait(tty_queue_t *queue, pid_t pid) {
     bool empty;
@@ -163,7 +171,6 @@ void tty_kb_handler(int code, kb_status_t *kb_status) {
     tty_queue_t *queue = ttys[cur_tty_id].kinput;
     uchar_t c;
     c = kb_status->shift ? kbdusupper[code] : kbdus[code];
-    tty_write(&ttys[cur_tty_id], 0, 1, &c);
     if (kb_status->ctrl == true) {
         //FIXME
         char op[2];
@@ -187,6 +194,9 @@ void tty_kb_handler(int code, kb_status_t *kb_status) {
                 return;
         }
     }
+    if (c == '\b' && tty_queue_isempty(queue))
+        return;
+    tty_write(&ttys[cur_tty_id], 0, 1, &c);
     if (code == 0x1C) {
         tty_cook(&ttys[cur_tty_id]);
     } else if (c != 0) {
@@ -196,6 +206,7 @@ void tty_kb_handler(int code, kb_status_t *kb_status) {
         }
         mutex_unlock(&queue->mutex);
     }
+
 }
 
 int32_t tty_fs_node_read(fs_node_t *node, __fs_special_t *fsp_, uint32_t size, uint8_t *buff) {
@@ -213,7 +224,6 @@ int32_t tty_fs_node_write(fs_node_t *node, __fs_special_t *fsp_, uint32_t size, 
         deprintf("tty not exist:%x", ttyid);
         return 1;
     }
-    //dprintf("write tty:%x %s", ttyid, buff);
     return tty_write(&ttys[ttyid], getpid(), size, buff);
 }
 
@@ -262,8 +272,6 @@ void tty_install() {
         mutex_init(&ttys[x].kinput->mutex);
     }
     cur_tty_id = 0;
-
-
 }
 
 int tty_register_self() {

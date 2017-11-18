@@ -71,9 +71,21 @@ __fs_special_t *devfs_fs_node_mount(void *dev, fs_node_t *node) {
     return NULL;
 }
 
+int devfs_fs_node_symlink(struct fs_node *node, __fs_special_t *fsp_,
+                          const char *target) {
+    __fs_special_t *catfsp = ((devfs_special_t *) fsp_)->catfsp;
+    return catmfs_fs_node_symlink(node, catfsp, target);
+}
+
+int devfs_fs_node_readlink(fs_node_t *node, __fs_special_t *fsp_,
+                           char *buff, int max_len) {
+    __fs_special_t *catfsp = ((devfs_special_t *) fsp_)->catfsp;
+    return catmfs_fs_node_readlink(node, catfsp, buff, max_len);
+}
+
 void devfs_create_fstype() {
     memset(&devfs, 0, sizeof(fs_t));
-    strcpy(devfs.name, "DEVFS_TEST");
+    strcpy(devfs.name, "devfs");
     devfs.mount = devfs_fs_node_mount;
     devfs.read = devfs_fs_node_read;
     devfs.write = devfs_fs_node_write;
@@ -81,4 +93,6 @@ void devfs_create_fstype() {
     devfs.readdir = devfs_fs_node_readdir;
     devfs.lseek = devfs_fs_node_lseek;
     devfs.tell = devfs_fs_node_tell;
+    devfs.symlink = devfs_fs_node_symlink;
+    devfs.readlink = devfs_fs_node_readlink;
 }

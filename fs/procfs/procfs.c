@@ -8,6 +8,7 @@
 #include <kmalloc.h>
 #include <procfs.h>
 #include <catmfs.h>
+#include <print.h>
 #include "procfs.h"
 
 fs_t procfs;
@@ -23,7 +24,11 @@ int procfs_insert_proc(pid_t pid) {
     fs_node_t *rnode = *psp.catrnode;
     fs_node_t tnode;
     char fn[10];
-    strformat(fn, "%d", pid);
+    if (pid > 0) {
+        strformat(fn, "%d", pid);
+    } else {
+        strcpy(fn, "self");
+    }
     CHK(catmfs_fs_node_make(rnode, psp.catfsp, FS_DIRECTORY, fn), "");
     CHK(catmfs_fs_node_finddir(rnode, psp.catfsp, fn, &tnode), "proc dir not found");
     for (int x = 0; x < procfs_items_count; x++) {
@@ -83,6 +88,8 @@ int procfs_fs_node_open(file_handle_t *handler) {
     }
     if (snode.id < 256 && procfs_items[snode.id].precall) {
         dprintf("calling precall:%x for %s", procfs_items[snode.id].precall, procfs_items[snode.id].fn);
+        if (snode.pid == 0)
+            snode.pid = getpid();
         procfs_items[snode.id].precall(node, catfsp, &snode);
     }
     catmfs_fs_node_lseek(node, catfsp, 0);
@@ -129,7 +136,6 @@ uint32_t procfs_fs_node_tell(fs_node_t *node, __fs_special_t *fsp_) {
 }
 
 int procfs_item_status(fs_node_t *node, __fs_special_t *fsp_, procfs_snode_t *snode) {
-
     pcb_t *pcb = getpcb(snode->pid);
     char *status;
     char buff[256];
@@ -174,10 +180,79 @@ int procfs_item_mounts(fs_node_t *node, __fs_special_t *fsp_, procfs_snode_t *sn
     return 0;
 }
 
+int procfs_item_pt(fs_node_t *node, __fs_special_t *fsp_, procfs_snode_t *snode) {
+    catmfs_fs_node_lseek(node, fsp_, sizeof(procfs_snode_t));
+    pcb_t *pcb = getpcb(snode->pid);
+    page_directory_t *dir = pcb->page_dir;
+    char *linebuff = (char *) kmalloc_paging(PAGE_SIZE, NULL);
+    for (int x = 0; x < 1024; x++) {
+        if (dir->tables[x]) {
+            if (dir->tables[x] != kernel_dir->tables[x]) {
+
+                strformat(linebuff, "page table[%x]:%x-%x\n"
+                                  "---------------------\n", dir->tables[x], x * 1024 * 0x1000,
+                          (x + 1) * 1024 * 0x1000);
+                catmfs_fs_node_write(node, fsp_, strlen(linebuff), linebuff);
+                page_table_t *table = dir->tables[x];
+                int len = 0;
+                for (int y = 0; y < 1024; y++) {
+                    if (table->pages[y].frame) {
+                        strformat(&linebuff[len], "entry:%x frame:%x\n", y * 0x1000 + x * 1024 * 0x1000,
+                                  table->pages[y].frame);
+                        len = strlen(linebuff);
+                        if (len >= PAGE_SIZE - 30) {
+                            catmfs_fs_node_write(node, fsp_, len, linebuff);
+                            len = 0;
+                        }
+                    }
+
+                }
+                strformat(&linebuff[len], "---------------------\n");
+                catmfs_fs_node_write(node, fsp_, strlen(linebuff), linebuff);
+            }
+        }
+    }
+    catmfs_fs_node_lseek(node, fsp_, 0);
+    return 0;
+}
+
+int procfs_fs_node_symlink(struct fs_node *node, __fs_special_t *fsp_,
+                           const char *target) {
+    __fs_special_t *catfsp = ((procfs_special_t *) fsp_)->catfsp;
+    return catmfs_fs_node_symlink(node, catfsp, target);
+}
+
+int procfs_fs_node_readlink(fs_node_t *node, __fs_special_t *fsp_,
+                            char *buff, int max_len) {
+
+    __fs_special_t *catfsp = ((procfs_special_t *) fsp_)->catfsp;
+    int ret = catmfs_fs_node_readlink(node, catfsp, buff, max_len);
+    if (ret == 0) {
+        if (str_compare(buff, PROC_SELF_SYMLINK_STUB))
+            sprintf(buff, "/proc/%d/", getpid());
+    }
+    return ret;
+}
+
+int procfs_after_vfs_inited() {
+    fs_node_t selfnode;
+    // /proc/self
+    CHK(catmfs_fs_node_make(*psp.catrnode, psp.catfsp, FS_SYMLINK, "self"), "");
+    CHK(catmfs_fs_node_finddir(*psp.catrnode, psp.catfsp, "self", &selfnode), "");
+    CHK(catmfs_fs_node_symlink(&selfnode, psp.catfsp, PROC_SELF_SYMLINK_STUB), "");
+    // /proc/mounts
+    CHK(catmfs_fs_node_make(*psp.catrnode, psp.catfsp, FS_SYMLINK, "mounts"), "");
+    CHK(catmfs_fs_node_finddir(*psp.catrnode, psp.catfsp, "mounts", &selfnode), "");
+    CHK(catmfs_fs_node_symlink(&selfnode, psp.catfsp, "/proc/self/mounts"), "");
+    return 0;
+    _err:
+    return -1;
+}
+
 void procfs_create_type() {
     memset(procfs_items, 0, sizeof(procfs_items));
     memset(&procfs, 0, sizeof(fs_t));
-    strcpy(procfs.name, "PROCFS_TEST");
+    strcpy(procfs.name, "procfs");
     procfs.mount = procfs_fs_node_mount;
     procfs.make = procfs_fs_node_make;
     procfs.readdir = procfs_fs_node_readdir;
@@ -188,7 +263,10 @@ void procfs_create_type() {
     procfs.tell = procfs_fs_node_tell;
     procfs.open = procfs_fs_node_open;
     procfs.close = procfs_fs_node_close;
+    procfs.readlink = procfs_fs_node_readlink;
+    procfs.symlink = procfs_fs_node_symlink;
     procfs_insert_item("status", procfs_item_status);
     procfs_insert_item("cmdline", procfs_item_cmdline);
     procfs_insert_item("mounts", procfs_item_mounts);
+    procfs_insert_item("pagetable", procfs_item_pt);
 }
