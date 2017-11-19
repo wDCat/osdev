@@ -22,6 +22,13 @@
 #define SEEK_CUR    1
 #define SEEK_END    2
 
+#define O_RDONLY    0x0000
+#define O_WRONLY    0x0001
+#define O_RDWR        0x0002
+#define O_NDELAY    0x0004
+#define O_APPEND    0x0008
+#define O_CREAT        0x0200
+
 typedef __fs_special_t *(*mount_type_t)(void *dev, fs_node_t *node);
 
 typedef int (*get_node_by_id_type_t)(__fs_special_t *, uint32_t id, fs_node_t *node);
@@ -71,7 +78,7 @@ typedef struct file_handle {
     bool present;
     fs_node_t node;
     mount_point_t *mp;
-    uint32_t mode;
+    int flags;
     void *reserved;
 } file_handle_t;
 
@@ -103,13 +110,13 @@ int32_t vfs_read(vfs_t *vfs, uint32_t size, uchar_t *buff);
 
 int32_t vfs_symlink(vfs_t *vfs, const char *name, const char *target);
 
-int8_t sys_open(const char *name, uint8_t mode);
+int8_t sys_open(const char *name, int flags);
 
 int8_t sys_close(int8_t fd);
 
 int8_t kclose(uint32_t pid, int8_t fd);
 
-int8_t kopen(uint32_t pid, const char *name, uint8_t mode);
+int8_t kopen(uint32_t pid, const char *name, int flags);
 
 int32_t sys_read(int8_t fd, int32_t size, uchar_t *buff);
 

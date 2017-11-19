@@ -47,6 +47,7 @@ void create_first_proc() {
     init_pcb->pid = 1;
     init_pcb->page_dir = kernel_dir;
     init_pcb->dynlibs_end_addr = 0xA0000000;
+    init_pcb->tty_no = 0;
     strcpy(init_pcb->dir, "/");
 
     extern tss_entry_t tss_entry;
@@ -347,6 +348,7 @@ pid_t fork(regs_t *r) {
     }
     dprintf("new dynlibs tree:%x", cpcb->dynlibs);
     cpcb->dynlibs_end_addr = fpcb->dynlibs_end_addr;
+    cpcb->tty_no = fpcb->tty_no;
     //Copy open file table...
     memcpy(cpcb->fh, fpcb->fh, sizeof(fpcb->fh));
     memset(cpcb->spages, 0, 0x1000);

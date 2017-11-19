@@ -94,4 +94,7 @@ int catmfs_fs_node_symlink(struct fs_node *node, __fs_special_t *fsp_, const cha
 int catmfs_fs_node_readlink(fs_node_t *node, __fs_special_t *fsp_,
                             char *buff, int max_len);
 
+int catmfs_fast_symlink(fs_node_t *node, __fs_special_t *fsp_,
+                        const char *name, const char *target);
+
 #endif //W2_CATMFS_H

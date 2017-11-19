@@ -188,7 +188,6 @@ int procfs_item_pt(fs_node_t *node, __fs_special_t *fsp_, procfs_snode_t *snode)
     for (int x = 0; x < 1024; x++) {
         if (dir->tables[x]) {
             if (dir->tables[x] != kernel_dir->tables[x]) {
-
                 strformat(linebuff, "page table[%x]:%x-%x\n"
                                   "---------------------\n", dir->tables[x], x * 1024 * 0x1000,
                           (x + 1) * 1024 * 0x1000);
@@ -235,15 +234,10 @@ int procfs_fs_node_readlink(fs_node_t *node, __fs_special_t *fsp_,
 }
 
 int procfs_after_vfs_inited() {
-    fs_node_t selfnode;
     // /proc/self
-    CHK(catmfs_fs_node_make(*psp.catrnode, psp.catfsp, FS_SYMLINK, "self"), "");
-    CHK(catmfs_fs_node_finddir(*psp.catrnode, psp.catfsp, "self", &selfnode), "");
-    CHK(catmfs_fs_node_symlink(&selfnode, psp.catfsp, PROC_SELF_SYMLINK_STUB), "");
+    CHK(catmfs_fast_symlink(*psp.catrnode, psp.catfsp, "self", PROC_SELF_SYMLINK_STUB), "");
     // /proc/mounts
-    CHK(catmfs_fs_node_make(*psp.catrnode, psp.catfsp, FS_SYMLINK, "mounts"), "");
-    CHK(catmfs_fs_node_finddir(*psp.catrnode, psp.catfsp, "mounts", &selfnode), "");
-    CHK(catmfs_fs_node_symlink(&selfnode, psp.catfsp, "/proc/self/mounts"), "");
+    CHK(catmfs_fast_symlink(*psp.catrnode, psp.catfsp, "mounts", "/proc/self/mounts"), "");
     return 0;
     _err:
     return -1;

@@ -539,6 +539,17 @@ int catmfs_fs_node_readlink(fs_node_t *node, __fs_special_t *fsp_,
     return -1;
 }
 
+inline int catmfs_fast_symlink(fs_node_t *node, __fs_special_t *fsp_,
+                               const char *name, const char *target) {
+    fs_node_t selfnode;
+    CHK(catmfs_fs_node_make(node, fsp_, FS_SYMLINK, name), "");
+    CHK(catmfs_fs_node_finddir(node, fsp_, name, &selfnode), "");
+    CHK(catmfs_fs_node_symlink(&selfnode, fsp_, target), "");
+    return 0;
+    _err:
+    return -1;
+}
+
 __fs_special_t *catmfs_fs_node_mount(void *dev, fs_node_t *node) {
     catmfs_special_t *fsp = (catmfs_special_t *) kmalloc(sizeof(catmfs_special_t));
     catmfs_inode_t *root = catmfs_alloc_inode();

@@ -37,8 +37,8 @@ void gdt_install() {
     gdt_set_gate(0, 0, 0, 0, 0);
     gdt_set_gate(GDT_KERNEL_CODE, 0, 0xFFFFFFFF, 0x9A, 0xCF);// Kernel Code
     gdt_set_gate(GDT_KERNEL_DATA, 0, 0xFFFFFFFF, 0x92, 0xCF);// Kernel Data
-    gdt_set_gate(GDT_USER_CODE, 0, 0xFFFFFFFF, 0xFA, 0xCF); // User mode code segment
-    gdt_set_gate(GDT_USER_DATA, 0, 0xFFFFFFFF, 0xF2, 0xCF); // User mode data segment
+    gdt_set_gate(GDT_USER_CODE, 0, 0xFFFFFFFF, 0xFA, 0xCF); // User flags code segment
+    gdt_set_gate(GDT_USER_DATA, 0, 0xFFFFFFFF, 0xF2, 0xCF); // User flags data segment
     gdt_set_gate(GDT_TLS_ID, UM_STACK_START - sizeof(uint32_t), 0xFFFFFFFF, 0xF2, 0xCF);
     write_tss(TSS_ID, 0x10, 0);
     extern uint32_t _sys_stack;

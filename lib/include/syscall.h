@@ -70,7 +70,7 @@ _define_syscall1(hello_switcher, SYS_hello_switcher, pid_t);
 
 _define_syscall1(exit, SYS_exit, uint32_t);
 
-_define_syscall2(open, SYS_open, const char*, uint8_t);
+_define_syscall2(open, SYS_open, const char*, int);
 
 _define_syscall1(close, SYS_close, int8_t);
 
@@ -104,6 +104,6 @@ _define_syscall3(dup3, SYS_dup3, int, int, int);
 
 _define_syscall3(readv, SYS_readv, int, void*, int);
 
-_define_syscall3(writev, SYS_writev, int,  void*, int);
+_define_syscall3(writev, SYS_writev, int, void*, int);
 
 #endif //W2_SYSCALL_H

@@ -34,14 +34,18 @@ console_t *console_alloc() {
 void console_switch(console_t *con) {
     //TODO fast switch
     uint16_t offset = (uint16_t) (con->start_addr - SCREEN_MEMORY_BASE);
-    uint temp = (con->y) * SCREEN_MAX_X + con->x + 1;
+    uint temp = (con->y) * SCREEN_MAX_X + con->x;
+    outportb(0x3D4, 0xA);
+    outportb(0x3D5, 0 | 0x0B);
+    outportb(0x3D4, 0xB);
+    outportb(0x3D5, 0 | 0x0F);
     outportb(0x3D4, 0xC);
     outportb(0x3D5, offset >> 9);
     outportb(0x3D4, 0xD);
     outportb(0x3D5, 0xFF & (offset >> 1));
-    outportb(0x3D4, 14);
+    outportb(0x3D4, 0xE);
     outportb(0x3D5, temp >> 8);
-    outportb(0x3D4, 15);
+    outportb(0x3D4, 0xF);
     outportb(0x3D5, temp);
 
 }
@@ -92,6 +96,7 @@ void console_putc(console_t *con, const uchar_t c) {
             data = (uint8_t) (c & 0xFF);
             *(where) = data;
             *(where + 1) = (COLOR_BLACK << 4 | (COLOR_WHITE)) & 0xFF;
+            *(where + 3) = (COLOR_BLACK << 4 | (COLOR_WHITE)) & 0xFF;//to show cursor
             con->x += 1;
     }
     if (con->x >= SCREEN_MAX_X) {

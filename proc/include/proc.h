@@ -78,6 +78,7 @@ typedef struct pcb_struct {
     bool heap_ready;
     heap_t heap;
     uint8_t hold_proc;//Can this pcb be free?
+    int8_t tty_no;
     struct pcb_struct *fpcb;
     struct pcb_struct *cpcb;
     //same group proc linked list

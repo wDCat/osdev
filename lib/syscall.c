@@ -19,7 +19,7 @@ _impl_syscall1(hello_switcher, SYS_hello_switcher, pid_t);
 
 _impl_syscall1(exit, SYS_exit, uint32_t);
 
-_impl_syscall2(open, SYS_open, const char*, uint8_t);
+_impl_syscall2(open, SYS_open, const char*, int);
 
 _impl_syscall1(close, SYS_close, int8_t);
 

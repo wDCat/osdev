@@ -8,6 +8,7 @@
 #include <mutex.h>
 #include <kmalloc.h>
 #include <devfs.h>
+#include <proc.h>
 #include "devfs.h"
 
 fs_t devfs;
@@ -80,7 +81,27 @@ int devfs_fs_node_symlink(struct fs_node *node, __fs_special_t *fsp_,
 int devfs_fs_node_readlink(fs_node_t *node, __fs_special_t *fsp_,
                            char *buff, int max_len) {
     __fs_special_t *catfsp = ((devfs_special_t *) fsp_)->catfsp;
-    return catmfs_fs_node_readlink(node, catfsp, buff, max_len);
+    int ret = catmfs_fs_node_readlink(node, catfsp, buff, max_len);
+    if (!ret) {
+        if (str_compare(buff, DEV_STDIN_SYMLINK_STUB)
+            || str_compare(buff, DEV_STDOUT_SYMLINK_STUB)
+            || str_compare(buff, DEV_STDERR_SYMLINK_STUB)) {
+            pcb_t *pcb = getpcb(getpid());
+            strformat(buff, "/dev/tty%d", pcb->tty_no);
+            return 0;
+        }
+    }
+    return ret;
+
+}
+
+int devfs_after_vfs_inited() {
+    CHK(catmfs_fast_symlink(devfsp.rootnode, devfsp.catfsp, "stdin", DEV_STDIN_SYMLINK_STUB), "");
+    CHK(catmfs_fast_symlink(devfsp.rootnode, devfsp.catfsp, "stdout", DEV_STDOUT_SYMLINK_STUB), "");
+    CHK(catmfs_fast_symlink(devfsp.rootnode, devfsp.catfsp, "stderr", DEV_STDERR_SYMLINK_STUB), "");
+    return 0;
+    _err:
+    return -1;
 }
 
 void devfs_create_fstype() {

@@ -276,7 +276,7 @@ void tty_install() {
 
 int tty_register_self() {
     for (int x = 0; x < TTY_MAX_COUNT; x++) {
-        char ttyfn[20];
+        char ttyfn[10];
         strformat(ttyfn, "tty%d", x);
         CHK(devfs_register_dev(ttyfn, &ttydev, (void *) x), "");
     }

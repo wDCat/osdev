@@ -39,7 +39,7 @@ typedef struct {
     uint32_t bg_reserved[3];       /* 可以忽略 */
 } ext2_group_desc_t;
 typedef struct {
-    uint16_t i_mode;    /* File mode */
+    uint16_t i_mode;    /* File flags */
     uint16_t i_uid;     /* Low 16 bits of Owner Uid */
     uint32_t i_size;    /* 文件大小，单位是 byte */
     uint32_t i_atime;   /* Access time */

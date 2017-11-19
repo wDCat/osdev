@@ -34,9 +34,9 @@ inline bool vfs_ready() {
 void stdio_install() {
     pcb_t *pcb = getpcb(1);
     kclose_all(1);
-    ASSERT(kopen(1, "/dev/tty0", 0) == 0);//STDIN
-    ASSERT(kopen(1, "/dev/tty0", 0) == 1);//STDOUT
-    ASSERT(kopen(1, "/dev/tty0", 0) == 2);//STDERR
+    ASSERT(kopen(1, "/dev/stdin", 0) == 0);//STDIN
+    ASSERT(kopen(1, "/dev/stdout", 0) == 1);//STDOUT
+    ASSERT(kopen(1, "/dev/stderr", 0) == 2);//STDERR
 }
 
 void vfs_install() {
@@ -156,6 +156,8 @@ int vfs_get_node4(vfs_t *vfs, const char *path, fs_node_t *node, bool follow_lin
             }
             if (mp->fs->finddir(&cur, mp->fsp, name, &tmp)) {
                 dprintf("obj not found:%s", name);
+                if (node)
+                    vfs_cpynode(node, &cur);
                 return 1;
             }
             tmp.vfs_mp = mp;
@@ -173,7 +175,8 @@ int vfs_get_node4(vfs_t *vfs, const char *path, fs_node_t *node, bool follow_lin
                     memcpy(buff, rpath, x);
                 }
                 strcat(buff, "/");
-                strcat(buff, &rpath[x + len]);
+                if (x + len + 1 < slen)
+                    strcat(buff, &rpath[x + len + 1]);
                 dprintf("new path:%s", buff);
                 int ret = vfs_get_node(vfs, buff, node);
                 kfree(buff);
@@ -382,6 +385,7 @@ int vfs_pretty_path(const char *path, char *out) {
     dprintf("pretty path: %s", out);
 }
 
+
 int vfs_fix_path(uint32_t pid, const char *name, char *out, int max_len) {
     const char *cwd = kgetcwd(pid);
     int p = 0, len = strlen(name), cwd_len = strlen(cwd);
@@ -418,7 +422,7 @@ int vfs_fix_path(uint32_t pid, const char *name, char *out, int max_len) {
     return 1;//ignored
 }
 
-int8_t kopen(uint32_t pid, const char *name, uint8_t mode) {
+int8_t kopen(uint32_t pid, const char *name, int flags) {
     pcb_t *pcb = getpcb(pid);
     char *path = (char *) kmalloc(MAX_PATH_LEN);
     vfs_fix_path(pid, name, path, MAX_PATH_LEN);
@@ -437,9 +441,29 @@ int8_t kopen(uint32_t pid, const char *name, uint8_t mode) {
     }
     file_handle_t *fh = &pcb->fh[fd];
     if (vfs_get_node(&pcb->vfs, path, &fh->node)) {
-        deprintf("no such file or dir:%s", name);
-        fd = -1;
-        goto _ret;
+        if (!(flags & O_CREAT)) {
+            deprintf("no such file or dir:%s flags:%d", name, flags);
+            fd = -1;
+            goto _ret;
+        } else {
+            int x = strlen(path) - 2;
+            while (path[x] != '/' && x >= 0)x--;
+            if (x == 0 && path[0] != '/') {
+                deprintf("Bad path:%s", path);
+                fd = -1;
+                goto _ret;
+            }
+            char origchr = path[x + 1];
+            path[x + 1] = 0;
+            vfs_cd(&pcb->vfs, path);
+            path[x + 1] = origchr;
+            dprintf("path:%s fn:%s", path, &path[x + 1]);
+            if (vfs_make(&pcb->vfs, FS_FILE, &path[x + 1]) || vfs_get_node(&pcb->vfs, path, &fh->node)) {
+                deprintf("cannot make new file:%s", path);
+                fd = -1;
+                goto _ret;
+            }
+        }
     }
     mp = vfs_get_mount_point(&pcb->vfs, &fh->node);
     if (mp == NULL) {
@@ -449,7 +473,7 @@ int8_t kopen(uint32_t pid, const char *name, uint8_t mode) {
     }
 
     fh->present = 1;
-    fh->mode = mode;
+    fh->flags = flags;
     fh->mp = mp;
     fh->node.offset = 0;
     if (mp->fs->open && mp->fs->open(fh)) {
@@ -467,13 +491,16 @@ void kclose_all(uint32_t pid) {
     for (int8_t x = 0; x < MAX_FILE_HANDLES; x++) {
         if (pcb->fh[x].present) {
             pcb->fh[x].present = 0;
-            break;
+            mount_point_t *mp = pcb->fh[x].mp;
+            if (mp->fs->close && mp->fs->close(&pcb->fh[x])) {
+                deprintf("fs's close callback failed.");
+            }
         }
     }
 }
 
-int8_t sys_open(const char *name, uint8_t mode) {
-    return kopen(getpid(), name, mode);
+int8_t sys_open(const char *name, int flags) {
+    return kopen(getpid(), name, flags);
 }
 
 int8_t kclose(uint32_t pid, int8_t fd) {
@@ -625,7 +652,7 @@ int sys_access(const char *name, int mode) {
     int ret = -vfs_get_node(&pcb->vfs, path, NULL);
     kfree(path);
     return ret;
-    //TODO mode./..
+    //TODO flags./..
 }
 
 int sys_stat(const char *name, stat_t *stat) {
@@ -767,6 +794,7 @@ void mount_rootfs(uint32_t initrd) {
     CHK(tty_register_self(), "");
     CHK(devfile_register_self(), "");
     CHK(procfs_after_vfs_inited(), "");
+    CHK(devfs_after_vfs_inited(), "");
     //symlink test
     CHK(vfs_cd(&vfs, "/"), "");
     CHK(vfs_symlink(&vfs, "link", "/data"), "");
