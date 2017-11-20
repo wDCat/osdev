@@ -54,3 +54,5 @@ _impl_syscall3(dup3, SYS_dup3, int, int, int);
 _impl_syscall3(readv, SYS_readv, int, void*, int);
 
 _impl_syscall3(writev, SYS_writev, int, void*, int);
+
+_impl_syscall3(ioctl, SYS_ioctl, unsigned long, unsigned long, unsigned long);

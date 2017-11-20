@@ -8,6 +8,7 @@
 #include <exit.h>
 #include <umalloc.h>
 #include <iov.h>
+#include <ioctl.h>
 #include "ker/include/idt.h"
 #include "proc.h"
 #include "syscall_handler.h"
@@ -67,7 +68,8 @@ uint32_t syscalls_table[] = {
         &sys_dup3,
         &sys_readv,
         &sys_writev,
-        &sys_stat64
+        &sys_stat64,
+        &sys_ioctl
 };
 uint32_t syscalls_count = sizeof(syscalls_table) / sizeof(uint32_t);
 

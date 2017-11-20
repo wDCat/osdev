@@ -16,7 +16,7 @@
 #include <blk_dev.h>
 #include <io.h>
 #include <console.h>
-#include <tty.h>
+#include "dev/tty/include/tty.h"
 #include <swap.h>
 #include <print.h>
 #include <dynlibs.h>

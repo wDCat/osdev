@@ -6,7 +6,7 @@
 #include "../ker/include/irqs.h"
 #include <str.h>
 #include <io.h>
-#include <tty.h>
+#include "tty/include/tty.h"
 #include <keyboard.h>
 #include "keyboard.h"
 

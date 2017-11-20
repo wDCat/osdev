@@ -13,7 +13,7 @@
 #include <catrfmt_def.h>
 #include <io.h>
 #include <syscall.h>
-#include <tty.h>
+#include "dev/tty/include/tty.h"
 #include <swap_disk.h>
 #include <swap.h>
 #include <print.h>

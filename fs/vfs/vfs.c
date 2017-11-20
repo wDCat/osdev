@@ -10,7 +10,7 @@
 #include <vfs.h>
 #include <catrfmt.h>
 #include <stat.h>
-#include <tty.h>
+#include "../../dev/tty/include/tty.h"
 #include <procfs.h>
 #include <devfs.h>
 #include <devfile.h>

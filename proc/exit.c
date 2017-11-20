@@ -70,8 +70,8 @@ void do_exit(pcb_t *pcb, int32_t ret) {
     free_proc_frames(pcb);
     uint32_t reserved_page = pcb->reserved_page;
     pcb->reserved_page = 0;
-    kfree(reserved_page);//Stack will not available.
+    kfree(reserved_page);//Stack will not available.-
     do_schedule(NULL);
     _err:
-    PANIC("may not happen...");
+    PANIC("proc %x exited,but still be schedled", pcb->pid);
 }

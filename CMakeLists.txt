@@ -9,6 +9,7 @@ include_directories(/home/dcat/osdev/w2/proc/include)
 include_directories(/home/dcat/osdev/w2/proc/swap/include)
 include_directories(/home/dcat/osdev/w2/proc/elf/include)
 include_directories(/home/dcat/osdev/w2/dev/include)
+include_directories(/home/dcat/osdev/w2/dev/tty/include)
 include_directories(/home/dcat/osdev/w2/fs/catmfs/include)
 include_directories(/home/dcat/osdev/w2/fs/vfs/include)
 include_directories(/home/dcat/osdev/w2/fs/procfs/include)
@@ -64,7 +65,6 @@ FILE(GLOB MyCSources
 /home/dcat/osdev/w2/proc/swap/swap_disk.c
 /home/dcat/osdev/w2/proc/elf/dynlibs.c
 /home/dcat/osdev/w2/proc/elf/elfloader.c
-/home/dcat/osdev/w2/dev/tty.c
 /home/dcat/osdev/w2/dev/console.c
 /home/dcat/osdev/w2/dev/keyboard.c
 /home/dcat/osdev/w2/dev/blk_dev.c
@@ -72,8 +72,10 @@ FILE(GLOB MyCSources
 /home/dcat/osdev/w2/dev/ide.c
 /home/dcat/osdev/w2/dev/vga.c
 /home/dcat/osdev/w2/dev/timer.c
+/home/dcat/osdev/w2/dev/ioctl.c
 /home/dcat/osdev/w2/dev/serial.c
 /home/dcat/osdev/w2/dev/screen.c
+/home/dcat/osdev/w2/dev/tty/tty.c
 /home/dcat/osdev/w2/fs/catmfs/catmfs.c
 /home/dcat/osdev/w2/fs/catmfs/catrfmt.c
 /home/dcat/osdev/w2/fs/vfs/vfs.c
@@ -138,13 +140,14 @@ FILE(GLOB MyCSources
 /home/dcat/osdev/w2/dev/include/keyboard.h
 /home/dcat/osdev/w2/dev/include/vga.h
 /home/dcat/osdev/w2/dev/include/timer.h
-/home/dcat/osdev/w2/dev/include/tty.h
 /home/dcat/osdev/w2/dev/include/atadef.h
 /home/dcat/osdev/w2/dev/include/blk_dev.h
+/home/dcat/osdev/w2/dev/include/ioctl.h
 /home/dcat/osdev/w2/dev/include/serial.h
 /home/dcat/osdev/w2/dev/include/ide.h
 /home/dcat/osdev/w2/dev/include/io.h
 /home/dcat/osdev/w2/dev/include/screen.h
+/home/dcat/osdev/w2/dev/tty/include/tty.h
 /home/dcat/osdev/w2/fs/catmfs/include/catrfmt.h
 /home/dcat/osdev/w2/fs/catmfs/include/catrfmt_def.h
 /home/dcat/osdev/w2/fs/catmfs/include/catmfs.h

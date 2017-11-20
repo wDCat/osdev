@@ -3,7 +3,7 @@
 //
 
 #include <kmalloc.h>
-#include <tty.h>
+#include "include/tty.h"
 #include <str.h>
 #include <schedule.h>
 #include <mutex.h>
@@ -11,6 +11,7 @@
 #include <vfs.h>
 #include <signal.h>
 #include <devfs.h>
+#include <tty.h>
 
 tty_t ttys[TTY_MAX_COUNT];
 uint8_t cur_tty_id;
@@ -106,18 +107,29 @@ void tty_full_wait(tty_queue_t *queue, pid_t pid) {
 int32_t tty_read(tty_t *tty, pid_t pid, int32_t size, uchar_t *buff) {
     tty_queue_t *queue = tty->read;
     tty_empty_wait(queue, pid);
-    mutex_lock(&queue->mutex);
     int32_t ret = 0;
     for (int x = 0; x < size; x++) {
+        mutex_lock(&queue->mutex);
+        if (tty_queue_isempty(queue)) {
+            proc_queue_insert(&queue->proc_wait, getpcb(pid));
+            mutex_unlock(&queue->mutex);
+            set_proc_status(getpcb(pid), STATUS_WAIT);
+            do_schedule(NULL);
+        }
         if (!tty_queue_getc(queue, buff) || TTY_IS_EOF(buff)) {
             ret = x + 1;
             goto _ret;
+        }
+        mutex_unlock(&queue->mutex);
+        if (*buff == 10) {
+            *buff = 0;
+            break;
         }
         buff++;
     }
     ret = size;
     _ret:
-    mutex_unlock(&queue->mutex);
+
     return ret;
 }
 
@@ -180,7 +192,7 @@ void tty_kb_handler(int code, kb_status_t *kb_status) {
             case 'C':
                 tty_write(&ttys[cur_tty_id], 0, 2, op);
                 pcb_t *npcb =
-                        getpid() == 0 ? tty_queue_next_pcb(&ttys[cur_tty_id].read, false)
+                        getpid() == 0 ? tty_queue_next_pcb(ttys[cur_tty_id].read, false)
                                       : getpcb(getpid());
                 if (npcb != NULL) {
                     send_sig(npcb, SIGINT);
@@ -193,18 +205,20 @@ void tty_kb_handler(int code, kb_status_t *kb_status) {
                 //TODO
                 return;
         }
-    }
-    if (c == '\b' && tty_queue_isempty(queue))
-        return;
-    tty_write(&ttys[cur_tty_id], 0, 1, &c);
-    if (code == 0x1C) {
-        tty_cook(&ttys[cur_tty_id]);
-    } else if (c != 0) {
-        mutex_lock(&queue->mutex);
-        if (!tty_queue_putc(queue, c)) {
-            deprintf("Ignore input:%x", code);
+    } else {
+        if (c == '\b' && tty_queue_isempty(queue))
+            return;
+        tty_write(&ttys[cur_tty_id], 0, 1, &c);
+        if (c != 0) {
+            mutex_lock(&queue->mutex);
+            if (!tty_queue_putc(queue, c)) {
+                deprintf("Ignore input:%x", code);
+            }
+            mutex_unlock(&queue->mutex);
+            if (tty_queue_isfull(queue) || c == 10) {
+                tty_cook(&ttys[cur_tty_id]);
+            }
         }
-        mutex_unlock(&queue->mutex);
     }
 
 }

@@ -3,7 +3,7 @@
 //
 
 #include <mem.h>
-#include <tty.h>
+#include "tty/include/tty.h"
 #include <console.h>
 #include <str.h>
 #include <io.h>

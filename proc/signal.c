@@ -61,7 +61,7 @@ int do_signal(pcb_t *pcb, regs_t *r) {
 }
 
 void send_sig(pcb_t *pcb, int sig) {
-    if (getpid() >= 2 && pcb->present)
+    if (pcb->pid >= 2 && pcb->present)
         SIG_SET(pcb->signal, sig);
     else
         deprintf("signal ignored.pid:%x", pcb->pid);
