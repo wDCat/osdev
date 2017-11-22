@@ -9,6 +9,7 @@
 #include <umalloc.h>
 #include <iov.h>
 #include <ioctl.h>
+#include <brk.h>
 #include "ker/include/idt.h"
 #include "proc.h"
 #include "syscall_handler.h"
@@ -17,10 +18,9 @@
 long errno;
 
 long helloworld(uint32_t ebx, uint32_t ecx, uint32_t edx, uint32_t esi, uint32_t edi, regs_t *r) {
-    dprintf("proc %x esp:%x useresp:%x tss_esp:%x", getpid(), r->esp, r->useresp, getpcb(getpid())->tss.esp);
-    set_proc_status(getpcb(getpid()), STATUS_READY);
-    switch_to_proc(getpcb(0));
-    return 12;
+    dprintf("fastdump:");
+    dump_regs(r);
+    return 0;
 }
 
 long screen_print(const char *str) {
@@ -69,7 +69,8 @@ uint32_t syscalls_table[] = {
         &sys_readv,
         &sys_writev,
         &sys_stat64,
-        &sys_ioctl
+        &sys_ioctl,
+        &sys_brk
 };
 uint32_t syscalls_count = sizeof(syscalls_table) / sizeof(uint32_t);
 

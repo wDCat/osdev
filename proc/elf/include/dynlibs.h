@@ -48,4 +48,6 @@ int dynlibs_add_to_tree(pid_t pid, dynlib_inctree_t *parent, dynlib_load_t *load
 
 int dynlibs_find_symbol(pid_t pid, const char *name, uint32_t *out);
 
+int dynlibs_handle_page_fault(regs_t *r);
+
 #endif //W2_DYNLIBS_H

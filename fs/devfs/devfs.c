@@ -11,7 +11,7 @@
 #include <proc.h>
 #include "devfs.h"
 
-fs_t devfs;
+
 bool __mounted = false;
 devfs_special_t devfsp;
 
@@ -95,6 +95,12 @@ int devfs_fs_node_readlink(fs_node_t *node, __fs_special_t *fsp_,
 
 }
 
+int devfs_fs_node_ioctl(fs_node_t *node, __fs_special_t *fsp_,
+                        unsigned int cmd, unsigned long arg) {
+    __fs_special_t *catfsp = ((devfs_special_t *) fsp_)->catfsp;
+    return catmfs_fs_node_ioctl(node, catfsp, cmd, arg);
+}
+
 int devfs_after_vfs_inited() {
     CHK(catmfs_fast_symlink(devfsp.rootnode, devfsp.catfsp, "stdin", DEV_STDIN_SYMLINK_STUB), "");
     CHK(catmfs_fast_symlink(devfsp.rootnode, devfsp.catfsp, "stdout", DEV_STDOUT_SYMLINK_STUB), "");
@@ -104,16 +110,19 @@ int devfs_after_vfs_inited() {
     return -1;
 }
 
+fs_t devfs = {
+        .name="devfs",
+        .mount = devfs_fs_node_mount,
+        .read = devfs_fs_node_read,
+        .write = devfs_fs_node_write,
+        .finddir = devfs_fs_node_finddir,
+        .readdir = devfs_fs_node_readdir,
+        .lseek = devfs_fs_node_lseek,
+        .tell = devfs_fs_node_tell,
+        .symlink = devfs_fs_node_symlink,
+        .readlink = devfs_fs_node_readlink,
+        .ioctl = devfs_fs_node_ioctl
+};
+
 void devfs_create_fstype() {
-    memset(&devfs, 0, sizeof(fs_t));
-    strcpy(devfs.name, "devfs");
-    devfs.mount = devfs_fs_node_mount;
-    devfs.read = devfs_fs_node_read;
-    devfs.write = devfs_fs_node_write;
-    devfs.finddir = devfs_fs_node_finddir;
-    devfs.readdir = devfs_fs_node_readdir;
-    devfs.lseek = devfs_fs_node_lseek;
-    devfs.tell = devfs_fs_node_tell;
-    devfs.symlink = devfs_fs_node_symlink;
-    devfs.readlink = devfs_fs_node_readlink;
 }

@@ -56,6 +56,7 @@ int dynlibs_find_symbol(pid_t pid, const char *name, uint32_t *out) {
     return -1;
 }
 
+
 int dynlibs_try_to_write(pid_t pid, uint32_t addr) {
     int ints;
     scli(&ints);
@@ -71,7 +72,7 @@ int dynlibs_try_to_write(pid_t pid, uint32_t addr) {
     switch (info->type) {
         case PT_DYNLIB_ORIG: {
             page->frame = NULL;
-            alloc_frame(page, !page->user, page->rw);
+            alloc_frame(page, !page->user, true);
             page_typeinfo_t *ninfo = get_page_type(addr, pcb->page_dir);
             ninfo->pid = pid;
             ninfo->free_on_proc_exit = true;
@@ -79,6 +80,7 @@ int dynlibs_try_to_write(pid_t pid, uint32_t addr) {
             ninfo->copy_on_fork = true;
             dprintf("copy on write(%x) %x --> %x", addr, orig_frame, page->frame);
             copy_frame_physical(orig_frame, page->frame);
+            ret = 0;
             break;
         }
         case PT_DYNLIB_DIRTY:
@@ -90,10 +92,22 @@ int dynlibs_try_to_write(pid_t pid, uint32_t addr) {
             break;
     }
     _ret:
+    flush_TLB();
     srestorei(&ints);
     return ret;
 }
-
+int dynlibs_handle_page_fault(regs_t *r) {
+    uint32_t cr2;
+    __asm__ __volatile__("mov %%cr2, %0" : "=r" (cr2));
+    uint32_t pageno = cr2 - cr2 % 0x1000;
+    dprintf("process..pid:%x addr:%x", getpid(), cr2);
+    page_typeinfo_t *info = get_page_type(pageno, getpcb(getpid())->page_dir);
+    if (info->type != PT_DYNLIB_ORIG) {
+        deprintf("not a dynlibs page.");
+        return -1;
+    }
+    return dynlibs_try_to_write(getpid(), pageno);
+}
 int dynlibs_add_to_tree(pid_t pid, dynlib_inctree_t *parent, dynlib_load_t *loadinfo) {
     pcb_t *pcb = getpcb(pid);
     dynlib_inctree_t *nitem = (dynlib_inctree_t *) kmalloc(sizeof(dynlib_inctree_t));
@@ -220,7 +234,7 @@ bool dynlibs_isloaded_to_memory(const char *path, uint32_t *index_out) {
 bool dynlibs_isloaded_to_proc(const char *path, pid_t pid) {
     dynlib_inctree_t *roottree = getpcb(pid)->dynlibs;
     squeue_t pre_iter;
-    squeue_init4(&pre_iter,pid, umalloc, ufree);
+    squeue_init4(&pre_iter, pid, umalloc, ufree);
     squeue_insert(&pre_iter, (uint32_t) roottree);
     while (!squeue_isempty(&pre_iter)) {
         dynlib_inctree_t *tree = SQUEUE_GET(&pre_iter, 0, dynlib_inctree_t*);
@@ -241,11 +255,12 @@ int dynlibs_unload_inner(pid_t pid, dynlib_load_t *loadinfo, bool remove_from_tr
     }
     dynlib_t *lib = loaded_dynlibs[loadinfo->no];
     int c0 = 0, c1 = 0;
+    dprintf_begin("entries[%s]:", loaded_dynlibs[loadinfo->no]->path);
     for (int x = 0; x < lib->frames_count; x++) {
         uint32_t paddr = loadinfo->start_addr + x * 0x1000;
         page_t *page = get_page(paddr, false, pcb->page_dir);
         page_typeinfo_t *pte = get_page_type(paddr, pcb->page_dir);
-        dprintf("%s entry{%x} at %x", loaded_dynlibs[loadinfo->no]->path, pte->type, paddr);
+        dprintf_cont("[%x:%x]", paddr, pte->type);
         switch (pte->type) {
             case PT_DYNLIB_ORIG:
                 c0++;
@@ -260,6 +275,7 @@ int dynlibs_unload_inner(pid_t pid, dynlib_load_t *loadinfo, bool remove_from_tr
         }
         page->frame = NULL;
     }
+    dprintf_end();
     dprintf("free dirty page:%x orig:%x", c1, c0);
     if (remove_from_tree)
         CHK(dynlibs_remove_from_tree(pid, NULL, loadinfo), "");
@@ -343,12 +359,12 @@ int dynlibs_load_section_data(dynlib_t *lib, elf_digested_t *edg,
             info->copy_on_fork = false;
             uint32_t size = MIN(MIN(PAGE_SIZE, les), PAGE_SIZE - (y % PAGE_SIZE));
             uint32_t foffset = shdr->sh_offset + y - shdr->sh_addr;
-            alloc_frame(page, false, true);
+            alloc_frame(page, false, false);
             if (shdr->sh_type == SHT_NOBITS) {
                 memset(y, 0, size);
             } else {
                 klseek(edg->pid, edg->fd, foffset, SEEK_SET);
-                if (kread(edg->pid, edg->fd, size, y) != size) {
+                if (kread(edg->pid, edg->fd, y, size) != size) {
                     deprintf("cannot read section:%x.I/O error.", y);
                     goto _err;
                 }
@@ -377,7 +393,7 @@ int dynlibs_load_sections(dynlib_t *lib, elf_digested_t *edg) {
     edg->shdrs = (elf_section_t *) kmalloc_paging(shdrsize, NULL);
     elf_section_t *shdr = edg->shdrs;
     klseek(edg->pid, edg->fd, ehdr->e_shoff, SEEK_SET);
-    if (kread(edg->pid, edg->fd, shdrsize, shdr) != shdrsize) {
+    if (kread(edg->pid, edg->fd, shdr, shdrsize) != shdrsize) {
         deprintf("cannot read section info.");
         goto _err;
     }
@@ -407,7 +423,7 @@ int dynlibs_load_sections(dynlib_t *lib, elf_digested_t *edg) {
                     dprintf("set section %x as symtab.", x);
                     edg->symbols = (elf_symbol_t *) kmalloc(shdr->sh_size);
                     klseek(edg->pid, edg->fd, shdr->sh_offset, SEEK_SET);
-                    if (kread(edg->pid, edg->fd, shdr->sh_size, (uchar_t *) edg->symbols) != shdr->sh_size) {
+                    if (kread(edg->pid, edg->fd, (uchar_t *) edg->symbols, shdr->sh_size) != shdr->sh_size) {
                         deprintf("i/o error when read sym section");
                         goto _err;
                     }
@@ -434,7 +450,7 @@ int dynlibs_load_sections(dynlib_t *lib, elf_digested_t *edg) {
                     dprintf("set section %x as strtab.", x);
                     edg->strings = (char *) kmalloc(shdr->sh_size);
                     klseek(edg->pid, edg->fd, shdr->sh_offset, SEEK_SET);
-                    if (kread(edg->pid, edg->fd, shdr->sh_size, (uchar_t *) edg->strings) != shdr->sh_size) {
+                    if (kread(edg->pid, edg->fd, (uchar_t *) edg->strings, shdr->sh_size) != shdr->sh_size) {
                         deprintf("i/o error when read str section");
                         goto _err;
                     }

@@ -150,7 +150,7 @@ int vfs_get_node4(vfs_t *vfs, const char *path, fs_node_t *node, bool follow_lin
             } else break;
             dprintf("cd fn:%s", name);
             fs_node_t tmp;
-            if (mp->fs->readdir == 0) {
+            if (mp->fs->finddir == 0) {
                 deprintf("fs operator not implemented");
                 return 1;
             }
@@ -167,14 +167,16 @@ int vfs_get_node4(vfs_t *vfs, const char *path, fs_node_t *node, bool follow_lin
                     deprintf("fail to resolve symlink:%s", name);
                     return 1;
                 }
-                dprintf("symlink following to %s", buff);
+                dprintf("symlink following to %s x=%x", buff, x);
                 //generate new path
                 //FIXME //////
                 if (buff[0] != '/') {
-                    memcpy(&buff[x], buff, strlen(buff));
-                    memcpy(buff, rpath, x);
+                    dmemcpy(&buff[x + 1], buff, strlen(buff));
+                    memcpy(&buff[1], rpath, x);
+                    buff[0] = '/';
                 }
-                strcat(buff, "/");
+                if (buff[strlen(buff) - 1] != '/')
+                    strcat(buff, "/");
                 if (x + len + 1 < slen)
                     strcat(buff, &rpath[x + len + 1]);
                 dprintf("new path:%s", buff);
@@ -524,7 +526,7 @@ int8_t sys_close(int8_t fd) {
     return kclose(getpid(), fd);
 }
 
-int32_t kread(uint32_t pid, int8_t fd, int32_t size, uchar_t *buff) {
+int32_t kread(uint32_t pid, int8_t fd, uchar_t *buff, int32_t size) {
     pcb_t *pcb = getpcb(pid);
     file_handle_t *fh = &pcb->fh[fd];
     if (!fh->present) {
@@ -544,14 +546,14 @@ int32_t kread(uint32_t pid, int8_t fd, int32_t size, uchar_t *buff) {
     return ret;
 }
 
-int32_t sys_read(int8_t fd, int32_t size, uchar_t *buff) {
+int32_t sys_read(int8_t fd, uchar_t *buff, int32_t size) {
     pcb_t *pcb = getpcb(getpid());
     file_handle_t *fh = &pcb->fh[fd];
     if (!fh->present) {
         dwprintf("fd %x not present.", fd);
         return -1;
     }
-    int32_t ret = kread(getpid(), fd, size, buff);
+    int32_t ret = kread(getpid(), fd, buff, size);
     //fh->node.offset += ret;
     return ret;
 }
@@ -615,7 +617,7 @@ off_t sys_lseek(int8_t fd, off_t offset, int where) {
     return klseek(getpid(), fd, offset, where);
 }
 
-int32_t kwrite(uint32_t pid, int8_t fd, int32_t size, uchar_t *buff) {
+int32_t kwrite(uint32_t pid, int8_t fd, uchar_t *buff, int32_t size) {
     pcb_t *pcb = getpcb(pid);
     file_handle_t *fh = &pcb->fh[fd];
     if (!fh->present) {
@@ -632,14 +634,14 @@ int32_t kwrite(uint32_t pid, int8_t fd, int32_t size, uchar_t *buff) {
     return ret;
 }
 
-int32_t sys_write(int8_t fd, int32_t size, uchar_t *buff) {
+int32_t sys_write(int8_t fd, uchar_t *buff, int32_t size) {
     pcb_t *pcb = getpcb(getpid());
     file_handle_t *fh = &pcb->fh[fd];
     if (!fh->present) {
         dwprintf("fd %x not present.", fd);
         return -1;
     }
-    int32_t ret = kwrite(getpid(), fd, size, buff);
+    int32_t ret = kwrite(getpid(), fd, buff, size);
     if (ret > 0)
         fh->node.offset += ret;
     return ret;
@@ -798,6 +800,8 @@ void mount_rootfs(uint32_t initrd) {
     //symlink test
     CHK(vfs_cd(&vfs, "/"), "");
     CHK(vfs_symlink(&vfs, "link", "/data"), "");
+    CHK(vfs_cd(&vfs, "/"), "");
+    CHK(vfs_symlink(&vfs, "libc.so.6", "libc.so"), "");
     //end symlink test
     stdio_install();
     mutex_unlock(&vfs_lock);

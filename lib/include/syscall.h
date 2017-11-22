@@ -74,9 +74,9 @@ _define_syscall2(open, SYS_open, const char*, int);
 
 _define_syscall1(close, SYS_close, int8_t);
 
-_define_syscall3(read, SYS_read, int8_t, int32_t, uchar_t*);
+_define_syscall3(read, SYS_read, int8_t, uchar_t*, int32_t);
 
-_define_syscall3(write, SYS_write, int8_t, int32_t, uchar_t*);
+_define_syscall3(write, SYS_write, int8_t, uchar_t*, int32_t);
 
 _define_syscall2(stat, SYS_stat, const char*, stat_t*);
 
@@ -107,5 +107,7 @@ _define_syscall3(readv, SYS_readv, int, void*, int);
 _define_syscall3(writev, SYS_writev, int, void*, int);
 
 _define_syscall3(ioctl, SYS_ioctl, unsigned long, unsigned long, unsigned long);
+
+_define_syscall1(brk, SYS_brk, void*);
 
 #endif //W2_SYSCALL_H

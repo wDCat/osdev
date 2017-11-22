@@ -35,4 +35,5 @@
 #define SYS_lstat64 25
 #define SYS_fstat64 25
 #define SYS_ioctl 26
+#define SYS_brk 27
 #endif //W2_SYSCALLNO_H

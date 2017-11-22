@@ -7,6 +7,7 @@
 #include <schedule.h>
 #include <signal.h>
 #include <page.h>
+#include <dynlibs.h>
 #include "../proc/swap/include/swap.h"
 #include "isrs.h"
 #include "idt.h"
@@ -19,7 +20,8 @@ void dump_regs(regs_t *r) {
     dprintf("REGS:");
     dprintf("-------------------------------------------");
     dprintf("[EAX:%x][EBX:%x][ECX:%x]", r->eax, r->ebx, r->ecx);
-    dprintf("[EDX:%x][EBP:%x][ESP:%x]", r->edx, r->ebp, r->useresp);
+    dprintf("[EDX:%x][ESI:%x][EDI:%x]", r->edx, r->esi, r->edi);
+    dprintf("[HA:+1s][EBP:%x][ESP:%x]", r->ebp, r->useresp);
     dprintf("[CS:%x][DS:%x][ES:%x]", r->cs, r->ds, r->es);
     dprintf("[FS:%x][GS:%x][EIP:%x]", r->fs, r->gs, r->eip);
 }
@@ -76,7 +78,7 @@ void fault_handler(struct regs *r) {
             umoude_con = true;
             break;
         case 0xE: {
-            if (swap_handle_page_fault(r)) {
+            if (swap_handle_page_fault(r) && dynlibs_handle_page_fault(r)) {
                 puterr_const("[-] Page Fault.");
                 umoude_con = true;
                 page_fault_handler(r);

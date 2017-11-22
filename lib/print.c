@@ -20,7 +20,7 @@ void fprintf(FILE *fp, const char *fmt, ...) {
         char *nextmk = strchr(les, '%');
         if (nextmk <= 0)break;
         int off = (int) (nextmk - les);
-        syscall_write(fd, off, &fmt[pos]);
+        syscall_write(fd, &fmt[pos], off);
         pos += off + 1;
         char tok = nextmk[1];
         switch (tok) {
@@ -28,7 +28,7 @@ void fprintf(FILE *fp, const char *fmt, ...) {
                 pos++;
                 char *data = va_arg(args, char*);
                 int len = strlen(data);
-                syscall_write(fd, len, data);
+                syscall_write(fd, data, len);
             }
                 break;
             case 'd': {
@@ -37,7 +37,7 @@ void fprintf(FILE *fp, const char *fmt, ...) {
                 char c2[12];
                 itos(n, c2);
                 int len = strlen(c2);
-                syscall_write(fd, len, c2);
+                syscall_write(fd, c2, len);
             }
                 break;
             case 'x': {
@@ -46,13 +46,13 @@ void fprintf(FILE *fp, const char *fmt, ...) {
                 char c2[12];
                 itohexs(n, c2);
                 int len = strlen(c2);
-                syscall_write(fd, len, c2);
+                syscall_write(fd, c2, len);
             }
                 break;
             case 'c': {
                 pos++;
                 char n = va_arg(args, char);
-                syscall_write(fd, 1, &n);
+                syscall_write(fd, &n, 1);
             }
                 break;
             default:
@@ -60,6 +60,6 @@ void fprintf(FILE *fp, const char *fmt, ...) {
         }
     }
     int len = strlen(&fmt[pos]);
-    syscall_write(fd, len, &fmt[pos]);
+    syscall_write(fd, &fmt[pos], len);
     va_end(args);
 }

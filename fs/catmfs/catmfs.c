@@ -8,9 +8,8 @@
 #include <str.h>
 #include <vfs.h>
 #include <catrfmt.h>
+#include <errno.h>
 
-
-fs_t catmfs;
 
 inline void catmfs_set_errno(catmfs_special_t *fsp, int8_t errno) {
     fsp->errno = errno;
@@ -550,6 +549,23 @@ inline int catmfs_fast_symlink(fs_node_t *node, __fs_special_t *fsp_,
     return -1;
 }
 
+int catmfs_fs_node_ioctl(fs_node_t *node, __fs_special_t *fsp_,
+                         unsigned int cmd, unsigned long arg) {
+    catmfs_inode_t *inode = (catmfs_inode_t *) node->inode;
+    if (inode->magic != CATMFS_MAGIC) {
+        deprintf("not a catmfs node[%x][%x].", inode, inode->magic);
+        return 1;
+    }
+    switch (inode->stype) {
+        case CATMFS_STYPE_OVERLAY: {
+            file_operations_t *oper = (file_operations_t *) inode->reserved;
+            if (oper == NULL || oper->ioctl == NULL)return -1;
+            return oper->ioctl(node, (void *) inode->reserved2, cmd, arg);
+        }
+    }
+    return -EINVAL;
+}
+
 __fs_special_t *catmfs_fs_node_mount(void *dev, fs_node_t *node) {
     catmfs_special_t *fsp = (catmfs_special_t *) kmalloc(sizeof(catmfs_special_t));
     catmfs_inode_t *root = catmfs_alloc_inode();
@@ -566,20 +582,23 @@ __fs_special_t *catmfs_fs_node_mount(void *dev, fs_node_t *node) {
     return fsp;
 }
 
+fs_t catmfs = {
+        .name="catmfs",
+        .make=(make_type_t) catmfs_fs_node_make,
+        .readdir=catmfs_fs_node_readdir,
+        .mount=catmfs_fs_node_mount,
+        .finddir=catmfs_fs_node_finddir,
+        .read=catmfs_fs_node_read,
+        .write=catmfs_fs_node_write,
+        .rm=catmfs_fs_node_rm,
+        .lseek=catmfs_fs_node_lseek,
+        .tell=catmfs_fs_node_tell,
+        .open=catmfs_fs_node_open,
+        .close=catmfs_fs_node_close,
+        .symlink=catmfs_fs_node_symlink,
+        .readlink=catmfs_fs_node_readlink,
+        .ioctl=catmfs_fs_node_ioctl
+};
+
 void catmfs_create_fstype() {
-    memset(&catmfs, 0, sizeof(fs_t));
-    strcpy(catmfs.name, "catmfs");
-    catmfs.make = (make_type_t) catmfs_fs_node_make;
-    catmfs.readdir = catmfs_fs_node_readdir;
-    catmfs.mount = catmfs_fs_node_mount;
-    catmfs.finddir = catmfs_fs_node_finddir;
-    catmfs.read = catmfs_fs_node_read;
-    catmfs.write = catmfs_fs_node_write;
-    catmfs.rm = catmfs_fs_node_rm;
-    catmfs.lseek = catmfs_fs_node_lseek;
-    catmfs.tell = catmfs_fs_node_tell;
-    catmfs.open = catmfs_fs_node_open;
-    catmfs.close = catmfs_fs_node_close;
-    catmfs.symlink = catmfs_fs_node_symlink;
-    catmfs.readlink = catmfs_fs_node_readlink;
 }

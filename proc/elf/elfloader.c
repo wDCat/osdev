@@ -139,7 +139,6 @@ int elsp_find_symbol(elf_digested_t *edg, const char *name, uint32_t *out) {
         if (esym == NULL)break;
         const char *symname = elsp_get_string_by_offset(edg, esym->st_name);
         if (symname == NULL)continue;
-        dprintf("sym:%s %x", symname, esym->st_value);
         if (str_compare(symname, name) && esym->st_value != 0) {
             if (out) {
                 *out = esym->st_value + 0x0;
@@ -255,7 +254,7 @@ int elsp_load_segment_data(elf_digested_t *edg, elf_program_t *phdr) {
             } else {
                 alloc_frame(page, false, true);
                 klseek(edg->pid, edg->fd, foffset, SEEK_SET);
-                if (kread(edg->pid, edg->fd, size, y) != size) {
+                if (kread(edg->pid, edg->fd, y, size) != size) {
                     deprintf("cannot read section:%x.I/O error.", y);
                     goto _err;
                 }
@@ -275,7 +274,7 @@ int elsp_load_segments(elf_digested_t *edg) {
     elf_program_t *phdr = (elf_program_t *) kmalloc(psize);
     edg->phdrs = phdr;
     klseek(edg->pid, edg->fd, ehdr->e_phoff, SEEK_SET);
-    if (kread(edg->pid, edg->fd, psize, phdr) != psize) {
+    if (kread(edg->pid, edg->fd, phdr, psize) != psize) {
         deprintf("cannot read program headers.");
         goto _err;
     }
@@ -327,7 +326,7 @@ int elsp_load_section_data(elf_digested_t *edg, elf_section_t *shdr) {
                 } else {
                     alloc_frame(page, false, true);
                     klseek(edg->pid, edg->fd, foffset, SEEK_SET);
-                    if (kread(edg->pid, edg->fd, size, y) != size) {
+                    if (kread(edg->pid, edg->fd, y, size) != size) {
                         deprintf("cannot read section:%x.I/O error.", y);
                         goto _err;
                     }
@@ -409,14 +408,14 @@ int elsp_load_sections(elf_digested_t *edg) {
     edg->shdrs = (elf_section_t *) kmalloc_paging(shdrsize, NULL);
     elf_section_t *shdr = edg->shdrs;
     klseek(edg->pid, edg->fd, ehdr->e_shoff, SEEK_SET);
-    if (kread(edg->pid, edg->fd, shdrsize, shdr) != shdrsize) {
+    if (kread(edg->pid, edg->fd, shdr, shdrsize) != shdrsize) {
         deprintf("cannot read section info.");
         goto _err;
     }
     for (int x = 0; x < edg->ehdr.e_shnum; x++) {
-        dprintf("Section %x(%x) addr:%x size:%x offset:%x type:%x", x, shdr->sh_name, shdr->sh_addr, shdr->sh_size,
-                shdr->sh_offset,
-                shdr->sh_type);
+        dprintf("Section %x(%s) addr:%x size:%x offset:%x type:%x", x, shdr->sh_name,
+                shdr->sh_addr, shdr->sh_size,
+                shdr->sh_offset, shdr->sh_type);
         elsp_load_section_data(edg, shdr);
         if (shdr->sh_type == SHT_DYNAMIC) {
             if (elsp_dynamic_section(edg, shdr)) {
@@ -435,7 +434,7 @@ int elsp_load_sections(elf_digested_t *edg) {
                     dprintf("set section %x as symtab.", x);
                     edg->symbols = (elf_symbol_t *) kmalloc(shdr->sh_size);
                     klseek(edg->pid, edg->fd, shdr->sh_offset, SEEK_SET);
-                    if (kread(edg->pid, edg->fd, shdr->sh_size, (uchar_t *) edg->symbols) != shdr->sh_size) {
+                    if (kread(edg->pid, edg->fd, (uchar_t *) edg->symbols, shdr->sh_size) != shdr->sh_size) {
                         deprintf("i/o error when read sym section");
                         goto _err;
                     }
@@ -462,7 +461,7 @@ int elsp_load_sections(elf_digested_t *edg) {
                     dprintf("set section %x as strtab.", x);
                     edg->strings = (char *) kmalloc(shdr->sh_size);
                     klseek(edg->pid, edg->fd, shdr->sh_offset, SEEK_SET);
-                    if (kread(edg->pid, edg->fd, shdr->sh_size, (uchar_t *) edg->strings) != shdr->sh_size) {
+                    if (kread(edg->pid, edg->fd, (uchar_t *) edg->strings, shdr->sh_size) != shdr->sh_size) {
                         deprintf("i/o error when read str section");
                         goto _err;
                     }
@@ -518,7 +517,7 @@ int elsp_load_sections(elf_digested_t *edg) {
 int elsp_load_header(elf_digested_t *edg) {
     elf_header_t *ehdr = &edg->ehdr;
     klseek(edg->pid, edg->fd, 0, SEEK_SET);
-    if (kread(edg->pid, edg->fd, sizeof(elf_header_t), ehdr) != sizeof(elf_header_t)) {
+    if (kread(edg->pid, edg->fd, ehdr, sizeof(elf_header_t)) != sizeof(elf_header_t)) {
         deprintf("cannot read elf header.");
         goto _err;
     }

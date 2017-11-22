@@ -57,6 +57,7 @@ FILE(GLOB MyCSources
 /home/dcat/osdev/w2/proc/exec.c
 /home/dcat/osdev/w2/proc/wait.c
 /home/dcat/osdev/w2/proc/proc_queue.c
+/home/dcat/osdev/w2/proc/brk.c
 /home/dcat/osdev/w2/proc/proc.c
 /home/dcat/osdev/w2/proc/signal.c
 /home/dcat/osdev/w2/proc/schedule.c
@@ -98,6 +99,7 @@ FILE(GLOB MyCSources
 /home/dcat/osdev/w2/lib/include/uvfs.h
 /home/dcat/osdev/w2/lib/include/intdef.h
 /home/dcat/osdev/w2/lib/include/uproc.h
+/home/dcat/osdev/w2/lib/include/uioctl.h
 /home/dcat/osdev/w2/lib/include/stat.h
 /home/dcat/osdev/w2/lib/include/env.h
 /home/dcat/osdev/w2/lib/include/stdint.h
@@ -122,6 +124,7 @@ FILE(GLOB MyCSources
 /home/dcat/osdev/w2/ker/include/tss.h
 /home/dcat/osdev/w2/ker/include/irqs.h
 /home/dcat/osdev/w2/ker/include/multiboot.h
+/home/dcat/osdev/w2/proc/include/brk.h
 /home/dcat/osdev/w2/proc/include/schedule.h
 /home/dcat/osdev/w2/proc/include/proc_queue.h
 /home/dcat/osdev/w2/proc/include/signal.h

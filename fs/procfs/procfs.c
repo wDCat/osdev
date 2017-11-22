@@ -11,7 +11,7 @@
 #include <print.h>
 #include "procfs.h"
 
-fs_t procfs;
+
 procfs_special_t psp;
 procfs_item_t procfs_items[256];
 uint8_t procfs_items_count = 0;
@@ -243,22 +243,24 @@ int procfs_after_vfs_inited() {
     return -1;
 }
 
+fs_t procfs = {
+        .name="procfs",
+        .mount = procfs_fs_node_mount,
+        .make = procfs_fs_node_make,
+        .readdir = procfs_fs_node_readdir,
+        .finddir = procfs_fs_node_finddir,
+        .read = procfs_fs_node_read,
+        .write = procfs_fs_node_write,
+        .lseek = procfs_fs_node_lseek,
+        .tell = procfs_fs_node_tell,
+        .open = procfs_fs_node_open,
+        .close = procfs_fs_node_close,
+        .readlink = procfs_fs_node_readlink,
+        .symlink = procfs_fs_node_symlink
+};
+
 void procfs_create_type() {
     memset(procfs_items, 0, sizeof(procfs_items));
-    memset(&procfs, 0, sizeof(fs_t));
-    strcpy(procfs.name, "procfs");
-    procfs.mount = procfs_fs_node_mount;
-    procfs.make = procfs_fs_node_make;
-    procfs.readdir = procfs_fs_node_readdir;
-    procfs.finddir = procfs_fs_node_finddir;
-    procfs.read = procfs_fs_node_read;
-    procfs.write = procfs_fs_node_write;
-    procfs.lseek = procfs_fs_node_lseek;
-    procfs.tell = procfs_fs_node_tell;
-    procfs.open = procfs_fs_node_open;
-    procfs.close = procfs_fs_node_close;
-    procfs.readlink = procfs_fs_node_readlink;
-    procfs.symlink = procfs_fs_node_symlink;
     procfs_insert_item("status", procfs_item_status);
     procfs_insert_item("cmdline", procfs_item_cmdline);
     procfs_insert_item("mounts", procfs_item_mounts);

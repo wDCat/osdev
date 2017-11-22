@@ -23,9 +23,9 @@ _impl_syscall2(open, SYS_open, const char*, int);
 
 _impl_syscall1(close, SYS_close, int8_t);
 
-_impl_syscall3(read, SYS_read, int8_t, int32_t, uchar_t*);
+_impl_syscall3(read, SYS_read, int8_t, uchar_t*, int32_t);
 
-_impl_syscall3(write, SYS_write, int8_t, int32_t, uchar_t*);
+_impl_syscall3(write, SYS_write, int8_t, uchar_t*, int32_t);
 
 _impl_syscall2(stat, SYS_stat, const char*, stat_t*);
 
@@ -56,3 +56,5 @@ _impl_syscall3(readv, SYS_readv, int, void*, int);
 _impl_syscall3(writev, SYS_writev, int, void*, int);
 
 _impl_syscall3(ioctl, SYS_ioctl, unsigned long, unsigned long, unsigned long);
+
+_impl_syscall1(brk, SYS_brk, void*);

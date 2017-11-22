@@ -90,6 +90,7 @@ typedef struct pcb_struct {
     void *tls;
     mutex_lock_t lock;
     regs_t *lastreg;//for soft switch
+    uint32_t program_break;
 } pcb_t;
 
 pid_t getpid();

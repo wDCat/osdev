@@ -12,6 +12,8 @@
 #include <signal.h>
 #include <devfs.h>
 #include <tty.h>
+#include <errno.h>
+#include <ioctl.h>
 
 tty_t ttys[TTY_MAX_COUNT];
 uint8_t cur_tty_id;
@@ -263,9 +265,30 @@ void tty_create_fstype() {
     ttyfs.write = tty_fs_node_write;
 }
 
+int tty_fs_node_ioctl(fs_node_t *node, __fs_special_t *fsp_, unsigned int cmd, unsigned long arg) {
+    uint8_t ttyid = (uint8_t) fsp_;
+    if (ttyid > TTY_MAX_COUNT) {
+        deprintf("tty not exist:%x", ttyid);
+        return 1;
+    }
+    switch (cmd) {
+        case TIOCGWINSZ: {
+            struct winsize *ws = (struct winsize *) arg;
+            ws->ws_col = SCREEN_MAX_X;
+            ws->ws_row = SCREEN_MAX_Y;
+            ws->ws_xpixel = 100;
+            ws->ws_ypixel = 100;
+            return 0;
+        }
+        default:
+            return -EINVAL;
+    }
+}
+
 file_operations_t ttydev = {
         .read=tty_fs_node_read,
-        .write=tty_fs_node_write
+        .write=tty_fs_node_write,
+        .ioctl=tty_fs_node_ioctl
 };
 
 void tty_install() {

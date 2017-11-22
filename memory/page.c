@@ -102,10 +102,10 @@ void alloc_frame(page_t *page, bool is_kernel, bool is_rw) {
         //memset(page, 0, sizeof(page_t));
         page->present = true;
         page->frame = (uint32_t) x;
-        page->user = is_kernel ? 0 : 1;
-        page->rw = is_rw;
         set_frame_status((uint32_t) (x * 0x1000), FRAME_STATUS_USED);
     }
+    page->user = is_kernel ? 0 : 1;
+    page->rw = is_rw;
 }
 
 

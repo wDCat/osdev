@@ -45,6 +45,8 @@ typedef int (*symlink_type_t)(struct fs_node *, __fs_special_t *, const char *);
 
 typedef int (*readlink_type_t)(struct fs_node *, __fs_special_t *, char *, int);
 
+typedef int (*ioctl_type_t)(struct fs_node *, __fs_special_t *, unsigned int cmd, unsigned long arg);
+
 typedef struct fs__ {
     char name[256];
     mount_type_t mount;
@@ -61,6 +63,7 @@ typedef struct fs__ {
     tell_type_t tell;
     symlink_type_t symlink;
     readlink_type_t readlink;
+    ioctl_type_t ioctl;
 } fs_t;
 typedef struct {
     char path[256];
@@ -118,13 +121,13 @@ int8_t kclose(uint32_t pid, int8_t fd);
 
 int8_t kopen(uint32_t pid, const char *name, int flags);
 
-int32_t sys_read(int8_t fd, int32_t size, uchar_t *buff);
+int32_t sys_read(int8_t fd, uchar_t *buff, int32_t size);
 
-int32_t kread(uint32_t pid, int8_t fd, int32_t size, uchar_t *buff);
+int32_t kread(uint32_t pid, int8_t fd, uchar_t *buff, int32_t size);
 
-int32_t kwrite(uint32_t pid, int8_t fd, int32_t size, uchar_t *buff);
+int32_t kwrite(uint32_t pid, int8_t fd, uchar_t *buff, int32_t size);
 
-int32_t sys_write(int8_t fd, int32_t size, uchar_t *buff);
+int32_t sys_write(int8_t fd, uchar_t *buff, int32_t size);
 
 int sys_stat(const char *path, stat_t *stat);
 

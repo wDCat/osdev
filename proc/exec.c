@@ -102,28 +102,31 @@ int kexec(pid_t pid, const char *path, int argc, char *const argv[], char *const
     dprintf("elf end addr:%x", edg->elf_end_addr);
     uint32_t heap_start = edg->elf_end_addr + (PAGE_SIZE - (edg->elf_end_addr % PAGE_SIZE)) + PAGE_SIZE * 2;
     CHK(create_user_heap(pcb, heap_start, 0x4000), "");
+    pcb->program_break = heap_start + 0x4000;
     CHK(elsp_load_need_dynlibs(edg), "");
     uint32_t sym_start;
     uint32_t sym_main;
     uint32_t eip;
-    if (dynlibs_find_symbol(pcb->pid, "_start", &sym_start)) {
-        if (dynlibs_find_symbol(pcb->pid, "__libc_start_main", &sym_start)) {
+    if (dynlibs_find_symbol(pcb->pid, "_start", &sym_start)) {//old libdcat.so
+        if (elsp_find_symbol(pcb->edg, "_start", &sym_start)) {
             eip = elsp_get_entry(edg);
             dprintf("redirect eip to elf_entry:%x", eip);
         } else {
             musl_libc = true;
-            eip = sym_start;
+            sym_start += pcb->edg->global_offset;
             if (elsp_find_symbol(pcb->edg, "main", &sym_main)) {
                 dwprintf("main not found!");
                 sym_main = 0x0;
             }
-            sym_main += edg->global_offset;
-            dprintf("redirect eip to __libc_start_main:%x main:%x", sym_start, sym_main);
+            sym_main += pcb->edg->global_offset;
+            dprintf("redirect eip to _start:%x main:%x", sym_start, sym_main);
+            eip = sym_start;
         }
     } else {
-        dprintf("redirect eip to _start:%x", sym_start);
+        dprintf("redirect eip to libdcat._start:%x", sym_start);
         eip = sym_start;
     }
+    sym_main += pcb->edg->global_offset;
     pcb->tss.eip = eip;
     uint32_t *esp = (uint32_t *) (UM_STACK_START - 0x10 * sizeof(uint32_t));
     dprintf("elf load done.new PC:%x", eip);
@@ -166,35 +169,42 @@ int kexec(pid_t pid, const char *path, int argc, char *const argv[], char *const
         }
         *uenvp = NULL;
     }
-
+    if (musl_libc) {
+        *esp = __envp;
+        esp -= 1;
+    }
     if (argv) {
         //push *argv
-        esp = esp - argc - 1;
-        for (int x = 0; x < argc; x++) {
-            esp += 1;
-            *esp = (uint32_t) argvp[x];
+        for (int x = 0; x <= argc; x++) {
+            esp -= 1;
+            *esp = (uint32_t) argvp[argc - x];
             dprintf("push arg %x to %x", *esp, esp);
         }
-        esp -= argc;
+        esp -= 1;
         __argvp = (uint32_t) (esp + 1);
     }
-    if (!musl_libc) {
+
+    if (musl_libc) {
+        //*esp = __argvp;//p+1
+        //dprintf("push argvp:%x to %x", __argvp, esp);
+        //esp -= 1;
+        *esp = (uint32_t) argc;//p
+        dprintf("push argc:%x to %x", argc, esp);
+        //esp -= 1;
+    } else {
         //push envp_reserved
         *esp = __env_rs;
         esp -= 1;
-    }
-    //push envp
-    *esp = __envp;
-    esp -= 1;
-    //push argv
-    *esp = __argvp;
-    esp -= 1;
-    //push argc
-    *esp = (uint32_t) argc;
-    esp -= 1;
-    if (musl_libc) {
-        //push main
-        *esp = sym_main;
+        *esp = NULL;
+        esp -= 1;
+        //push envp
+        *esp = __envp;
+        esp -= 1;
+        //push argv
+        *esp = __argvp;
+        esp -= 1;
+        //push argc
+        *esp = (uint32_t) argc;
         esp -= 1;
     }
     /**
@@ -213,6 +223,7 @@ int kexec(pid_t pid, const char *path, int argc, char *const argv[], char *const
      * -------------------
      *  <--esp
      * */
+    dprintf("push done.esp:%x", esp);
     pcb->tss.esp = (uint32_t) esp;
     uint32_t *tls = (uint32_t *) (UM_STACK_START - sizeof(uint32_t));
     *tls = (uint32_t) umalloc(pid, sizeof(uint32_t) * 0xA);

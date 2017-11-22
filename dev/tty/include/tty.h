@@ -14,7 +14,7 @@
 #define TTY_BUFF_SIZE 256
 #define TTY_MAX_COUNT 5
 #define TTY_MAX_WAIT_PROC 20
-
+#define TIOCGWINSZ	0x5413
 #define TTY_IS_EOF(x) ((x)=='\n')
 typedef struct {
     uint16_t used;

@@ -55,6 +55,7 @@ typedef struct file_operations {
     lseek_type_t lseek;
     open_type_t open;
     close_type_t close;
+    ioctl_type_t ioctl;
 } file_operations_t;
 
 int catmfs_fs_node_load_catrfmt(fs_node_t *node, __fs_special_t *fsp_, uint32_t start_addr);
@@ -96,5 +97,8 @@ int catmfs_fs_node_readlink(fs_node_t *node, __fs_special_t *fsp_,
 
 int catmfs_fast_symlink(fs_node_t *node, __fs_special_t *fsp_,
                         const char *name, const char *target);
+
+int catmfs_fs_node_ioctl(fs_node_t *node, __fs_special_t *fsp_,
+                         unsigned int cmd, unsigned long arg);
 
 #endif //W2_CATMFS_H
