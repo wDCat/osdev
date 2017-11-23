@@ -23,8 +23,8 @@ long kbrk(pid_t pid, void *addr) {
             return -1;
         }
     }
-    pcb->program_break = naddr;
     dprintf("program break set from %x to %x", pcb->program_break, naddr);
+    pcb->program_break = naddr;
     return pcb->program_break;
 }
 

@@ -643,7 +643,7 @@ int dynlibs_do_load_to_proc(pid_t pid, uint32_t loadno, dynlib_load_t **loadinfo
         page->present = true;
         page->accessed = false;
         page->user = true;
-        page->rw = true;
+        page->rw = false;
         page->dirty = false;
         page->frame = frame->frameno;
         tinfo->pid = pid;
