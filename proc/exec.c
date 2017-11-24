@@ -148,49 +148,66 @@ int kexec(pid_t pid, const char *path, int argc, char *const argv[], char *const
             strcpy(espptr, str);
         }
     }
-    esp = ((uint32_t *) espptr) - 1;
+    espptr -= 4;
+    esp = (uint32_t *) espptr;
     uint32_t __envp = NULL, __argvp = NULL;
     uint32_t __env_rs = 0;
     if (tenvp && tenvp[0] != NULL) {
-        envc = 0;
-        for (; tenvp[envc] != NULL; envc++);
-        envc++;
-        __env_rs = envc * 2 * sizeof(uint32_t);
-        uint32_t *uenvp = umalloc(pid, __env_rs);
-        __envp = (uint32_t) uenvp;
-        //push *envp
-        for (int x = 0; tenvp[x] != NULL && x < 128; x++) {
-            dprintf("env:%s %x %x", tenvp[x], uenvp, 0x2333);
-            int len = strlen(tenvp[x]);
-            uchar_t *cp = umalloc(pid, len + 1);
-            strcpy(cp, tenvp[x]);
-            *uenvp = (uint32_t) cp;
-            uenvp += 1;
+        if (musl_libc) {
+            uint32_t envpp[envc];
+            memset(envpp, 0, sizeof(uint32_t) * envc);
+            for (int x = 0; tenvp[x] != NULL && x < envc; x++) {
+                char *str = tenvp[x];
+                int len = strlen(str) + 1;
+                espptr -= len;
+                espptr -= (uint32_t) espptr % 4;
+                strcpy((char *) espptr, str);
+                envpp[x] = (uint32_t) espptr;
+                dprintf("env:%s %x %x", tenvp[x], espptr, esp);
+            }
+            espptr -= 4;
+            esp = (uint32_t *) espptr;
+            *esp = NULL;
+            esp -= 1;
+            for (int x = 0; envpp[x] != NULL && x < envc; x++) {
+                *esp = envpp[x];
+                dprintf("push envp %x to %x", *esp, esp);
+                esp -= 1;
+            }
+        } else {
+            envc = 0;
+            for (; tenvp[envc] != NULL; envc++);
+            envc++;
+            __env_rs = envc * 2 * sizeof(uint32_t);
+            uint32_t *uenvp = umalloc(pid, __env_rs);
+            __envp = (uint32_t) uenvp;
+            //push *envp
+            for (int x = 0; tenvp[x] != NULL && x < 128; x++) {
+                dprintf("env:%s %x %x", tenvp[x], uenvp, 0x2333);
+                int len = strlen(tenvp[x]);
+                uchar_t *cp = umalloc(pid, len + 1);
+                strcpy(cp, tenvp[x]);
+                *uenvp = (uint32_t) cp;
+                uenvp += 1;
+            }
+            *uenvp = NULL;
         }
-        *uenvp = NULL;
-    }
-    if (musl_libc) {
-        *esp = __envp;
-        esp -= 1;
     }
     if (argv) {
         //push *argv
         for (int x = 0; x <= argc; x++) {
-            esp -= 1;
             *esp = (uint32_t) argvp[argc - x];
+            esp -= 1;
             dprintf("push arg %x to %x", *esp, esp);
         }
-        esp -= 1;
         __argvp = (uint32_t) (esp + 1);
+        //esp -= 1;
     }
 
+
     if (musl_libc) {
-        //*esp = __argvp;//p+1
-        //dprintf("push argvp:%x to %x", __argvp, esp);
-        //esp -= 1;
         *esp = (uint32_t) argc;//p
         dprintf("push argc:%x to %x", argc, esp);
-        //esp -= 1;
     } else {
         //push envp_reserved
         *esp = __env_rs;
@@ -251,6 +268,12 @@ int kexec(pid_t pid, const char *path, int argc, char *const argv[], char *const
     return 1;
 }
 
+//Unix like
+int sys_execve(const char *path, char *const argv[], char *const envp[]) {
+    int argc = 0;
+    for (; argv[argc] != NULL; argc++);
+    return kexec(getpid(), path, argc, argv, envp);
+}
 
 int sys_exec(const char *path, int argc, char *const argv[], char *const envp[]) {
     return kexec(getpid(), path, argc, argv, envp);

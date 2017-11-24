@@ -20,7 +20,7 @@ fsck_disk:
 update:
 	#update file list
 	make clean
-	cd build && kotlinc src/build.kt -include-runtime -d w2_build.jar
+	cd build && make w2_build.jar
 	cd build && java -jar w2_build.jar
 all:
 	#build all

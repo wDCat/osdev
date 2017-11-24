@@ -661,7 +661,6 @@ int sys_stat(const char *name, stat_t *stat) {
     char *path = (char *) kmalloc(MAX_PATH_LEN);
     vfs_fix_path(getpid(), name, path, MAX_PATH_LEN);
     CHK(vfs_cd(&vfs, path), "No such file or directory.");
-    dprintf("debug:::st:%x", stat);
     fs_node_t *n = &vfs.current;
     stat->st_dev = 30;
     stat->st_ino = n->inode;
@@ -671,13 +670,13 @@ int sys_stat(const char *name, stat_t *stat) {
     stat->st_gid = n->gid;
     stat->st_rdev = 0;
     stat->st_size = n->size;
-    dprintf("debug:::%x", stat->st_size);
     stat->st_blksize = 0;
     stat->st_blocks = 0;
     stat->st_atime = 0;
     stat->st_mtime = 0;
     stat->st_ctime = 0;
     kfree(path);
+    dprintf("stat done.");
     return 0;
     _err:
     kfree(path);

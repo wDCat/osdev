@@ -42,7 +42,7 @@ long hello_switcher(pid_t pid, uint32_t ecx, uint32_t edx, uint32_t esi, uint32_
     switch_to_proc(getpcb(pid));
 }
 
-uint32_t syscalls_table[] = {
+void* syscalls_table[] = {
         &helloworld,
         &screen_print,
         &delay,
@@ -70,7 +70,8 @@ uint32_t syscalls_table[] = {
         &sys_writev,
         &sys_stat64,
         &sys_ioctl,
-        &sys_brk
+        &sys_brk,
+        &sys_execve
 };
 uint32_t syscalls_count = sizeof(syscalls_table) / sizeof(uint32_t);
 
@@ -85,7 +86,7 @@ void syscall_install() {
 typedef uint32_t (*syscall_fun_t)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, regs_t *r);
 
 int syscall_handler(regs_t *r) {
-    dprintf("syscall no:%d ebx:%x ecx:%x edx:%x", r->eax, r->ebx, r->ecx, r->edx);
+    dprintf("syscall[%d] a0:%x a1:%x a2:%x eip:%x", r->eax, r->ebx, r->ecx, r->edx, r->eip);
     if (r->eax >= syscalls_count) {
         dwprintf("syscall not found:%d", r->eax);
         r->eax = (uint32_t) -1;
