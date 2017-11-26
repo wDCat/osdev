@@ -37,4 +37,7 @@
 #define SYS_ioctl 26
 #define SYS_brk 27
 #define SYS_execve 28
+#define SYS_signal 29
+#define SYS_sigaction 30
+#define SYS_rt_sigaction 30
 #endif //W2_SYSCALLNO_H

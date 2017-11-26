@@ -371,10 +371,11 @@ pid_t fork(regs_t *r) {
         strcpy(neko2, "DCat");
         strcpy(neko5, "DCat~~~");
         char *args[3] = {neko, neko2, neko5};
-        char neko3[256], neko4[256];
+        char neko3[256], neko4[256], neko6[20];
         strcpy(neko3, "PATH=/:/bin");
         strcpy(neko4, "COLOR=black");
-        char *envp[3] = {neko3, neko4, NULL};
+        strcpy(neko6, "HOME=/");
+        char *envp[4] = {neko3, neko4, neko6, NULL};
         kexec(cpid, "/init", 3, args, envp);
         //extern int little_test2();
         //tss->eip = (uint32_t) little_test2;

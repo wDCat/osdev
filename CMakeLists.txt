@@ -111,6 +111,7 @@ FILE(GLOB MyCSources
 /home/dcat/osdev/w2/memory/include/page.h
 /home/dcat/osdev/w2/memory/include/umalloc.h
 /home/dcat/osdev/w2/memory/include/heap_array_list.h
+/home/dcat/osdev/w2/include/syscall_names.h
 /home/dcat/osdev/w2/include/fs_node.h
 /home/dcat/osdev/w2/include/bochs_debug.h
 /home/dcat/osdev/w2/include/mutex.h

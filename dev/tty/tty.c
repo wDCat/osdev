@@ -124,7 +124,8 @@ int32_t tty_read(tty_t *tty, pid_t pid, int32_t size, uchar_t *buff) {
         }
         mutex_unlock(&queue->mutex);
         if (*buff == 10) {
-            *buff = 0;
+            *buff = 10;
+            *(buff + 1) = 0;
             break;
         }
         buff++;

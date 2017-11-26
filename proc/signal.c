@@ -70,3 +70,17 @@ void send_sig(pcb_t *pcb, int sig) {
 int sys_kill(pid_t pid, int sig) {
     send_sig(getpcb(pid), sig);
 }
+
+sighandler_t ksignal(pid_t pid, int sig, sighandler_t handler) {
+    //not implemented
+    return handler;
+}
+
+sighandler_t sys_signal(int sig, sighandler_t handler) {
+    return ksignal(getpid(), sig, handler);
+}
+
+int sys_sigaction(int sig, void *arg2, void *arg3) {
+    //not implemented
+    return 0;
+}

@@ -100,6 +100,7 @@ inline int elsp_rel_386_symtab(elf_digested_t *edg, elf_rel_tmp_t *rtmp, uint32_
         if (pcb->edg == NULL || elsp_find_symbol(pcb->edg, symname, &addr)) {
             if (elsp_find_dynsymbol(edg, symname, &addr)) {
                 dwprintf("[WARN]symbol %s not found!", symname);
+                addr=0xFFFF6666;//for debug
                 goto _err;
             } else {
                 addr = addr + rtmp->global_offset;

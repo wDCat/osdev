@@ -38,6 +38,12 @@
 #define SIG_CLEAR(obj, sig) obj&=~(1<<(sig-1))
 #define SIG_TEST(obj, sig) (obj&(1<<(sig-1)))
 
+struct sigaction {
+
+};
+
+typedef void (*sighandler_t)(int);
+
 int do_signal(pcb_t *pcb, regs_t *r);
 
 void send_sig(pcb_t *pcb, int sig);
@@ -45,5 +51,11 @@ void send_sig(pcb_t *pcb, int sig);
 int sys_kill(pid_t pid, int sig);
 
 void signal_print_proc(pcb_t *pcb);
+
+sighandler_t ksignal(pid_t pid, int sig, sighandler_t handler);
+
+sighandler_t sys_signal(int sig, sighandler_t handler);
+
+int sys_sigaction(int sig, void *arg2, void *arg3);
 
 #endif //W2_SIGNAL_H

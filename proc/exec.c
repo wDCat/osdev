@@ -132,7 +132,6 @@ int kexec(pid_t pid, const char *path, int argc, char *const argv[], char *const
     dprintf("elf load done.new PC:%x", eip);
     uint8_t *espptr = (uint8_t *) esp;
     strcpy(pcb->cmdline, path);
-    char **argvp = (char **) argv;
     if (argv) {
         //push **argv
         for (int x = argc - 1; x >= 0; x--) {
@@ -141,7 +140,7 @@ int kexec(pid_t pid, const char *path, int argc, char *const argv[], char *const
             int len = strlen(str) + 1;
             espptr -= len;
             espptr -= (uint32_t) espptr % 4;
-            argvp[x] = (char *) espptr;
+            targv[x] = (char *) espptr;
             strcat(pcb->cmdline, " ");
             strcat(pcb->cmdline, targv[argc - x - 1]);
             dprintf("copy str %s to %x", str, espptr);
@@ -194,16 +193,17 @@ int kexec(pid_t pid, const char *path, int argc, char *const argv[], char *const
         }
     }
     if (argv) {
+        *esp = NULL;
+        esp -= 1;
         //push *argv
-        for (int x = 0; x <= argc; x++) {
-            *esp = (uint32_t) argvp[argc - x];
-            esp -= 1;
+        for (int x = 0; x < argc; x++) {
+            *esp = (uint32_t) targv[argc - x - 1];
             dprintf("push arg %x to %x", *esp, esp);
+            esp -= 1;
         }
         __argvp = (uint32_t) (esp + 1);
         //esp -= 1;
     }
-
 
     if (musl_libc) {
         *esp = (uint32_t) argc;//p

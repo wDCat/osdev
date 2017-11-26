@@ -5,15 +5,15 @@ import java.util.*
 /**
  * Created by DCat on 9/2/17.
  */
-val ROOT = "/home/dcat/osdev/w2"
-val O_OUTPUT = "${ROOT}/OUTPUT"
-val LOG_OUTPUT = "${ROOT}/OUTPUT/LOG"
+var ROOT = "/home/dcat/osdev/w2"
+val O_OUTPUT = "\$(SRC_ROOT)/OUTPUT"
+val LOG_OUTPUT = "\$(SRC_ROOT)/OUTPUT/LOG"
 val Makefile = "${ROOT}/build_kernel.makefile"
 val clibMakefile = "${ROOT}/build_lib.makefile"
 val CMakeList = "${ROOT}/CMakeLists.txt"
 var C_INCLUDE = ""
 val C_FLAGS = "-fno-stack-protector -m32 -std=c99 -Wall -O0 -O -fstrength-reduce -fomit-frame-pointer -D__DCAT__ -DKERNEL=1 -finline-functions -c -nostdinc -fno-builtin"
-val CLIB_C_FLAGS = "-I${ROOT}/lib/include -fPIC -fno-stack-protector -m32 -std=c99 -Wall -O -fomit-frame-pointer -finline-functions -nostdinc -fno-builtin -nostdlib"
+val CLIB_C_FLAGS = "-I\$(SRC_ROOT)/lib/include -fPIC -fno-stack-protector -m32 -std=c99 -Wall -O -fomit-frame-pointer -finline-functions -nostdinc -fno-builtin -nostdlib"
 val NASM_FLAGS = "-f elf"
 val LD_FLAGS = "n -m elf_i386 -A elf32-i386 -nostdlib"
 val cFiles = Stack<String>()
@@ -107,7 +107,25 @@ class BuildThread(val id: Int) : Runnable {
     }
 }
 
+fun prettyRootPath(path: String): String {
+    var p = path.trim()
+    if (p.startsWith(ROOT))
+        return "\$(SRC_ROOT)${p.substring(ROOT.length)}"
+    return p
+
+}
+
 fun main(args: Array<String>) {
+    var x = 0
+    while (x < args.size) {
+        if (args[x].length < 1) continue
+        if (args[x].equals("--output")) {
+            x += 2
+            continue
+        }
+        ROOT = args[x]
+        break
+    }
     val slient = true
     val dirStack = Stack<File>()
     val includeDir = Stack<String>()
@@ -146,31 +164,42 @@ fun main(args: Array<String>) {
     }
     cmout.write("FILE(GLOB MyCSources \n")
     val mfout = FileWriter(File(Makefile))
-    mfout.write("build_kernel:\n")
+    mfout.write("headers=")
+    hFiles.forEach {
+        val ppath = prettyRootPath(it)
+        mfout.write(" ${ppath}")
+    }
+    mfout.write("\n")
+    mfout.write("build_kernel_pre:\n")
     mfout.write("\tmkdir  ${O_OUTPUT}||echo \"\"\n")
-    mfout.write("\trm -rf ${O_OUTPUT}/*\n")
+    //mfout.write("\trm -rf ${O_OUTPUT}/*\n")
     mfout.write("\tmkdir  ${LOG_OUTPUT}||echo \"\"\n")
     mfout.write("\trm -rf ${LOG_OUTPUT}/*\n")
+    var outFiles = ""
     val clibmfout = FileWriter(File(clibMakefile))
-    clibmfout.write("build_lib:\n")
+    clibmfout.write("libdcat.so: \n")
     clibmfout.write("\t@echo \"[ %%% ] \\033[32m Building clib...\\033[0m\"\n")
     clibmfout.write("\t@gcc -shared -o ${ROOT}/libdcat.so  ${CLIB_C_FLAGS} ")
     cFiles.forEach {
-        val prog = ((count.toFloat() / fileCount) * 100).toInt()
+        val ppath = prettyRootPath(it)
+        val prog = "%%"//((count.toFloat() / fileCount) * 100).toInt()
         count++
         val outputName = prettyOutputName(it)
-        mfout.write("\t@echo \"[ $prog% ] \\033[32m Building ${it}\\033[0m\"\n")
+        mfout.write("${outputName}: build_kernel_pre ${ppath} $(headers)\n")
+        outFiles += " ${outputName}"
+        mfout.write("\t@rm -f \"${O_OUTPUT}/${outputName}\" \"${LOG_OUTPUT}/${outputName}.log\" || echo \"\"\n")
+        mfout.write("\t@echo \"[ $prog% ] \\033[32m Building ${it}\\033[0m\">/dev/stdout\n")
         if (slient)
-            mfout.write("\t@gcc ${C_FLAGS} ${C_INCLUDE} -o ${O_OUTPUT}/${outputName} ${it} 1>${LOG_OUTPUT}/${outputName}.log 2>&1 || echo ''\n")
+            mfout.write("\t@gcc ${C_FLAGS} ${C_INCLUDE} -o ${O_OUTPUT}/${outputName} ${ppath} 1>${LOG_OUTPUT}/${outputName}.log 2>&1 || echo ''\n")
         else
-            mfout.write("\tgcc ${C_FLAGS} ${C_INCLUDE} -o ${O_OUTPUT}/${outputName} ${it} 2>&1 | tee ${LOG_OUTPUT}/${outputName}.log\n")
+            mfout.write("\tgcc ${C_FLAGS} ${C_INCLUDE} -o ${O_OUTPUT}/${outputName} ${ppath} 2>&1 | tee ${LOG_OUTPUT}/${outputName}.log\n")
         mfout.write("\t@if [ -e \"${O_OUTPUT}/${outputName}\" ];" +
                 "then " +
-                "echo \"[ $prog% ] \\033[32m Build Done: ${it}\\033[0m\";" +
+                "echo \"[ $prog% ] \\033[32m Build Done: ${it}\\033[0m\">/dev/stdout;" +
                 "else " +
                 "echo \"\\033[31m Build Output: \\033[0m\" &&" +
-                " cat ${LOG_OUTPUT}/${outputName}.log &&" +
-                " echo \"\\033[31m Build Failed: ${it}\\033[0m\" &&" +
+                " cat ${LOG_OUTPUT}/${outputName}.log >/dev/stdout &&" +
+                " echo \"\\033[31m Build Failed: ${it}\\033[0m\">/dev/stdout &&" +
                 " exit 1;" +
                 "fi\n")
         cmout.write("${it}\n")
@@ -178,6 +207,8 @@ fun main(args: Array<String>) {
             clibmfout.write(it + " ")
         }
     }
+    mfout.write("koutfiles= ${outFiles}\n")
+    //mfout.write("kernel.bin: \$(outFiles)\n")
     clibmfout.write("1>${LOG_OUTPUT}/clib.log 2>&1 || echo ''\n")
     clibmfout.write("\t@if [ -e \"${ROOT}/libdcat.so\" ];" +
             "then " +
