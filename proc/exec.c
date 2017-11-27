@@ -13,6 +13,15 @@
 #include <dynlibs.h>
 #include "exec.h"
 
+#define push_stack(esp, val)({\
+    *(esp)=val;\
+    (esp)-=1;\
+})
+#define push_aux(esp, key, value) ({\
+    push_stack((esp),(value));\
+    push_stack((esp),(key));\
+})
+
 int kexec(pid_t pid, const char *path, int argc, char *const argv[], char *const envp[]) {
     pid_t orig_pid = getpid();
     pcb_t *pcb = getpcb(pid);
@@ -166,12 +175,12 @@ int kexec(pid_t pid, const char *path, int argc, char *const argv[], char *const
             }
             espptr -= 4;
             esp = (uint32_t *) espptr;
-            *esp = NULL;
-            esp -= 1;
+            push_aux(esp, NULL, NULL);
+            push_aux(esp, AT_PAGESZ, PAGE_SIZE);
+            push_stack(esp, NULL);
             for (int x = 0; envpp[x] != NULL && x < envc; x++) {
-                *esp = envpp[x];
-                dprintf("push envp %x to %x", *esp, esp);
-                esp -= 1;
+                dprintf("push envp %x to %x", envpp[x], esp);
+                push_stack(esp,envpp[x]);
             }
         } else {
             envc = 0;
@@ -193,13 +202,11 @@ int kexec(pid_t pid, const char *path, int argc, char *const argv[], char *const
         }
     }
     if (argv) {
-        *esp = NULL;
-        esp -= 1;
+        push_stack(esp,NULL);
         //push *argv
         for (int x = 0; x < argc; x++) {
-            *esp = (uint32_t) targv[argc - x - 1];
-            dprintf("push arg %x to %x", *esp, esp);
-            esp -= 1;
+            dprintf("push arg %x to %x",  targv[argc - x - 1], esp);
+            push_stack(esp, targv[argc - x - 1]);
         }
         __argvp = (uint32_t) (esp + 1);
         //esp -= 1;
@@ -209,6 +216,22 @@ int kexec(pid_t pid, const char *path, int argc, char *const argv[], char *const
         *esp = (uint32_t) argc;//p
         dprintf("push argc:%x to %x", argc, esp);
     } else {
+        /**
+         * -------------------
+         * TLS Pointer
+         * -------------------
+         * nouse
+         * -------------------
+         * *argv ~
+         * -------------------
+         * envp
+         * -------------------
+         * argv
+         * -------------------
+         * argc
+         * -------------------
+         *  <--esp
+         * */
         //push envp_reserved
         *esp = __env_rs;
         esp -= 1;
@@ -224,22 +247,6 @@ int kexec(pid_t pid, const char *path, int argc, char *const argv[], char *const
         *esp = (uint32_t) argc;
         esp -= 1;
     }
-    /**
-     * -------------------
-     * TLS Pointer
-     * -------------------
-     * nouse
-     * -------------------
-     * *argv ~
-     * -------------------
-     * envp
-     * -------------------
-     * argv
-     * -------------------
-     * argc
-     * -------------------
-     *  <--esp
-     * */
     dprintf("push done.esp:%x", esp);
     pcb->tss.esp = (uint32_t) esp;
     uint32_t *tls = (uint32_t *) (UM_STACK_START - sizeof(uint32_t));

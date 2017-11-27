@@ -8,7 +8,7 @@
 #include "stdint.h"
 #include "uproc.h"
 #include "uvfs.h"
-#include "stat.h"
+#include "ustat.h"
 #include "syscallno.h"
 
 #define _define_syscall0(fn, num) long syscall_##fn()

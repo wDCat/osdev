@@ -7,7 +7,7 @@
 
 #include "system.h"
 #include "fs_node.h"
-#include "stat.h"
+#include "ustat.h"
 #include "uvfs.h"
 #include "uproc.h"
 #include "mutex.h"

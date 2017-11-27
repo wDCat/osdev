@@ -79,6 +79,7 @@ FILE(GLOB MyCSources
 /home/dcat/osdev/w2/dev/tty/tty.c
 /home/dcat/osdev/w2/fs/catmfs/catmfs.c
 /home/dcat/osdev/w2/fs/catmfs/catrfmt.c
+/home/dcat/osdev/w2/fs/vfs/stat.c
 /home/dcat/osdev/w2/fs/vfs/vfs.c
 /home/dcat/osdev/w2/fs/vfs/iov.c
 /home/dcat/osdev/w2/fs/procfs/procfs.c
@@ -98,9 +99,9 @@ FILE(GLOB MyCSources
 /home/dcat/osdev/w2/lib/include/va.h
 /home/dcat/osdev/w2/lib/include/uvfs.h
 /home/dcat/osdev/w2/lib/include/intdef.h
+/home/dcat/osdev/w2/lib/include/ustat.h
 /home/dcat/osdev/w2/lib/include/uproc.h
 /home/dcat/osdev/w2/lib/include/uioctl.h
-/home/dcat/osdev/w2/lib/include/stat.h
 /home/dcat/osdev/w2/lib/include/env.h
 /home/dcat/osdev/w2/lib/include/stdint.h
 /home/dcat/osdev/w2/memory/include/linkedlist.h
@@ -157,6 +158,7 @@ FILE(GLOB MyCSources
 /home/dcat/osdev/w2/fs/catmfs/include/catmfs.h
 /home/dcat/osdev/w2/fs/vfs/include/vfs.h
 /home/dcat/osdev/w2/fs/vfs/include/iov.h
+/home/dcat/osdev/w2/fs/vfs/include/stat.h
 /home/dcat/osdev/w2/fs/procfs/include/procfs.h
 /home/dcat/osdev/w2/fs/ext2/include/ext2_fs_node.h
 /home/dcat/osdev/w2/fs/ext2/include/ext2.h

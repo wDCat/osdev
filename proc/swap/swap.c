@@ -151,13 +151,13 @@ int swap_handle_page_fault(regs_t *r) {
                     if (swap_in(pcb, &pcb->spages[x]))return 1;
                     found = true;
                     dprintf("handler done.");
-                }
+                }\
             }
         }
     }
     if (found)
         dprintf("dump eip:%x %x", pcb->tss.eip, r->eip);
     else
-        deprintf("no suitable page found!");
+        dwprintf("no suitable page found!");
     return !found;
 }

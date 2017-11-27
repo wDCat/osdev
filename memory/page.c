@@ -243,7 +243,7 @@ void page_fault_handler(regs_t *r) {
     // The error code gives us details of what happened.
     int present = !(r->err_code & 0x1); // Page not present
     int rw = r->err_code & 0x2;           // Write operation?
-    int us = r->err_code & 0x4;           // Processor was in user-flags?
+    int us = r->err_code & 0x4;           // Processor was in user-type?
     int reserved = r->err_code & 0x8;     // Overwritten CPU-reserved bits of page entry?
     int id = r->err_code & 0x10;          // Caused by an instruction fetch?
     char emsg[256];
@@ -252,7 +252,7 @@ void page_fault_handler(regs_t *r) {
     strcat(emsg, "Page Fault! ( ");
     if (present) { strcat(emsg, "present "); }
     if (rw) { strcat(emsg, "read-only "); }
-    if (us) { strcat(emsg, "user-flags "); }
+    if (us) { strcat(emsg, "user-type "); }
     if (reserved) { strcat(emsg, "reserved "); }
     strcat(emsg, ") at");
     deprintf("%s %x", emsg, faulting_address);

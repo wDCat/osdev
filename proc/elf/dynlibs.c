@@ -96,6 +96,7 @@ int dynlibs_try_to_write(pid_t pid, uint32_t addr) {
     srestorei(&ints);
     return ret;
 }
+
 int dynlibs_handle_page_fault(regs_t *r) {
     uint32_t cr2;
     __asm__ __volatile__("mov %%cr2, %0" : "=r" (cr2));
@@ -103,11 +104,12 @@ int dynlibs_handle_page_fault(regs_t *r) {
     dprintf("process..pid:%x addr:%x", getpid(), cr2);
     page_typeinfo_t *info = get_page_type(pageno, getpcb(getpid())->page_dir);
     if (info->type != PT_DYNLIB_ORIG) {
-        deprintf("not a dynlibs page.");
+        dwprintf("not a dynlibs page.");
         return -1;
     }
     return dynlibs_try_to_write(getpid(), pageno);
 }
+
 int dynlibs_add_to_tree(pid_t pid, dynlib_inctree_t *parent, dynlib_load_t *loadinfo) {
     pcb_t *pcb = getpcb(pid);
     dynlib_inctree_t *nitem = (dynlib_inctree_t *) kmalloc(sizeof(dynlib_inctree_t));
@@ -271,7 +273,7 @@ int dynlibs_unload_inner(pid_t pid, dynlib_load_t *loadinfo, bool remove_from_tr
                 break;
             default:
                 deprintf("Unknown page type:%x at %x", pte->type, paddr);
-                return -1;
+                //return -1;
         }
         page->frame = NULL;
     }
@@ -370,12 +372,21 @@ int dynlibs_load_section_data(dynlib_t *lib, elf_digested_t *edg,
                 }
             }
             if (paddr != last_paddr) {
+                while (paddr - last_paddr > PAGE_SIZE && last_paddr != 0) {
+                    dynlib_frame_t *emptyframeinfo = (dynlib_frame_t *) kmalloc(sizeof(dynlib_frame_t));
+                    last_paddr += PAGE_SIZE;
+                    emptyframeinfo->dirty = false;
+                    emptyframeinfo->frameno = 0;
+                    CHK(squeue_insert(finfo, (uint32_t)emptyframeinfo), "");
+                    dprintf("empty frame info:%x", last_paddr);
+
+                }
                 last_paddr = paddr;
                 CHK(squeue_set(finfo, 0, paddr), "");
                 frameinfo->dirty = false;
                 frameinfo->frameno = get_frame(page);
                 dprintf("frame info:%x %x", paddr, frameinfo->frameno);
-                CHK(squeue_insert(finfo, frameinfo), "");
+                CHK(squeue_insert(finfo, (uint32_t)frameinfo), "");
             } else
                 dprintf("reuse finfo:%x", last_paddr);
             y += size;

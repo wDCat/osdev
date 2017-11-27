@@ -2,12 +2,12 @@
 // Created by dcat on 9/7/17.
 //
 
-#ifndef W2_STAT_H
-#define W2_STAT_H
+#ifndef W2_USTAT_H
+#define W2_USTAT_H
 
 #include "stdint.h"
 
-typedef struct stat {
+typedef struct ustat {
     uint32_t st_dev;     /* ID of device containing file */
     uint32_t st_ino;     /* inode number */
     uint32_t st_nlink;   /* number of hard links */
@@ -37,4 +37,4 @@ typedef struct stat64 {
     uint32_t st_mtime;   /* time of last modification */
     uint32_t st_ctime;   /* time of last status change */
 } stat64_t;
-#endif //W2_STAT_H
+#endif //W2_USTAT_H

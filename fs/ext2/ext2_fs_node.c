@@ -67,7 +67,6 @@ int32_t ext2_fs_node_read(fs_node_t *node, __fs_special_t *fsp, uint32_t len, ui
     _err:
     return -1;
 }
-
 int ext2_get_fs_node(ext2_t *fs, uint32_t inode_id, const char *fn, fs_node_t *node) {
     if (inode_id < 2) {
         deprintf("Bad inode_id:%x", inode_id);
@@ -76,15 +75,14 @@ int ext2_get_fs_node(ext2_t *fs, uint32_t inode_id, const char *fn, fs_node_t *n
     strcpy(node->name, fn);
     ext2_inode_t inode;
     ext2_find_inote(fs, inode_id, &inode);
-    node->mask = inode.i_mode;
+    node->mode = inode.i_mode;
     node->uid = inode.i_uid;
     node->gid = inode.i_gid;
     if (IS_DIR(inode.i_mode) || inode_id == 2) {
-        node->flags = FS_DIRECTORY;
+        node->type = FS_DIRECTORY;
     } else if (IS_FILE(inode.i_mode)) {
-        node->flags = FS_FILE;
-    } else node->flags = 0;//?
-
+        node->type = FS_FILE;
+    } else node->type = 0;//?
     node->size = inode.i_size;
     node->fsp = fs;
     node->inode = inode_id;
@@ -110,7 +108,7 @@ int32_t ext2_fs_node_readdir(fs_node_t *node, __fs_special_t *fsp, uint32_t coun
         result[x].name_len = dir->name_length;
         if (dir->type_indicator == INODE_DIR_TYPE_INDICATOR_DIRECTORY)
             result[x].type = FS_DIRECTORY;
-        else if (dir->type_indicator = INODE_DIR_TYPE_INDICATOR_FILE)
+        else if (dir->type_indicator == INODE_DIR_TYPE_INDICATOR_FILE)
             result[x].type = FS_FILE;
         else PANIC("Unknown file type:%x", dir->type_indicator);
         //CHK(ext2_find_inote(fs, dir->inode_id, &cinode), "");
@@ -196,7 +194,7 @@ __fs_special_t *ext2_fs_node_mount(blk_dev_t *dev, fs_node_t *rootnode) {
     CHK(ext2_init(fs, dev), "[ext2]fail to mount");
     rootnode->inode = 2;
     rootnode->fsp = fs;
-    rootnode->flags = FS_DIRECTORY;
+    rootnode->type = FS_DIRECTORY;
     return fs;
     _err:
     return 0;

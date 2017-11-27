@@ -9,6 +9,7 @@
 #include <vfs.h>
 #include <catrfmt.h>
 #include <errno.h>
+#include <stat.h>
 
 
 inline void catmfs_set_errno(catmfs_special_t *fsp, int8_t errno) {
@@ -213,6 +214,22 @@ int catmfs_fs_node_finddir(fs_node_t *node, __fs_special_t *fsp_, const char *na
     return 1;
 }
 
+inline uint32_t catmfs_type_to_mode(uint8_t type, uint16_t permission) {
+    uint32_t mode = (uint32_t) (permission & 0xFFFF);
+    switch (type) {
+        case FS_FILE:
+            mode |= S_IFREG;
+            break;
+        case FS_DIRECTORY:
+            mode |= S_IFDIR;
+            break;
+        case FS_SYMLINK:
+            mode |= S_IFLNK;
+            break;
+    }
+    return mode;
+}
+
 int catmfs_get_fs_node(uint32_t inode_id, fs_node_t *node) {
     catmfs_inode_t *inode = (catmfs_inode_t *) inode_id;
     if (inode->magic != CATMFS_MAGIC) {
@@ -223,7 +240,8 @@ int catmfs_get_fs_node(uint32_t inode_id, fs_node_t *node) {
     node->uid = inode->uid;
     node->gid = inode->gid;
     node->size = inode->size;
-    node->flags = inode->type;
+    node->type = inode->type;
+    node->mode = catmfs_type_to_mode(inode->type, inode->permission);
     return 0;
 }
 

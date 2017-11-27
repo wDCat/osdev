@@ -13,7 +13,7 @@ void idt_set_gate(unsigned char num, unsigned long base,
     idt[num].base_hi = (base >> 16) & 0xFFFF;
 
     /* The segment or 'selector' that this IDT entry will use
-    *  is set here, along with any access flags */
+    *  is set here, along with any access type */
     idt[num].sel = sel;
     idt[num].always0 = 0;
     idt[num].flags = flags;

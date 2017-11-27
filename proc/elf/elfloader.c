@@ -414,7 +414,7 @@ int elsp_load_sections(elf_digested_t *edg) {
         goto _err;
     }
     for (int x = 0; x < edg->ehdr.e_shnum; x++) {
-        dprintf("Section %x(%s) addr:%x size:%x offset:%x type:%x", x, shdr->sh_name,
+        dprintf("Section %x(%x) addr:%x size:%x offset:%x type:%x", x, shdr->sh_name,
                 shdr->sh_addr, shdr->sh_size,
                 shdr->sh_offset, shdr->sh_type);
         elsp_load_section_data(edg, shdr);

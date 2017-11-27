@@ -8,7 +8,7 @@
 
 void irq_remap(void) {
     /* Normally, IRQs 0 to 7 are mapped to entries 8 to 15. This
-*  is a problem in protected flags, because IDT entry 8 is a
+*  is a problem in protected type, because IDT entry 8 is a
 *  Double Fault! Without remapping, every time IRQ0 fires,
 *  you get a Double Fault Exception, which is NOT actually
 *  what's happening. We send commands to the Programmable

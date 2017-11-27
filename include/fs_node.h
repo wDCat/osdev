@@ -31,12 +31,12 @@ typedef int (*finddir_type_t)(struct fs_node *, __fs_special_t *fsp, const char 
 
 typedef struct fs_node {
     char name[256];
-    uint32_t mask;
+    uint32_t type;//FS_**
+    uint32_t mode;//POSIX
     uint32_t uid;
     uint32_t gid;
-    uint32_t flags;       // Includes the node type. See #defines above.
-    uint32_t inode;       // This is device-specific - provides a way for a filesystem to identify files.
-    uint32_t size;      // Size of the file, in bytes.
+    uint32_t inode;
+    uint32_t size;
     void *vfs_mp;
     __fs_special_t *fsp;
     uint32_t offset;

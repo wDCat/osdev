@@ -9,7 +9,7 @@
 #include <catmfs.h>
 #include <vfs.h>
 #include <catrfmt.h>
-#include <stat.h>
+#include <ustat.h>
 #include "../../dev/tty/include/tty.h"
 #include <procfs.h>
 #include <devfs.h>
@@ -93,7 +93,7 @@ inline int vfs_cpynode(fs_node_t *target, fs_node_t *src) {
 }
 
 int vfs_resolve_symlink(vfs_t *vfs, mount_point_t *mp, fs_node_t *node, fs_node_t *node_out) {
-    if (node->flags != FS_SYMLINK) {
+    if (node->type != FS_SYMLINK) {
         deprintf("not a symlink node!");
         return -1;
     }
@@ -161,7 +161,7 @@ int vfs_get_node4(vfs_t *vfs, const char *path, fs_node_t *node, bool follow_lin
                 return 1;
             }
             tmp.vfs_mp = mp;
-            if (tmp.flags == FS_SYMLINK && follow_link) {
+            if (tmp.type == FS_SYMLINK && follow_link) {
                 char *buff = kmalloc(MAX_PATH_LEN);
                 if (mp->fs->readlink(&tmp, mp->fsp, buff, MAX_PATH_LEN)) {
                     deprintf("fail to resolve symlink:%s", name);
@@ -202,13 +202,13 @@ int vfs_cd(vfs_t *vfs, const char *path) {
         deprintf("no such file or dir:%s", path);
         return 1;
     }
-    if (vfs->current.flags == FS_DIRECTORY) {
+    if (vfs->current.type == FS_DIRECTORY) {
         dprintf("cd to dir:%s", path);
         vfs_cpynode(&vfs->current_dir, &vfs->current);
-    } else if (vfs->current.flags == FS_FILE)
+    } else if (vfs->current.type == FS_FILE)
         dprintf("cd to file:%s", path);
     else
-        deprintf("cd to unknown thing(%x):%s", vfs->current.flags, path);
+        deprintf("cd to unknown thing(%x):%s", vfs->current.type, path);
     strcpy(vfs->path, path);
     dprintf("%s inode:%x", path, vfs->current.inode);
     return 0;
@@ -309,7 +309,7 @@ int32_t vfs_read(vfs_t *vfs, uint32_t size, uchar_t *buff) {
         deprintf("mount point not found:%s", vfs->path);
         return -1;
     }
-    if (vfs->current.flags != FS_FILE) {
+    if (vfs->current.type != FS_FILE) {
         deprintf("try to read a directory or something else:%s", vfs->path);
         return -1;
     }
@@ -327,7 +327,7 @@ int32_t vfs_write(vfs_t *vfs, uint32_t size, uchar_t *buff) {
         deprintf("mount point not found:%s", vfs->path);
         return -1;
     }
-    if (vfs->current.flags != FS_FILE) {
+    if (vfs->current.type != FS_FILE) {
         deprintf("try to write a directory or something else:%s", vfs->path);
         return -1;
     }
@@ -444,7 +444,7 @@ int8_t kopen(uint32_t pid, const char *name, int flags) {
     file_handle_t *fh = &pcb->fh[fd];
     if (vfs_get_node(&pcb->vfs, path, &fh->node)) {
         if (!(flags & O_CREAT)) {
-            deprintf("no such file or dir:%s flags:%d", name, flags);
+            deprintf("no such file or dir:%s type:%d", name, flags);
             fd = -1;
             goto _ret;
         } else {
@@ -654,7 +654,7 @@ int sys_access(const char *name, int mode) {
     int ret = -vfs_get_node(&pcb->vfs, path, NULL);
     kfree(path);
     return ret;
-    //TODO flags./..
+    //TODO type./..
 }
 
 int sys_stat(const char *name, stat_t *stat) {
@@ -664,7 +664,7 @@ int sys_stat(const char *name, stat_t *stat) {
     fs_node_t *n = &vfs.current;
     stat->st_dev = 30;
     stat->st_ino = n->inode;
-    stat->st_mode = n->flags;
+    stat->st_mode = n->mode;
     stat->st_nlink = 1;
     stat->st_uid = n->uid;
     stat->st_gid = n->gid;
@@ -692,13 +692,12 @@ int sys_stat64(const char *name, stat64_t *stat) {
     fs_node_t *n = &vfs.current;
     stat->st_dev = 20;
     stat->st_ino = n->inode;
-    stat->st_mode = n->flags;
+    stat->st_mode = n->mode;
     stat->st_nlink = 1;
     stat->st_uid = n->uid;
     stat->st_gid = n->gid;
     stat->st_rdev = 0;
     stat->st_size = n->size;
-    dprintf("debug:::%x", stat->st_size);
     stat->st_blksize = 0;
     stat->st_blocks = 0;
     stat->st_atime = 0;

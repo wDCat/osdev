@@ -160,7 +160,7 @@ void usermode() {
     __asm__ __volatile__("mov %%ebp, %0" : "=r" (ebp));
     set_kernel_stack(esp);
     long a;
-    __asm__ __volatile__("int $0x60" : "=a" (a) : "0" (3));//It will enter user flags and clear the stack.
+    __asm__ __volatile__("int $0x60" : "=a" (a) : "0" (3));//It will enter user type and clear the stack.
     //Never exec..
 }
 
