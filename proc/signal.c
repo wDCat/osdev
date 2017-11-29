@@ -36,6 +36,7 @@ int do_signal_inner(pcb_t *pcb, int signal) {
                 case SIGSTOP:
                 case SIGABRT:
                     dprintf("kill proc %x", getpid());
+                    pcb->exit_sig = signal;
                     do_exit(pcb, -1);
                     break;
             }

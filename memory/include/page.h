@@ -44,7 +44,7 @@ extern page_directory_t *kernel_dir;
 #define FRAME_STATUS_USED 1
 #define FRAME_STATUS_FREE 0
 #define KHEAP_START 0xA000000
-#define KHEAP_SIZE  0x50000
+#define KHEAP_SIZE  0xC0000
 #define KPHEAP_START 0xA500000
 #define KPHEAP_SIZE  0xC0000
 #define KCONTHEAP_SIZE  0x10000

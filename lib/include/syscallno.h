@@ -40,4 +40,5 @@
 #define SYS_signal 29
 #define SYS_sigaction 30
 #define SYS_rt_sigaction 30
+#define SYS_wait4 31
 #endif //W2_SYSCALLNO_H

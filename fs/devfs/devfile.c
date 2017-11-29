@@ -30,13 +30,26 @@ int32_t devrandom_read(fs_node_t *node, __fs_special_t *fsp_, uint32_t size, uin
     return size;
 }
 
+int32_t devlog_write(fs_node_t *node, __fs_special_t *fsp_, uint32_t size, uint8_t *buff) {
+    //TODO
+    uint8_t orig = buff[size];
+    buff[size] = 0;
+    dprintf("%s", buff);
+    buff[size] = orig;
+    return size;
+}
+
 file_operations_t devrandomops = {
         .read=devrandom_read
+};
+file_operations_t devlogops = {
+        .write=devlog_write
 };
 
 int devfile_register_self() {
     srand(1024);
     devfs_register_dev("null", &devnullops, NULL);
     devfs_register_dev("random", &devrandomops, NULL);
+    devfs_register_dev("debug_log", &devlogops, NULL);
     return 0;
 }

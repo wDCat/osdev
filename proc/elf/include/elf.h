@@ -165,6 +165,21 @@ typedef struct elf_rela {
 #define AT_EUID		12
 #define AT_GID		13
 #define AT_EGID		14
+#define AT_PLATFORM	15
+#define AT_HWCAP	16
+#define AT_FPUCW	18
+#define AT_DCACHEBSIZE	19
+#define AT_ICACHEBSIZE	20
+#define AT_UCACHEBSIZE	21
+#define AT_IGNOREPPC	22
+#define	AT_SECURE	23
+#define AT_BASE_PLATFORM 24
+#define AT_RANDOM	25
+#define AT_HWCAP2	26
+#define AT_EXECFN	31
+#define AT_SYSINFO	32
+#define AT_SYSINFO_EHDR	33
+
 typedef struct {
     uint32_t a_type;
     union {

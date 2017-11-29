@@ -98,7 +98,10 @@ void alloc_frame(page_t *page, bool is_kernel, bool is_rw) {
     ASSERT(frame_status != NULL);
     if (!page->frame) {
         int32_t x = get_free_frame();
-        if (x < 0) PANIC("No more free frame.");
+        if (x < 0) {
+            //TODO swap out
+            PANIC("No more free frame.");
+        }
         //memset(page, 0, sizeof(page_t));
         page->present = true;
         page->frame = (uint32_t) x;
@@ -241,19 +244,20 @@ void page_fault_handler(regs_t *r) {
     __asm__ __volatile__("mov %%cr2, %0" : "=r" (faulting_address));
 
     // The error code gives us details of what happened.
-    int present = !(r->err_code & 0x1); // Page not present
-    int rw = r->err_code & 0x2;           // Write operation?
-    int us = r->err_code & 0x4;           // Processor was in user-type?
-    int reserved = r->err_code & 0x8;     // Overwritten CPU-reserved bits of page entry?
-    int id = r->err_code & 0x10;          // Caused by an instruction fetch?
+    bool present = !(r->err_code & 0x1); // Page not present
+    bool rw = (bool) (r->err_code & 0x2);           // Write operation?
+    bool us = (bool) (r->err_code & 0x4);           // Processor was in user-mode?
+    bool reserved = (bool) (r->err_code & 0x8);     // Overwritten CPU-reserved bits of page entry?
+    bool id = (bool) (r->err_code & 0x10);          // Caused by an instruction fetch?
     char emsg[256];
     memset(emsg, 0, 256);
     // Output an error message.
     strcat(emsg, "Page Fault! ( ");
     if (present) { strcat(emsg, "present "); }
     if (rw) { strcat(emsg, "read-only "); }
-    if (us) { strcat(emsg, "user-type "); }
+    if (us) { strcat(emsg, "user-mode "); }
     if (reserved) { strcat(emsg, "reserved "); }
+    if (id) { strcat(emsg, "instruction-fetch "); }
     strcat(emsg, ") at");
     deprintf("%s %x", emsg, faulting_address);
 }

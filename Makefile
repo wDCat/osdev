@@ -71,5 +71,8 @@ run:
 clean:
 	rm -rf *.o kernel.bin
 	rm -rf OUTPUT
+.PHONY:backup
+backup:
+	git push github master
 .PHONY:onestep
 onestep:all install qemu

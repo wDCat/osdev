@@ -47,9 +47,11 @@ typedef enum proc_status {
     STATUS_RUN = 0x1,
     STATUS_READY = 0x2,
     STATUS_WAIT = 0x3,
-    STATUS_DIED = 0x4
+    STATUS_ZOMBIE = 0x4,
+    STATUS_DIED = 0x5
+
 } proc_status_t;
-typedef uint16_t pid_t;
+typedef int16_t pid_t;
 typedef struct {
     uint32_t base;
     uint32_t limit;
@@ -66,7 +68,8 @@ typedef struct pcb_struct {
     uint32_t reserved_page;
     struct spage_info *spages;
     uint8_t spages_count;
-    int32_t exit_val;
+    int exit_sig;
+    int exit_val;
     uint32_t signal_handler[25];
     uint32_t blocked;
     uint32_t signal;

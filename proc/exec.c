@@ -176,11 +176,13 @@ int kexec(pid_t pid, const char *path, int argc, char *const argv[], char *const
             espptr -= 4;
             esp = (uint32_t *) espptr;
             push_aux(esp, NULL, NULL);
+            push_aux(esp, AT_HWCAP, 0);
+            push_aux(esp, AT_SYSINFO, 0);
             push_aux(esp, AT_PAGESZ, PAGE_SIZE);
             push_stack(esp, NULL);
             for (int x = 0; envpp[x] != NULL && x < envc; x++) {
                 dprintf("push envp %x to %x", envpp[x], esp);
-                push_stack(esp,envpp[x]);
+                push_stack(esp, envpp[x]);
             }
         } else {
             envc = 0;
@@ -202,10 +204,10 @@ int kexec(pid_t pid, const char *path, int argc, char *const argv[], char *const
         }
     }
     if (argv) {
-        push_stack(esp,NULL);
+        push_stack(esp, NULL);
         //push *argv
         for (int x = 0; x < argc; x++) {
-            dprintf("push arg %x to %x",  targv[argc - x - 1], esp);
+            dprintf("push arg %x to %x", targv[argc - x - 1], esp);
             push_stack(esp, targv[argc - x - 1]);
         }
         __argvp = (uint32_t) (esp + 1);
@@ -233,19 +235,11 @@ int kexec(pid_t pid, const char *path, int argc, char *const argv[], char *const
          *  <--esp
          * */
         //push envp_reserved
-        *esp = __env_rs;
-        esp -= 1;
-        *esp = NULL;
-        esp -= 1;
-        //push envp
-        *esp = __envp;
-        esp -= 1;
-        //push argv
-        *esp = __argvp;
-        esp -= 1;
-        //push argc
-        *esp = (uint32_t) argc;
-        esp -= 1;
+        push_stack(esp,__env_rs);
+        push_stack(esp,NULL);
+        push_stack(esp,__envp);//push envp
+        push_stack(esp,__argvp);//push argv
+        push_stack(esp,argc);//push argc
     }
     dprintf("push done.esp:%x", esp);
     pcb->tss.esp = (uint32_t) esp;

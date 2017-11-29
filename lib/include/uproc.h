@@ -6,8 +6,7 @@
 #define W2_UPROC_H
 
 #include "stdint.h"
-
 #define K_USER
-typedef uint16_t pid_t;
+typedef int16_t pid_t;
 #undef K_USER
 #endif //W2_UPROC_H

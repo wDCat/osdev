@@ -110,7 +110,7 @@ int32_t tty_read(tty_t *tty, pid_t pid, int32_t size, uchar_t *buff) {
     tty_queue_t *queue = tty->read;
     tty_empty_wait(queue, pid);
     int32_t ret = 0;
-    for (int x = 0; x < size; x++) {
+    for (int x = 0; x < size - 2; x++) {
         mutex_lock(&queue->mutex);
         if (tty_queue_isempty(queue)) {
             proc_queue_insert(&queue->proc_wait, getpcb(pid));
@@ -119,20 +119,20 @@ int32_t tty_read(tty_t *tty, pid_t pid, int32_t size, uchar_t *buff) {
             do_schedule(NULL);
         }
         if (!tty_queue_getc(queue, buff) || TTY_IS_EOF(buff)) {
-            ret = x + 1;
+            *(++buff) = 0;
+            ret = x + 2;
             goto _ret;
         }
         mutex_unlock(&queue->mutex);
         if (*buff == 10) {
-            *buff = 10;
-            *(buff + 1) = 0;
-            break;
+            *(++buff) = 0;
+            ret = x + 2;
+            goto _ret;
         }
         buff++;
     }
     ret = size;
     _ret:
-
     return ret;
 }
 

@@ -265,7 +265,7 @@ void clean_pcb_table() {
     uint32_t procc = proc_count;
     for (pid_t x = 2; x < procc; x++) {
         pcb_t *pcb = getpcb(x);
-        if (get_proc_status(pcb) == STATUS_DIED && pcb->hold_proc == 0) {
+        if (get_proc_status(pcb) == STATUS_DIED) {
             if (pcb->fpcb) {
                 ASSERT(pcb->fpcb->cpcb);
                 pcb_t *pp = pcb->fpcb->cpcb;
@@ -281,7 +281,6 @@ void clean_pcb_table() {
                         }
                     }
                     if (!found) PANIC("proc %s ix %x 's child,but it not exist in it's father's cpcb");
-
                 }
             }
             memset(pcb, 0, sizeof(pcb_t));

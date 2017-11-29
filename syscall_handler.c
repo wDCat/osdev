@@ -74,7 +74,8 @@ void *syscalls_table[] = {
         &sys_brk,
         &sys_execve,
         &sys_signal,
-        &sys_sigaction
+        &sys_sigaction,
+        &sys_wait4
 };
 uint32_t syscalls_count = sizeof(syscalls_table) / sizeof(uint32_t);
 

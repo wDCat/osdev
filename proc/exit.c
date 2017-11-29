@@ -14,7 +14,8 @@
 
 void sys_exit(int32_t ret) {
     pcb_t *pcb = getpcb(getpid());
-    dprintf("[+] proc %x exited with ret:%x", getpid(), ret);
+    dprintf("proc %x exited with ret:%x", getpid(), ret);
+    pcb->exit_sig = SIGQUIT;
     do_exit(pcb, ret);
     deprintf("proc %x already exited,but still be scheduled!");
     for (;;);
@@ -61,7 +62,7 @@ void do_exit(pcb_t *pcb, int32_t ret) {
         if (pcb->fh[x].present)
             sys_close(x);
     }
-    set_proc_status(pcb, STATUS_DIED);
+    set_proc_status(pcb, STATUS_ZOMBIE);
     dynlibs_unload_all(pcb->pid);
     destory_user_heap(pcb);
     if (pcb->edg) {
