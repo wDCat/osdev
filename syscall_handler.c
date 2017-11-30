@@ -10,7 +10,10 @@
 #include <iov.h>
 #include <ioctl.h>
 #include <brk.h>
-#include "ker/include/idt.h"
+#include <fcntl.h>
+#include <errno.h>
+#include <open.h>
+#include "idt.h"
 #include "proc.h"
 #include "syscall_handler.h"
 #include "timer.h"
@@ -75,7 +78,8 @@ void *syscalls_table[] = {
         &sys_execve,
         &sys_signal,
         &sys_sigaction,
-        &sys_wait4
+        &sys_wait4,
+        &sys_fcntl
 };
 uint32_t syscalls_count = sizeof(syscalls_table) / sizeof(uint32_t);
 
@@ -93,9 +97,9 @@ int syscall_handler(regs_t *r) {
     dprintf("syscall[%d][%s] a0:%x a1:%x a2:%x", r->eax,
             r->eax > SYSCALL_NAMES_COUNT ? "UNDEF" : SYSCALL_NAMES_TABLE[r->eax],
             r->ebx, r->ecx, r->edx);
-    if (r->eax >= syscalls_count) {
+    if (r->eax >= syscalls_count || syscalls_table[r->eax] == NULL) {
         dwprintf("syscall not found:%d", r->eax);
-        r->eax = (uint32_t) -1;
+        r->eax = (uint32_t) -ENOSYS;
         return 0;
     }
     syscall_fun_t fun = (syscall_fun_t) syscalls_table[r->eax];

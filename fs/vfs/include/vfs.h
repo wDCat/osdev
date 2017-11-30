@@ -22,11 +22,6 @@
 #define SEEK_CUR    1
 #define SEEK_END    2
 
-#define O_RDONLY    0x0000
-#define O_WRONLY    0x0001
-#define O_RDWR        0x0002
-#define O_NDELAY    0x0004
-#define O_APPEND    0x0008
 #define O_CREAT        0x0200
 
 typedef __fs_special_t *(*mount_type_t)(void *dev, fs_node_t *node);
@@ -81,7 +76,8 @@ typedef struct file_handle {
     bool present;
     fs_node_t node;
     mount_point_t *mp;
-    int flags;
+    int flags:1;
+    int amode;
     void *reserved;
 } file_handle_t;
 
@@ -103,6 +99,8 @@ void vfs_init(vfs_t *vfs);
 
 int vfs_cd(vfs_t *vfs, const char *path);
 
+mount_point_t *vfs_get_mount_point(vfs_t *vfs, fs_node_t *node);
+
 int vfs_mount(vfs_t *vfs, const char *path, fs_t *fs, void *dev);
 
 int32_t vfs_ls(vfs_t *vfs, dirent_t *dirs, uint32_t max_count);
@@ -112,14 +110,6 @@ int vfs_make(vfs_t *vfs, uint8_t type, const char *name);
 int32_t vfs_read(vfs_t *vfs, uint32_t size, uchar_t *buff);
 
 int32_t vfs_symlink(vfs_t *vfs, const char *name, const char *target);
-
-int8_t sys_open(const char *name, int flags);
-
-int8_t sys_close(int8_t fd);
-
-int8_t kclose(uint32_t pid, int8_t fd);
-
-int8_t kopen(uint32_t pid, const char *name, int flags);
 
 int32_t sys_read(int8_t fd, uchar_t *buff, int32_t size);
 
@@ -134,8 +124,6 @@ int sys_stat(const char *path, stat_t *stat);
 int sys_stat64(const char *name, stat64_t *stat);
 
 int sys_ls(const char *path, dirent_t *dirents, uint32_t count);
-
-void kclose_all(uint32_t pid);
 
 int sys_access(const char *path, int mode);
 
@@ -160,5 +148,7 @@ off_t sys_lseek(int8_t fd, off_t offset, int where);
 off_t ktell(uint32_t pid, int8_t fd);
 
 off_t sys_tell(int8_t fd);
+
+int vfs_fix_path(uint32_t pid, const char *name, char *out, int max_len);
 
 #endif //W2_VFS_H

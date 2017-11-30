@@ -215,7 +215,7 @@ int catmfs_fs_node_finddir(fs_node_t *node, __fs_special_t *fsp_, const char *na
 }
 
 inline uint32_t catmfs_type_to_mode(uint8_t type, uint16_t permission) {
-    uint32_t mode = (uint32_t) (permission & 0xFFFF);
+    uint32_t mode = (uint32_t) (permission & 0xFFF);
     switch (type) {
         case FS_FILE:
             mode |= S_IFREG;
@@ -226,6 +226,8 @@ inline uint32_t catmfs_type_to_mode(uint8_t type, uint16_t permission) {
         case FS_SYMLINK:
             mode |= S_IFLNK;
             break;
+        default:
+            deprintf("unknown type:%x",type);
     }
     return mode;
 }

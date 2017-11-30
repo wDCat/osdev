@@ -11,6 +11,8 @@
 #include <elf.h>
 #include <kmalloc.h>
 #include <dynlibs.h>
+#include <fcntl.h>
+#include <open.h>
 #include "exec.h"
 
 #define push_stack(esp, val)({\
@@ -84,7 +86,7 @@ int kexec(pid_t pid, const char *path, int argc, char *const argv[], char *const
             }
         }
         if (fd < 3) {
-            deprintf("too much opened files");
+            deprintf("too many opened files");
             goto _err;
         }
     }
@@ -113,6 +115,12 @@ int kexec(pid_t pid, const char *path, int argc, char *const argv[], char *const
     CHK(create_user_heap(pcb, heap_start, 0x4000), "");
     pcb->program_break = heap_start + 0x4000;
     CHK(elsp_load_need_dynlibs(edg), "");
+    for (int x = 0; x < MAX_FILE_HANDLES; x++) {
+        if (pcb->fh[x].present && (pcb->fh[x].flags & FD_CLOEXEC)) {
+            dprintf("close on exec: fd:%d", x);
+            kclose(pid, x);
+        }
+    }
     uint32_t sym_start;
     uint32_t sym_main;
     uint32_t eip;
@@ -235,11 +243,11 @@ int kexec(pid_t pid, const char *path, int argc, char *const argv[], char *const
          *  <--esp
          * */
         //push envp_reserved
-        push_stack(esp,__env_rs);
-        push_stack(esp,NULL);
-        push_stack(esp,__envp);//push envp
-        push_stack(esp,__argvp);//push argv
-        push_stack(esp,argc);//push argc
+        push_stack(esp, __env_rs);
+        push_stack(esp, NULL);
+        push_stack(esp, __envp);//push envp
+        push_stack(esp, __argvp);//push argv
+        push_stack(esp, argc);//push argc
     }
     dprintf("push done.esp:%x", esp);
     pcb->tss.esp = (uint32_t) esp;

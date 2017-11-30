@@ -81,7 +81,9 @@ FILE(GLOB MyCSources
 /home/dcat/osdev/w2/fs/catmfs/catrfmt.c
 /home/dcat/osdev/w2/fs/vfs/stat.c
 /home/dcat/osdev/w2/fs/vfs/vfs.c
+/home/dcat/osdev/w2/fs/vfs/open.c
 /home/dcat/osdev/w2/fs/vfs/iov.c
+/home/dcat/osdev/w2/fs/vfs/fcntl.c
 /home/dcat/osdev/w2/fs/procfs/procfs.c
 /home/dcat/osdev/w2/fs/ext2/ext2.c
 /home/dcat/osdev/w2/fs/ext2/ext2_fs_node.c
@@ -115,6 +117,7 @@ FILE(GLOB MyCSources
 /home/dcat/osdev/w2/include/syscall_names.h
 /home/dcat/osdev/w2/include/fs_node.h
 /home/dcat/osdev/w2/include/bochs_debug.h
+/home/dcat/osdev/w2/include/time.h
 /home/dcat/osdev/w2/include/mutex.h
 /home/dcat/osdev/w2/include/syscall_handler.h
 /home/dcat/osdev/w2/ker/include/random.h
@@ -158,6 +161,8 @@ FILE(GLOB MyCSources
 /home/dcat/osdev/w2/fs/catmfs/include/catmfs.h
 /home/dcat/osdev/w2/fs/vfs/include/vfs.h
 /home/dcat/osdev/w2/fs/vfs/include/iov.h
+/home/dcat/osdev/w2/fs/vfs/include/open.h
+/home/dcat/osdev/w2/fs/vfs/include/fcntl.h
 /home/dcat/osdev/w2/fs/vfs/include/stat.h
 /home/dcat/osdev/w2/fs/procfs/include/procfs.h
 /home/dcat/osdev/w2/fs/ext2/include/ext2_fs_node.h
