@@ -119,10 +119,6 @@ int32_t kwrite(uint32_t pid, int8_t fd, uchar_t *buff, int32_t size);
 
 int32_t sys_write(int8_t fd, uchar_t *buff, int32_t size);
 
-int sys_stat(const char *path, stat_t *stat);
-
-int sys_stat64(const char *name, stat64_t *stat);
-
 int sys_ls(const char *path, dirent_t *dirents, uint32_t count);
 
 int sys_access(const char *path, int mode);

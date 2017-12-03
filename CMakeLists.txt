@@ -79,6 +79,7 @@ FILE(GLOB MyCSources
 /home/dcat/osdev/w2/dev/tty/tty.c
 /home/dcat/osdev/w2/fs/catmfs/catmfs.c
 /home/dcat/osdev/w2/fs/catmfs/catrfmt.c
+/home/dcat/osdev/w2/fs/vfs/getdents.c
 /home/dcat/osdev/w2/fs/vfs/stat.c
 /home/dcat/osdev/w2/fs/vfs/vfs.c
 /home/dcat/osdev/w2/fs/vfs/open.c
@@ -94,8 +95,10 @@ FILE(GLOB MyCSources
 /home/dcat/osdev/w2/lib/include/syscallno.h
 /home/dcat/osdev/w2/lib/include/syscall.h
 /home/dcat/osdev/w2/lib/include/print.h
+/home/dcat/osdev/w2/lib/include/def.h
 /home/dcat/osdev/w2/lib/include/uexec.h
 /home/dcat/osdev/w2/lib/include/str.h
+/home/dcat/osdev/w2/lib/include/ugetdents.h
 /home/dcat/osdev/w2/lib/include/file.h
 /home/dcat/osdev/w2/lib/include/errno.h
 /home/dcat/osdev/w2/lib/include/va.h
@@ -161,6 +164,7 @@ FILE(GLOB MyCSources
 /home/dcat/osdev/w2/fs/catmfs/include/catmfs.h
 /home/dcat/osdev/w2/fs/vfs/include/vfs.h
 /home/dcat/osdev/w2/fs/vfs/include/iov.h
+/home/dcat/osdev/w2/fs/vfs/include/getdents.h
 /home/dcat/osdev/w2/fs/vfs/include/open.h
 /home/dcat/osdev/w2/fs/vfs/include/fcntl.h
 /home/dcat/osdev/w2/fs/vfs/include/stat.h

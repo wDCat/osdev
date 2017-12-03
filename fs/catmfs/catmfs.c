@@ -77,6 +77,7 @@ int catmfs_make_overlay_file(catmfs_special_t *fsp, catmfs_inode_t *inode,
     ninode->reserved = (uint32_t) fop;
     ninode->reserved2 = (uint32_t) extern_data;
     ninode->finode = inode;
+    ninode->permission = 0777;
     CHK(catmfs_do_make(fsp, inode, name, ninode), "");
     return 0;
     _err:
@@ -99,6 +100,7 @@ int catmfs_make_rfmt_file(catmfs_special_t *fsp, catmfs_inode_t *inode,
     ninode->size = rfmt_node->size;
     ninode->reserved = (uint32_t) rfmt_node;
     ninode->finode = inode;
+    ninode->permission = 0755;
     CHK(catmfs_do_make(fsp, inode, name, ninode), "");
     return 0;
     _err:
@@ -121,6 +123,7 @@ int catmfs_make(catmfs_special_t *fsp, catmfs_inode_t *inode, uint8_t type, cons
         ninode = catmfs_alloc_inode();
         ninode->type = type;
         ninode->size = type == FS_DIRECTORY ? 1024 : 0;
+        ninode->permission = 00777;
         ninode->reserved = 0;
         ninode->finode = inode;
         if (type == FS_FILE && reserved2 != 0) {
@@ -151,13 +154,14 @@ int32_t catmfs_fs_node_readdir(fs_node_t *node, __fs_special_t *fsp_, uint32_t c
         deprintf("not a catmfs node[%x][%x].", inode, inode->magic);
         return -1;
     }
-    //putf_const("[catmfs_fs_node_readdir]target:%x\n", inode);
-    uint8_t *raw = (uint8_t *) ((uint32_t) inode + sizeof(catmfs_inode_t));
+    //dprintf("[catmfs_fs_node_readdir]target:%x count:%x\n", inode,count);
+
+    uint32_t raw_st = (uint32_t) inode + sizeof(catmfs_inode_t);
+    uint8_t *raw = (uint8_t *) (raw_st + node->offset);
     int x = 0;
     for (; x < count; x++) {
         catmfs_dir_t *dir = (catmfs_dir_t *) raw;
         if (dir->inode == 0) {
-            x--;
             break;
         }
         if (dir->name_len > 255 || dir->len < 9) {
@@ -167,15 +171,16 @@ int32_t catmfs_fs_node_readdir(fs_node_t *node, __fs_special_t *fsp_, uint32_t c
         char *np = (char *) ((uint32_t) dir + 9);
         memcpy(result[x].name, np, dir->name_len);
         result[x].name[dir->name_len] = '\0';
-        //dprintf("offset:%x len:%x fn:%s", dir, dir->len, result[x].name);
+        dprintf("offset:%x len:%x fn:%s", dir, dir->len, result[x].name);
         result[x].type = dir->type;
         result[x].name_len = dir->name_len;
         result[x].node = dir->inode;
         raw = (uint8_t *) ((uint32_t) raw + dir->len);
-        if ((uint32_t) raw - (uint32_t) inode > 0x1000 && x--)
+        node->offset = ((uint32_t) raw) - raw_st;
+        if ((uint32_t) raw - (uint32_t) inode > 0x1000)
             break;
     }
-    return x + 1;
+    return x;
 }
 
 int catmfs_fs_node_finddir(fs_node_t *node, __fs_special_t *fsp_, const char *name, fs_node_t *result_out) {
@@ -227,7 +232,7 @@ inline uint32_t catmfs_type_to_mode(uint8_t type, uint16_t permission) {
             mode |= S_IFLNK;
             break;
         default:
-            deprintf("unknown type:%x",type);
+            deprintf("unknown type:%x", type);
     }
     return mode;
 }
@@ -594,7 +599,7 @@ __fs_special_t *catmfs_fs_node_mount(void *dev, fs_node_t *node) {
     fsp->max_singly_blks = fsp->page_size / sizeof(uint32_t);
     root->type = FS_DIRECTORY;
     root->size = 1024;
-    root->permission = 0xFFFF;
+    root->permission = 00777;
     root->uid = root->gid = 0;//root:root
     root->finode = 0;
     root->reserved = 0;

@@ -13,6 +13,8 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <open.h>
+#include <stat.h>
+#include <getdents.h>
 #include "idt.h"
 #include "proc.h"
 #include "syscall_handler.h"
@@ -79,7 +81,8 @@ void *syscalls_table[] = {
         &sys_signal,
         &sys_sigaction,
         &sys_wait4,
-        &sys_fcntl
+        &sys_fcntl,
+        &sys_getdents
 };
 uint32_t syscalls_count = sizeof(syscalls_table) / sizeof(uint32_t);
 

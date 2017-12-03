@@ -67,6 +67,51 @@ void console_scroll(console_t *con) {
     }
 }
 
+#define ansi_color_to_vga(c) ((uint8_t) ((int[]) {0, 4, 2, 6, 1, 5, 3, 7})[(c) % 8])
+
+int parse_control_str(console_t *con, char *str) {
+    if (str[1] == '\0') {
+        switch (str[0]) {
+            case '0':
+                con->control_mode.on = false;
+                return 0;
+        }
+    }
+    char *i = str;
+    uint8_t fg = COLOR_WHITE, bg = COLOR_BLACK;
+    bool light = false;
+    while (*i) {
+        if ((i = strchr(str, ';')) == NULL)
+            i = &str[strlen(str)];
+        else
+            *i++ = '\0';
+        int c = atoi(str);
+        if (c >= 30 && c < 40) {
+            fg = ansi_color_to_vga((uint8_t) (c - 30));
+        } else if (c >= 40 && c < 50) {
+            bg = ansi_color_to_vga((uint8_t) (c - 40));
+        } else if (c == 1) light = true;
+        str = i;
+    }
+    if (light) {
+        fg += 8;
+    }
+    con->control_mode.color = (uint8_t) ((bg & 0xF) << 4 | (fg & 0xF));
+    //dprintf("set color to %d fg:%d bg:%d", con->control_mode.color, fg, bg);
+    con->control_mode.on = true;
+    return 0;
+}
+
+inline uchar_t console_getc(console_t *con, int x, int y) {
+    return *(uchar_t *) (con->start_addr + ((con->y * SCREEN_MAX_X) + con->x) * 2);
+}
+
+inline void console_setpos(console_t *con, uint32_t addr_offset) {
+    uint32_t offset = addr_offset / 2;
+    con->y = offset / SCREEN_MAX_X;
+    con->x = offset % SCREEN_MAX_X;
+}
+
 void console_putc(console_t *con, const uchar_t c) {
     if (!con->present) {
         deprintf("try to write a not presented console.");
@@ -74,6 +119,7 @@ void console_putc(console_t *con, const uchar_t c) {
     }
 
     uint8_t data;
+    bool doprint = false;
     uint8_t *where = (uint8_t *) (con->start_addr + ((con->y * SCREEN_MAX_X) + con->x) * 2);
     switch (c) {
         case '\b'://Backspace
@@ -92,12 +138,58 @@ void console_putc(console_t *con, const uchar_t c) {
         case '\t':
             con->x += 4;
             break;
+        case '\033':
+            con->escape = (uint32_t) where;
+            doprint = true;
+            //dprintf("control char \\\\033 ");
+            break;
+        case '[':
+            doprint = true;
+            if ((uint32_t) where - con->escape != 2) {
+                con->escape = NULL;
+            }
+            //dprintf("control char [ ");
+            break;
+        case 'm': {
+            if (con->escape == NULL) {
+                doprint = true;
+                break;
+            }
+            if ((uint32_t) where - con->escape > 0x20) {
+                con->escape = NULL;
+                doprint = true;
+                break;
+            }
+
+            //dprintf("control char m");
+            char buff[((uint32_t) where - con->escape) / 2], *obuff = buff;
+            for (uint8_t *x = (uint8_t *) (con->escape + 4); x < where; x += 2) {
+                *obuff++ = *x;
+            }
+            *obuff = '\0';
+            //dprintf("control str:%s", buff);
+            if (parse_control_str(con, buff) == 0) {
+                for (uint8_t *x = (uint8_t *) (con->escape); x < where; x++) {
+                    *x = '\0';
+                }
+                console_setpos(con, con->escape - con->start_addr);
+            }
+            con->escape = NULL;
+            break;
+        }
         default:
-            data = (uint8_t) (c & 0xFF);
-            *(where) = data;
+            doprint = true;
+    }
+    if (doprint) {
+        data = (uint8_t) (c & 0xFF);
+        *(where) = data;
+        if (con->control_mode.on) {
+            *(where + 1) = con->control_mode.color;
+        } else {
             *(where + 1) = (COLOR_BLACK << 4 | (COLOR_WHITE)) & 0xFF;
-            *(where + 3) = (COLOR_BLACK << 4 | (COLOR_WHITE)) & 0xFF;//to show cursor
-            con->x += 1;
+        }
+        *(where + 3) = (COLOR_BLACK << 4 | (COLOR_WHITE)) & 0xFF;//to show cursor
+        con->x += 1;
     }
     if (con->x >= SCREEN_MAX_X) {
         con->x = 0;

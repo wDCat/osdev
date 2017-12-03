@@ -177,7 +177,7 @@ fun main(args: Array<String>) {
     mfout.write("\trm -rf ${LOG_OUTPUT}/*\n")
     var outFiles = ""
     val clibmfout = FileWriter(File(clibMakefile))
-    clibmfout.write("libdcat.so: \n")
+    clibmfout.write("libdcat.so: build_kernel_pre\n")
     clibmfout.write("\t@echo \"[ %%% ] \\033[32m Building clib...\\033[0m\"\n")
     clibmfout.write("\t@gcc -shared -o ${ROOT}/libdcat.so  ${CLIB_C_FLAGS} ")
     cFiles.forEach {

@@ -11,7 +11,7 @@
 #define    W_OK    2        /* Test for write permission.  */
 #define    X_OK    1        /* Test for execute permission.  */
 #define    F_OK    0        /* Test for existence.  */
-typedef int32_t off_t;
+
 typedef struct dirent {
     uint32_t node;
     unsigned short name_len; /* size of this d_name 文件名长 */

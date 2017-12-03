@@ -13,24 +13,35 @@ class SyscallNos {
     fun remove(name: String) = map.remove(name)
     fun addHeaderFile(path: String) {
         var count = 0
+        var cdef = 0
+        var cundef = 0
         val fin = BufferedReader(FileReader(File(path)))
         while (true) {
             val line = (fin.readLine() ?: break).trim()
             //println(line)
-            if (line.length < 1 || !line.startsWith("#define")) continue
+            var action = 0
+            if (line.length < 1) continue
+            if (line.startsWith("#define"))
+                action = 1
+            else if (line.startsWith("#undef"))
+                action = 2
+            else continue
             val name: String
-            var no: String
+            var no: String = ""
             var i = line.indexOf(' ')
             if (i < 0) continue
             val lesC = line.substring(i + 1)
             i = lesC.indexOf(' ')
             if (i < 0) {
                 i = lesC.indexOf('\t')
-                if (i < 0)
-                    continue
+                if (i < 0) {
+                    if (action == 1)
+                        continue
+                    i = lesC.length
+                }
             }
             val sname = lesC.substring(0, i).trim()
-            no = lesC.substring(i + 1).trim()
+            if (action == 1) no = lesC.substring(i + 1).trim()
             if (sname.trim().startsWith("__NR_")) {
                 name = sname.substring(5)
             } else if (sname.startsWith("SYS_")) {
@@ -38,10 +49,19 @@ class SyscallNos {
             } else name = sname
             //println("syscall ${name} ${no}")
             if (map.containsKey(name)) map.remove(name)
-            add(name, no)
+            when (action) {
+                1 -> {
+                    add(name, no)
+                    cdef++
+                }
+                2 -> {
+                    println("remove ${name}")
+                    cundef++
+                }
+            }
             count++
         }
-        println("[*] add ${path} done. syscall count:${count}")
+        println("[*] add ${path} done. line:${count} ( define ${cdef} undef ${cundef}) totally syscall:${map.count()}")
     }
 
     fun writeToHeaderFile(path: String) {
@@ -66,9 +86,9 @@ class SyscallNos {
         val t = TreeMap<Int, String>(kotlin.Comparator { o1, o2 -> o1 - o2 })
         map.forEach { name, no ->
             try {
-                print("[${no}]")
+                //print("[${no}]")
                 val intno = no.trim().toInt()
-                println("[${intno}]$name")
+                //println("[${intno}]$name")
                 t[intno] = name
             } catch (ignored: Throwable) {
 

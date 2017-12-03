@@ -273,3 +273,17 @@ int strnxtok(const char *str, const char c, int start) {
     }
     return -1;
 }
+
+int atoi(const char *s) {
+    int n = 0, neg = 0;
+    while (*s == ' ' || *s == '\t') s++;
+    switch (*s) {
+        case '-':
+            neg = 1;
+        case '+':
+            s++;
+    }
+    while (*s && *s - '0' < 10)
+        n = 10 * n - (*s++ - '0');
+    return neg ? n : -n;
+}

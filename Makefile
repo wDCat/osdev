@@ -39,6 +39,7 @@ kernel.sym:
 	nm -v kernel.bin > kernel.sym
 install_libdcat:libdcat.so
 	cp -f libdcat.so $(SRC_ROOT)/../a_out_test/libdcat.so
+	cp -f libdcat.so $(SRC_ROOT)/../catmfs_creator/fsroot/libdcat.so
 	#cd $(SRC_ROOT)/../a_out_test && make install
 .PHONY:install
 install:
@@ -69,7 +70,7 @@ run:
 	qemu-system-i386 -hda ../bgrub.img -fdb ../disk.img -m 16 -k en-us -sdl  -s
 .PHONY:clean
 clean:
-	rm -rf *.o kernel.bin
+	rm -rf *.o kernel.bin libdcat.so
 	rm -rf OUTPUT
 .PHONY:backup
 backup:

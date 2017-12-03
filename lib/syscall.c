@@ -58,3 +58,5 @@ _impl_syscall3(writev, SYS_writev, int, void*, int);
 _impl_syscall3(ioctl, SYS_ioctl, unsigned long, unsigned long, unsigned long);
 
 _impl_syscall1(brk, SYS_brk, void*);
+
+_impl_syscall3(getdents, SYS_getdents, unsigned int, struct linux_dirent *, unsigned int);

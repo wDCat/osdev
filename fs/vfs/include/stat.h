@@ -45,6 +45,8 @@
 #define S_IXOTH 0001
 #define S_IRWXO 0007
 #endif
+int sys_stat(const char *path, stat_t *stat);
 
+#define sys_stat64 sys_stat
 
 #endif //W2_STAT_H

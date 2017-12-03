@@ -27,6 +27,7 @@ int8_t kopen(uint32_t pid, const char *name, int flags) {
         goto _ret;
     }
     file_handle_t *fh = &pcb->fh[fd];
+    memset(fh, 0, sizeof(file_handle_t));
     if (vfs_get_node(&pcb->vfs, path, &fh->node)) {
         if (!(flags & O_CREAT)) {
             deprintf("no such file or dir:%s type:%d", name, flags);

@@ -610,12 +610,6 @@ char *sys_getcwd(char *buff, int len) {
     return buff;
 }
 
-int sys_ls(const char *path, dirent_t *dirents, uint32_t count) {
-    CHK(vfs_cd(&vfs, path), "");
-    return vfs_ls(&vfs, dirents, count);
-    _err:
-    return -1;
-}
 
 void mount_rootfs(uint32_t initrd) {
     vfs_init(&vfs);

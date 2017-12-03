@@ -42,4 +42,7 @@
 #define SYS_rt_sigaction 30
 #define SYS_wait4 31
 #define SYS_fcntl 32
+#define SYS_getdents 33
+#define SYS_getdents64 33
+#undef SYS_getdents64
 #endif //W2_SYSCALLNO_H

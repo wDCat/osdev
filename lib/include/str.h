@@ -39,4 +39,6 @@ uint itos(const int num, char *c2);
 
 int strnxtok(const char *str, const char c, int start);
 
+int atoi(const char *s);
+
 #endif //W2_STR_H

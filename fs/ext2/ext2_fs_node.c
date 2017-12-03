@@ -6,6 +6,7 @@
 #include <str.h>
 #include <kmalloc.h>
 #include <vfs.h>
+#include <stat.h>
 #include "ext2_fs_node.h"
 
 extern int ext2_find_inote(ext2_t *ext2_fs, uint32_t inode_id,
@@ -67,6 +68,7 @@ int32_t ext2_fs_node_read(fs_node_t *node, __fs_special_t *fsp, uint32_t len, ui
     _err:
     return -1;
 }
+
 int ext2_get_fs_node(ext2_t *fs, uint32_t inode_id, const char *fn, fs_node_t *node) {
     if (inode_id < 2) {
         deprintf("Bad inode_id:%x", inode_id);
@@ -195,6 +197,7 @@ __fs_special_t *ext2_fs_node_mount(blk_dev_t *dev, fs_node_t *rootnode) {
     rootnode->inode = 2;
     rootnode->fsp = fs;
     rootnode->type = FS_DIRECTORY;
+    rootnode->mode = S_IFDIR | 0777;
     return fs;
     _err:
     return 0;

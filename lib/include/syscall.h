@@ -10,6 +10,7 @@
 #include "uvfs.h"
 #include "ustat.h"
 #include "syscallno.h"
+#include "ugetdents.h"
 
 #define _define_syscall0(fn, num) long syscall_##fn()
 #define _define_syscall1(fn, num, P1) long syscall_##fn(P1 p1)
@@ -109,5 +110,7 @@ _define_syscall3(writev, SYS_writev, int, void*, int);
 _define_syscall3(ioctl, SYS_ioctl, unsigned long, unsigned long, unsigned long);
 
 _define_syscall1(brk, SYS_brk, void*);
+
+_define_syscall3(getdents, SYS_getdents, unsigned int, struct linux_dirent *, unsigned int);
 
 #endif //W2_SYSCALL_H
