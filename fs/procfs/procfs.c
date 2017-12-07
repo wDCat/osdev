@@ -212,6 +212,16 @@ int procfs_item_pt(fs_node_t *node, __fs_special_t *fsp_, procfs_snode_t *snode)
         }
     }
     catmfs_fs_node_lseek(node, fsp_, 0);
+    kfree(linebuff);
+    return 0;
+}
+
+int procfs_item_stat(fs_node_t *node, __fs_special_t *fsp_, procfs_snode_t *snode) {
+    catmfs_fs_node_lseek(node, fsp_, sizeof(procfs_snode_t));
+    char buff[256];
+    strformat(buff, "%d (%s)", snode->pid, getpcb(snode->pid)->name);
+    catmfs_fs_node_write(node, fsp_, strlen(buff), buff);
+    catmfs_fs_node_lseek(node, fsp_, 0);
     return 0;
 }
 
@@ -228,7 +238,7 @@ int procfs_fs_node_readlink(fs_node_t *node, __fs_special_t *fsp_,
     int ret = catmfs_fs_node_readlink(node, catfsp, buff, max_len);
     if (ret == 0) {
         if (str_compare(buff, PROC_SELF_SYMLINK_STUB))
-            sprintf(buff, "/proc/%d/", getpid());
+            sprintf(buff, "/proc/%d", getpid());
     }
     return ret;
 }
@@ -265,4 +275,5 @@ void procfs_create_type() {
     procfs_insert_item("cmdline", procfs_item_cmdline);
     procfs_insert_item("mounts", procfs_item_mounts);
     procfs_insert_item("pagetable", procfs_item_pt);
+    procfs_insert_item("stat", procfs_item_stat);
 }

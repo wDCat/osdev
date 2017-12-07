@@ -5,6 +5,7 @@
 #include <ext2.h>
 #include <superblk.h>
 #include <syscall.h>
+#include <errno.h>
 #include "ext2.h"
 #include "ide.h"
 #include "../../memory/include/kmalloc.h"
@@ -19,14 +20,22 @@ int ext2_read_block(ext2_t *fs, uint32_t base, uint32_t count, uint8_t *buff) {
     uint32_t offset = base * fs->block_size;
     uint32_t size = count * fs->block_size;
     dprintf("[%x:%x] ==> [%x]", base, offset, buff);
-    return fs->dev->read(offset, size, buff);
+    int ret = fs->dev->read(offset, size, buff);
+    if (ret) {
+        deprintf("I/O Error,errno:%d base:%x count:%x buff:%x", ret, base, count, buff);
+    }
+    return -ret;
 }
 
 int ext2_write_block(ext2_t *fs, uint32_t base, uint32_t count, uint8_t *buff) {
     uint32_t offset = base * fs->block_size;
     uint32_t size = count * fs->block_size;
     dprintf("[%x:%x] <== [%x]", base, offset, buff);
-    return fs->dev->write(offset, size, buff);
+    int ret = fs->dev->write(offset, size, buff);
+    if (ret) {
+        deprintf("I/O Error,errno:%d base:%x count:%x buff:%x", ret, base, count, buff);
+    }
+    return -ret;
 }
 
 int ext2_get_inode_block(ext2_t *fs, uint32_t inode_id, uint32_t *index_out, uint32_t *block_no_out,
@@ -70,7 +79,7 @@ ext2_find_inote(ext2_t *ext2_fs, uint32_t inode_id,
     uint32_t off_les = off_2 % SECTION_SIZE;
     off += off_sec * SECTION_SIZE;
     if (ext2_fs->dev->read(off, SECTION_SIZE, blk)) {
-        ret = -1;
+        ret = -EIO;
         goto _after;
     }
     inode = (ext2_inode_t *) (blk + off_les);
@@ -94,11 +103,13 @@ ext2_dir_iterator_init(ext2_t *fs, ext2_inode_t *inode,
 }
 
 int ext2_dir_iterator_next(ext2_dir_iterator_t *iter, ext2_dir_t **dir) {
-    if (iter->cur_dir == 0 || iter->cur_dir->inode_id == 0) {
+    if (iter->cur_dir == 0) {
         //load next block
         dprintf("switch block:%x/%x [%x][%x]", iter->next_block_id, EXT2_NDIR_BLOCKS,
                 iter->inode->i_block[iter->next_block_id], iter->block);
-        ext2_read_block(iter->fs, iter->inode->i_block[iter->next_block_id], 1, iter->block);
+        if (iter->inode->i_block[iter->next_block_id] == 0)return 0;
+        if (ext2_read_block(iter->fs, iter->inode->i_block[iter->next_block_id], 1, iter->block) < 0)
+            return -EIO;
         iter->next_block_id++;
         iter->cur_dir = (ext2_dir_t *) iter->block;
         if (iter->cur_dir->inode_id == 0)
@@ -108,9 +119,10 @@ int ext2_dir_iterator_next(ext2_dir_iterator_t *iter, ext2_dir_t **dir) {
     }
     iter->cur_dir = (ext2_dir_t *) ((uint32_t) iter->cur_dir + iter->cur_dir->size);
     *dir = iter->cur_dir;
-    if (iter->cur_dir->inode_id == 0 ||
-        (uint32_t) iter->cur_dir - (uint32_t) iter->block > iter->fs->block_size)
+    if (iter->cur_dir->inode_id == 0)
         return 0;
+    if ((uint32_t) iter->cur_dir - (uint32_t) iter->block > iter->fs->block_size)
+        iter->cur_dir = 0;
     return 1;
 }
 

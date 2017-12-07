@@ -7,6 +7,7 @@
 #include <vfs.h>
 #include <kmalloc.h>
 #include <proc.h>
+#include <errno.h>
 #include "open.h"
 
 int8_t kopen(uint32_t pid, const char *name, int flags) {
@@ -53,13 +54,31 @@ int8_t kopen(uint32_t pid, const char *name, int flags) {
             }
         }
     }
+
     mp = vfs_get_mount_point(&pcb->vfs, &fh->node);
     if (mp == NULL) {
         deprintf("mount point not found:%s", path);
         fd = -1;
         goto _ret;
     }
-
+    int loopchk = 0;
+    while (fh->node.type == FS_SYMLINK) {
+        loopchk++;
+        if (loopchk > MAX_LINK_LOOP)return -ELOOP;
+        char *buff = kmalloc(MAX_PATH_LEN);
+        if (mp->fs->readlink(&fh->node, mp->fsp, buff, MAX_PATH_LEN)) {
+            dwprintf("fail to resolve symlink:%s", name);
+            kfree(buff);
+            return -ENOENT;
+        }
+        if (vfs_get_node(&pcb->vfs, buff, &fh->node)) {
+            dwprintf("symbol link's target not found.");
+            kfree(buff);
+            return -ENOENT;
+        }
+        mp = vfs_get_mount_point(&pcb->vfs, &fh->node);
+        kfree(buff);
+    }
     fh->present = 1;
     fh->flags = flags;
     fh->mp = mp;
@@ -68,7 +87,10 @@ int8_t kopen(uint32_t pid, const char *name, int flags) {
         deprintf("fs's open callback failed.");
         goto _ret;
     }
-    dprintf("proc %x open %s fd:%x", pid, path, fd);
+    int pathlen = strlen(path);
+    fh->path = kmalloc(sizeof(char) * (pathlen + 1));
+    memcpy(fh->path, path, pathlen + 1);
+    dprintf("proc %x open %s fd:%x", pid, fh->path, fd);
     _ret:
     kfree(path);
     return fd;

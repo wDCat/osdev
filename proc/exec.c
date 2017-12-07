@@ -92,8 +92,9 @@ int kexec(pid_t pid, const char *path, int argc, char *const argv[], char *const
     }
     if (pcb->heap_ready)
         CHK(destory_user_heap(pcb), "fail to release old heap..");
-
+    dprintf("elf unload dump:%x", pcb->edg);
     if (pcb->edg) {
+        CHK(elsp_unload_sections(pcb->edg), "fail to unload elf");
         CHK(elsp_free_edg(pcb->edg), "fail to release old edg");
         kfree(pcb->edg);
         pcb->edg = NULL;
@@ -112,8 +113,8 @@ int kexec(pid_t pid, const char *path, int argc, char *const argv[], char *const
     CHK(elsp_load_sections(edg), "");
     dprintf("elf end addr:%x", edg->elf_end_addr);
     uint32_t heap_start = edg->elf_end_addr + (PAGE_SIZE - (edg->elf_end_addr % PAGE_SIZE)) + PAGE_SIZE * 2;
-    CHK(create_user_heap(pcb, heap_start, 0x4000), "");
-    pcb->program_break = heap_start + 0x4000;
+    CHK(create_user_heap(pcb, heap_start, 0x1000), "");
+    pcb->program_break = heap_start + 0x1000;
     CHK(elsp_load_need_dynlibs(edg), "");
     for (int x = 0; x < MAX_FILE_HANDLES; x++) {
         if (pcb->fh[x].present && (pcb->fh[x].flags & FD_CLOEXEC)) {

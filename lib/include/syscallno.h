@@ -44,5 +44,7 @@
 #define SYS_fcntl 32
 #define SYS_getdents 33
 #define SYS_getdents64 33
-#undef SYS_getdents64
+#define SYS_readlink 34
+#define SYS_readlinkat 35
+
 #endif //W2_SYSCALLNO_H

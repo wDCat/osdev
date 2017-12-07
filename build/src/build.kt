@@ -1,5 +1,6 @@
 import java.io.*
 import java.util.*
+import java.util.regex.Pattern
 
 
 /**
@@ -19,6 +20,7 @@ val LD_FLAGS = "n -m elf_i386 -A elf32-i386 -nostdlib"
 val cFiles = Stack<String>()
 val hFiles = Stack<String>()
 val asmFiles = Stack<String>()
+val debugLevels = HashMap<String, Int>()
 var buildStop = false
 var count = 0
 var fileCount = 0
@@ -44,6 +46,39 @@ fun prettyOutputName(path: String): String {
         result = path.substring(ROOT.length + 1)
     return result.replace("[/?]".toRegex(), "_").replace("c$|asm$|s$".toRegex(), "o")
 }
+
+fun parseDebugLevelsFile() {
+    val fin = BufferedReader(FileReader(File("debug_level.txt")))
+    while (true) {
+        var level = Int.MIN_VALUE
+        (fin.readLine() ?: break).trim().split(" ").forEach {
+            if (it.length > 0) {
+                if (level == Int.MIN_VALUE) {
+                    try {
+                        level = it.toInt()
+                    } catch (e: Throwable) {
+                        println("Bad Level '${it}',line ignored.")
+                        return@forEach
+                    }
+                } else {
+                    debugLevels[it] = level
+                    println("${it} $level")
+                }
+            }
+        }
+    }
+}
+
+fun getDebugLevel(fn: String): Int {
+    val levels = debugLevels.filterKeys { k -> Pattern.matches(k, fn) }.values
+    if (levels.size == 0)
+        return 1
+    else {
+        //println("special level:${fn} ${levels.first()}")
+        return levels.first()
+    }
+}
+
 
 class ExecResult(val exitCode: Int, val output: String)
 
@@ -126,6 +161,7 @@ fun main(args: Array<String>) {
         ROOT = args[x]
         break
     }
+    parseDebugLevelsFile()
     val slient = true
     val dirStack = Stack<File>()
     val includeDir = Stack<String>()
@@ -190,9 +226,9 @@ fun main(args: Array<String>) {
         mfout.write("\t@rm -f \"${O_OUTPUT}/${outputName}\" \"${LOG_OUTPUT}/${outputName}.log\" || echo \"\"\n")
         mfout.write("\t@echo \"[ $prog% ] \\033[32m Building ${it}\\033[0m\">/dev/stdout\n")
         if (slient)
-            mfout.write("\t@gcc ${C_FLAGS} ${C_INCLUDE} -o ${O_OUTPUT}/${outputName} ${ppath} 1>${LOG_OUTPUT}/${outputName}.log 2>&1 || echo ''\n")
+            mfout.write("\t@gcc -DDEBUG_PRINT_LEVEL=${getDebugLevel(outputName)} ${C_FLAGS} ${C_INCLUDE} -o ${O_OUTPUT}/${outputName} ${ppath} 1>${LOG_OUTPUT}/${outputName}.log 2>&1 || echo ''\n")
         else
-            mfout.write("\tgcc ${C_FLAGS} ${C_INCLUDE} -o ${O_OUTPUT}/${outputName} ${ppath} 2>&1 | tee ${LOG_OUTPUT}/${outputName}.log\n")
+            mfout.write("\tgcc -DDEBUG_PRINT_LEVEL=${getDebugLevel(outputName)} ${C_FLAGS} ${C_INCLUDE} -o ${O_OUTPUT}/${outputName} ${ppath} 2>&1 | tee ${LOG_OUTPUT}/${outputName}.log\n")
         mfout.write("\t@if [ -e \"${O_OUTPUT}/${outputName}\" ];" +
                 "then " +
                 "echo \"[ $prog% ] \\033[32m Build Done: ${it}\\033[0m\">/dev/stdout;" +

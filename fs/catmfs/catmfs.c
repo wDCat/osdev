@@ -154,12 +154,13 @@ int32_t catmfs_fs_node_readdir(fs_node_t *node, __fs_special_t *fsp_, uint32_t c
         deprintf("not a catmfs node[%x][%x].", inode, inode->magic);
         return -1;
     }
-    //dprintf("[catmfs_fs_node_readdir]target:%x count:%x\n", inode,count);
-
+    //dprintf("[catmfs_fs_node_readdir]target:%x count:%x\n", inode, count);
     uint32_t raw_st = (uint32_t) inode + sizeof(catmfs_inode_t);
     uint8_t *raw = (uint8_t *) (raw_st + node->offset);
     int x = 0;
     for (; x < count; x++) {
+        if ((uint32_t) raw - (uint32_t) inode > 0x1000)
+            break;
         catmfs_dir_t *dir = (catmfs_dir_t *) raw;
         if (dir->inode == 0) {
             break;
@@ -177,8 +178,6 @@ int32_t catmfs_fs_node_readdir(fs_node_t *node, __fs_special_t *fsp_, uint32_t c
         result[x].node = dir->inode;
         raw = (uint8_t *) ((uint32_t) raw + dir->len);
         node->offset = ((uint32_t) raw) - raw_st;
-        if ((uint32_t) raw - (uint32_t) inode > 0x1000)
-            break;
     }
     return x;
 }
@@ -243,6 +242,7 @@ int catmfs_get_fs_node(uint32_t inode_id, fs_node_t *node) {
         deprintf("not a catmfs node[%x][%x].", inode, inode->magic);
         return -1;
     }
+    node->offset = 0;
     node->inode = inode_id;
     node->uid = inode->uid;
     node->gid = inode->gid;
@@ -604,7 +604,11 @@ __fs_special_t *catmfs_fs_node_mount(void *dev, fs_node_t *node) {
     root->finode = 0;
     root->reserved = 0;
     catmfs_get_fs_node(fsp->root_inode_id, node);
+    CHK(catmfs_make(fsp, root, FS_DIRECTORY, ".", root), "");
+    CHK(catmfs_make(fsp, root, FS_DIRECTORY, "..", root), "");
     return fsp;
+    _err:
+    return NULL;
 }
 
 fs_t catmfs = {

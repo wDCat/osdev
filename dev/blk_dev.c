@@ -20,19 +20,19 @@ int disk1_ata_section_read(uint32_t offset, uint32_t len, uint8_t *buff) {
 
     for (uint32_t x = 0; x < blk_count; x++) {
         err = ide_ata_access(ATA_READ, 1, blk_no + x, 1, buff + x * SECTION_SIZE);
-        ASSERT(err == 0);
+        if (err != 0)return err;
     }
     if (len % SECTION_SIZE != 0) {
         //uint8_t tbuff[SECTION_SIZE]  will break the pcb...
         uint8_t *tbuff = (uint8_t *) kmalloc_paging(SECTION_SIZE, NULL);
         err = ide_ata_access(ATA_READ, 1, blk_no + blk_count, 1, tbuff);
-        ASSERT(err == 0);
+        if (err != 0)return -err;
         dprintf("copy %x to %x size %x", buff + (blk_count) * SECTION_SIZE, buff, len % SECTION_SIZE);
         memcpy(buff + (blk_count) * SECTION_SIZE, tbuff, len % SECTION_SIZE);
         kfree(buff);
         //for (;;);
     }
-    return err;
+    return 0;
 }
 
 int disk1_ata_section_write(uint32_t offset, uint32_t len, uint8_t *buff) {
@@ -44,9 +44,9 @@ int disk1_ata_section_write(uint32_t offset, uint32_t len, uint8_t *buff) {
     uint8_t err;
     for (uint32_t x = 0; x < blk_count; x++) {
         err = ide_ata_access(ATA_WRITE, 1, blk_no + x, 1, buff + x * SECTION_SIZE);
-        ASSERT(err == 0);
+        if (err != 0)return err;
     }
-    return err;
+    return 0;
 }
 
 int swap_ata_section_read(uint32_t offset, uint32_t len, uint8_t *buff) {
@@ -59,9 +59,9 @@ int swap_ata_section_read(uint32_t offset, uint32_t len, uint8_t *buff) {
 
     for (uint32_t x = 0; x < blk_count; x++) {
         err = ide_ata_access(ATA_READ, 2, blk_no + x, 1, buff + x * SECTION_SIZE);
-        ASSERT(err == 0);
+        if (err != 0)return err;
     }
-    return err;
+    return 0;
 }
 
 int swap_ata_section_write(uint32_t offset, uint32_t len, uint8_t *buff) {
@@ -73,9 +73,9 @@ int swap_ata_section_write(uint32_t offset, uint32_t len, uint8_t *buff) {
     uint8_t err;
     for (uint32_t x = 0; x < blk_count; x++) {
         err = ide_ata_access(ATA_WRITE, 2, blk_no + x, 1, buff + x * SECTION_SIZE);
-        ASSERT(err == 0);
+        if (err != 0)return err;
     }
-    return err;
+    return 0;
 }
 
 void blk_dev_install() {

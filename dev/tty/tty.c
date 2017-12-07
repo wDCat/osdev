@@ -147,10 +147,16 @@ int32_t tty_write(tty_t *tty, pid_t pid, int32_t size, uchar_t *buff) {
 }
 
 pcb_t *tty_queue_next_pcb(tty_queue_t *target, bool remove) {
-    pcb_t *pcb = proc_queue_next(&target->proc_wait);
-    if (remove && pcb != NULL)
-        proc_queue_remove(&target->proc_wait, pcb);
-    return pcb;
+    while (true) {
+        pcb_t *pcb = proc_queue_next(&target->proc_wait);
+        if (pcb != NULL && get_proc_status(pcb) != STATUS_WAIT) {
+            proc_queue_remove(&target->proc_wait, pcb);
+            continue;
+        }
+        if (pcb != NULL && remove)
+            proc_queue_remove(&target->proc_wait, pcb);
+        return pcb;
+    }
 }
 
 int32_t tty_cook(tty_t *tty) {

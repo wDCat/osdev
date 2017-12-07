@@ -6,6 +6,7 @@
 #define W2_UVFS_H
 
 #include "stdint.h"
+#define MAX_FILENAME_LEN 256
 //Test
 #define    R_OK    4        /* Test for read permission.  */
 #define    W_OK    2        /* Test for write permission.  */

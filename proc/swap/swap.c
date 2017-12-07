@@ -21,7 +21,7 @@ void swap_install() {
 spage_info_t *swap_find_empty(pcb_t *pcb) {
     //dprintf("pcb:%x", pcb);
     for (int x = 0; x < MAX_SWAPPED_OUT_PAGE; x++) {
-        dprintf("addr:%x index %x type %x", &pcb->spages[x], x, pcb->spages[x].type);
+        //dprintf("addr:%x index %x type %x", &pcb->spages[x], x, pcb->spages[x].type);
         if (pcb->spages[x].type == SPAGE_TYPE_UNUSED) {
             return &pcb->spages[x];
         }
@@ -44,6 +44,7 @@ int swap_insert_empty_page(pcb_t *pcb, uint32_t addr) {
 
 int swap_insert_pload_page(pcb_t *pcb, uint32_t addr, int8_t fd,
                            uint32_t offset) {
+    mutex_lock(&pcb->lock);
     dprintf("pload:addr:%x off:%x inoff:0 size:0x1000", addr, offset);
     spage_info_t *info = swap_find_empty(pcb);
     if (!info) {
@@ -57,6 +58,7 @@ int swap_insert_pload_page(pcb_t *pcb, uint32_t addr, int8_t fd,
     info->fd = fd;
     info->offset = offset;
     pcb->spages_count++;
+    mutex_unlock(&pcb->lock);
     return 0;
 }
 
@@ -94,7 +96,7 @@ int swap_in(pcb_t *pcb, spage_info_t *info) {
     if (getpid() != pcb->pid) {
         TODO;//swap page table.
     }
-    dprintf("swap in page %x", info->addr);
+    dprintf("swap in page %x(%x) fd:%x", info->addr,info->type,info->fd);
     switch (info->type) {
         case SPAGE_TYPE_PLOAD: {
             uint32_t pageno = info->addr - info->addr % 0x1000;
@@ -103,7 +105,7 @@ int swap_in(pcb_t *pcb, spage_info_t *info) {
             ASSERT(page);
             alloc_frame(page, false, true);
             klseek(pcb->pid, info->fd, info->offset, SEEK_SET);
-            if (kread(pcb->pid, info->fd, PAGE_SIZE, info->addr) != PAGE_SIZE) {
+            if (kread(pcb->pid, info->fd, (uchar_t *) info->addr, PAGE_SIZE) != PAGE_SIZE) {
                 deprintf("fail to swap in page.I/O error.");
                 return 1;
             }
@@ -151,13 +153,13 @@ int swap_handle_page_fault(regs_t *r) {
                     if (swap_in(pcb, &pcb->spages[x]))return 1;
                     found = true;
                     dprintf("handler done.");
-                }\
+                }
             }
         }
     }
     if (found)
-        dprintf("dump eip:%x %x", pcb->tss.eip, r->eip);
+            dprintf("dump eip:%x %x", pcb->tss.eip, r->eip);
     else
-        dwprintf("no suitable page found!");
+            dwprintf("no suitable page found!");
     return !found;
 }

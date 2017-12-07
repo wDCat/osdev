@@ -65,6 +65,12 @@
 
 #define FD_CLOEXEC 1
 
+#define AT_FDCWD (-100)
+#define AT_SYMLINK_NOFOLLOW 0x100
+#define AT_REMOVEDIR 0x200
+#define AT_SYMLINK_FOLLOW 0x400
+#define AT_EACCESS 0x200
+
 int kfcntl(pid_t pid, int fd, int cmd, void *arg);
 
 int sys_fcntl(int fd, int cmd, void *arg);

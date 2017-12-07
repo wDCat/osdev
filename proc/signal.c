@@ -22,6 +22,12 @@ void signal_print_proc(pcb_t *pcb) {
 }
 
 int do_signal_inner(pcb_t *pcb, int signal) {
+    switch (get_proc_status(pcb)) {
+        case STATUS_ZOMBIE:
+        case STATUS_DIED:
+            dwprintf("proc %d is zombie or died,signal %d ignored.", pcb->pid, signal);
+            return 0;
+    }
     switch (pcb->signal_handler[signal]) {
         case 1:
             goto _after;

@@ -60,7 +60,8 @@ inline mount_point_t *vfs_get_mount_point(vfs_t *vfs, fs_node_t *node) {
     return node->vfs_mp;
 }
 
-int vfs_find_mount_point(vfs_t *vfs, const char *path, mount_point_t **mp_out, char **relatively_path) {
+int vfs_find_mount_point(vfs_t *vfs, const char *path,
+                         mount_point_t **mp_out, char **relatively_path) {
     dprintf("mount point count:%x", mount_points_count);
     int maxpathlen = 0, mx = -1;
     mount_point_t *mp = 0;
@@ -163,9 +164,15 @@ int vfs_get_node4(vfs_t *vfs, const char *path, fs_node_t *node, bool follow_lin
             }
             tmp.vfs_mp = mp;
             if (tmp.type == FS_SYMLINK && follow_link) {
+                if (x + len + 1 >= slen) {
+                    deprintf("debug::match st:%s %s %d", path, name, x);
+                    vfs_cpynode(&cur, &tmp);
+                    break;
+                }
                 char *buff = kmalloc(MAX_PATH_LEN);
                 if (mp->fs->readlink(&tmp, mp->fsp, buff, MAX_PATH_LEN)) {
                     deprintf("fail to resolve symlink:%s", name);
+                    kfree(buff);
                     return 1;
                 }
                 dprintf("symlink following to %s x=%x", buff, x);
@@ -237,8 +244,8 @@ int vfs_mount(vfs_t *vfs, const char *path, fs_t *fs, void *dev) {
         vfs_t tmpvfs;
         vfs_cloneobj(vfs, &tmpvfs);
         vfs_cd(&tmpvfs, path);
-        vfs_symlink(&tmpvfs, "..", "..");
-        vfs_symlink(&tmpvfs, ".", ".");
+        vfs_mkdir(&tmpvfs,".");
+        vfs_mkdir(&tmpvfs,"..");
     }
     dprintf("%s mount to %s", fs->name, path);
     return 0;
@@ -388,9 +395,9 @@ int vfs_pretty_path(const char *path, char *out) {
     dprintf("pretty path: %s", out);
 }
 
+int vfs_fix_path5(uint32_t pid, const char *name,
+                  const char *cwd, char *out, int max_len) {
 
-int vfs_fix_path(uint32_t pid, const char *name, char *out, int max_len) {
-    const char *cwd = kgetcwd(pid);
     int p = 0, len = strlen(name), cwd_len = strlen(cwd);
     if (len >= MAX_PATH_LEN) {
         deprintf("name too long//");
@@ -423,6 +430,11 @@ int vfs_fix_path(uint32_t pid, const char *name, char *out, int max_len) {
     _err:
     sprintf(out, "%s", name);
     return 1;//ignored
+}
+
+int vfs_fix_path(uint32_t pid, const char *name, char *out, int max_len) {
+    const char *cwd = kgetcwd(pid);
+    return vfs_fix_path5(pid, name, cwd, out, max_len);
 }
 
 int32_t kread(uint32_t pid, int8_t fd, uchar_t *buff, int32_t size) {

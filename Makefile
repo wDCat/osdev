@@ -35,7 +35,7 @@ kernel.ld:
 kernel.bin:$(koutfiles) kernel.ld
 	@ #link them or zelda them
 	ld $(LD_FLAGS) -T OUTPUT/kernel.ld -o kernel.bin OUTPUT/*.o
-kernel.sym:
+kernel.sym: kernel.bin
 	nm -v kernel.bin > kernel.sym
 install_libdcat:libdcat.so
 	cp -f libdcat.so $(SRC_ROOT)/../a_out_test/libdcat.so
@@ -70,10 +70,14 @@ run:
 	qemu-system-i386 -hda ../bgrub.img -fdb ../disk.img -m 16 -k en-us -sdl  -s
 .PHONY:clean
 clean:
-	rm -rf *.o kernel.bin libdcat.so
+	rm -rf *.o kernel.bin libdcat.so kernel.sym
 	rm -rf OUTPUT
 .PHONY:backup
 backup:
 	git push github master
 .PHONY:onestep
-onestep:all install qemu
+onestep:
+	make update
+	make all -j4
+	make install
+	make qemu

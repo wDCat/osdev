@@ -15,6 +15,7 @@
 #include <open.h>
 #include <stat.h>
 #include <getdents.h>
+#include <readlink.h>
 #include "idt.h"
 #include "proc.h"
 #include "syscall_handler.h"
@@ -82,7 +83,9 @@ void *syscalls_table[] = {
         &sys_sigaction,
         &sys_wait4,
         &sys_fcntl,
-        &sys_getdents
+        &sys_getdents,
+        &sys_readlink,
+        &sys_readlinkat
 };
 uint32_t syscalls_count = sizeof(syscalls_table) / sizeof(uint32_t);
 

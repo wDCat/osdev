@@ -81,6 +81,7 @@ FILE(GLOB MyCSources
 /home/dcat/osdev/w2/fs/catmfs/catrfmt.c
 /home/dcat/osdev/w2/fs/vfs/getdents.c
 /home/dcat/osdev/w2/fs/vfs/stat.c
+/home/dcat/osdev/w2/fs/vfs/readlink.c
 /home/dcat/osdev/w2/fs/vfs/vfs.c
 /home/dcat/osdev/w2/fs/vfs/open.c
 /home/dcat/osdev/w2/fs/vfs/iov.c
@@ -122,6 +123,7 @@ FILE(GLOB MyCSources
 /home/dcat/osdev/w2/include/bochs_debug.h
 /home/dcat/osdev/w2/include/time.h
 /home/dcat/osdev/w2/include/mutex.h
+/home/dcat/osdev/w2/include/debug_print.h
 /home/dcat/osdev/w2/include/syscall_handler.h
 /home/dcat/osdev/w2/ker/include/random.h
 /home/dcat/osdev/w2/ker/include/system.h
@@ -163,6 +165,7 @@ FILE(GLOB MyCSources
 /home/dcat/osdev/w2/fs/catmfs/include/catrfmt_def.h
 /home/dcat/osdev/w2/fs/catmfs/include/catmfs.h
 /home/dcat/osdev/w2/fs/vfs/include/vfs.h
+/home/dcat/osdev/w2/fs/vfs/include/readlink.h
 /home/dcat/osdev/w2/fs/vfs/include/iov.h
 /home/dcat/osdev/w2/fs/vfs/include/getdents.h
 /home/dcat/osdev/w2/fs/vfs/include/open.h

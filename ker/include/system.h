@@ -1,6 +1,7 @@
 #ifndef __SYSTEM_H
 #define __SYSTEM_H
 
+#include "debug_print.h"
 #include "uproc.h"
 #include "screen.h"
 #include "bochs_debug.h"
@@ -70,26 +71,7 @@ void set_interrupt_status(int status);
 #define srestorei(iflag) ({set_interrupt_status(*(iflag));})
 
 //debug print
-void dprint_(const char *str);
 
-#define dprintf(str, args...) ({\
-strformatw(serial_write, COM1,"[D][%d][%s] " str "\n",current_pid,__func__,##args);\
-})
-#define dprintf_begin(str, args...)({\
-strformatw(serial_write, COM1,"[D][%d][%s] " str ,current_pid,__func__,##args);\
-})
-#define dprintf_cont(str, args...)({\
-strformatw(serial_write, COM1,str,##args);\
-})
-#define dprintf_end()({\
-strformatw(serial_write, COM1,"\n");\
-})
-#define dwprintf(str, args...) ({\
-strformatw(serial_write, COM1,"[W][%d][%s] " str "\n",current_pid,__func__,##args);\
-})
-#define deprintf(str, args...) ({\
-strformatw(serial_write, COM1,"[ERROR][%d][%s] " str "\n",current_pid,__func__,##args);\
-})
 #define CHK(fun, msg, args...) if(fun){\
 deprintf("CHK::" #fun " Failed:" msg,##args);\
 goto _err;\

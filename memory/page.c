@@ -120,6 +120,7 @@ void free_frame(page_t *page) {
     } else {
         ASSERT(get_frame_status(page->frame * 0x1000) != FRAME_STATUS_FREE);
         set_frame_status(page->frame * 0x1000, FRAME_STATUS_FREE);
+        page->present=false;
         page->frame = NULL;
     }
 }

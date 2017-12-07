@@ -4,12 +4,15 @@
 
 #ifndef W2_UGETDENTS_H
 #define W2_UGETDENTS_H
+
+#include "uvfs.h"
+
 struct linux_dirent {
     ino_t d_ino;    /* 64-bit inode number */
     off_t d_off;    /* 64-bit offset to next structure */
     unsigned short d_reclen; /* Size of this dirent */
     unsigned char d_type;   /* File type */
-    char d_name[256]; /* Filename (null-terminated) */
+    char d_name[MAX_FILENAME_LEN]; /* Filename (null-terminated) */
 };
 #define DT_UNKNOWN 0
 #define DT_FIFO 1

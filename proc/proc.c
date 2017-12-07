@@ -159,8 +159,6 @@ inline void save_proc_state(pcb_t *pcb, regs_t *r) {
 
 proc_queue_t *find_pqueue_by_status(proc_status_t status) {
     switch (status) {
-        case STATUS_DIED:
-            return proc_died_queue;
         case STATUS_READY:
             return proc_ready_queue;
         case STATUS_WAIT:
@@ -261,12 +259,15 @@ void create_ldt(pcb_t *pcb) {
 }
 
 void clean_pcb_table() {
+    ASSERT(!get_interrupt_status());
     dprintf("PCB Table clean routine...");
     uint32_t procc = proc_count;
-    for (pid_t x = 2; x < procc; x++) {
+    for (pid_t x = 2, y = 0; x < MAX_PROC_COUNT && y < procc; x++) {
         pcb_t *pcb = getpcb(x);
+        if (pcb->present)y++;
         if (get_proc_status(pcb) == STATUS_DIED) {
             if (pcb->fpcb) {
+                dprintf("child proc %d fproc:%d",pcb->pid,pcb->fpcb->pid);
                 ASSERT(pcb->fpcb->cpcb);
                 pcb_t *pp = pcb->fpcb->cpcb;
                 if (pp->pid == pcb->pid) {
@@ -322,8 +323,9 @@ int destory_user_heap(pcb_t *pcb) {
 }
 
 pid_t fork(regs_t *r) {
-    cli();
-    if (proc_count % 8 == 0) {
+    int intS;
+    scli(&intS);
+    if (proc_count % 2 == 0) {
         clean_pcb_table();
     }
     pid_t fpid = getpid();
@@ -339,8 +341,8 @@ pid_t fork(regs_t *r) {
     cpcb->present = true;
     cpcb->pid = cpid;
     cpcb->page_dir = clone_page_directory(fpcb->page_dir);
-    cpcb->reserved_page = (uint32_t) (kmalloc_paging(0x1000, NULL));
-    memset(cpcb->reserved_page, 0, 0x1000);
+    cpcb->reserved_page = (uint32_t) (kmalloc_paging(0x2000, NULL));
+    memset(cpcb->reserved_page, 0, 0x2000);
     cpcb->spages = (struct spage_info *) cpcb->reserved_page;
     if (fpid > 1 && dynlibs_clone_tree(fpid, cpid)) {
         PANIC("cannot clone dynlibs tree");
@@ -411,9 +413,13 @@ pid_t fork(regs_t *r) {
     for (uint32_t s = 0; s <= UM_KSTACK_SIZE; s++) {
         alloc_frame(get_page(UM_KSTACK_START + s, true, cpcb->page_dir), false, true);
     }*/
-    tss->esp0 = (uint32_t) cpcb->reserved_page + 0xFF0;
+    tss->esp0 = (uint32_t) cpcb->reserved_page + 0x1FF0;
     tss->ldt = 0;
     cpcb->fpcb = fpcb;
+    {
+        //TODO
+        //cpcb->???
+    }
     if (fpcb->cpcb) {
         pcb_t *pp = fpcb->cpcb;
         while (true) {

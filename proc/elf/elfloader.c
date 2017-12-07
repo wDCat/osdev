@@ -100,7 +100,7 @@ inline int elsp_rel_386_symtab(elf_digested_t *edg, elf_rel_tmp_t *rtmp, uint32_
         if (pcb->edg == NULL || elsp_find_symbol(pcb->edg, symname, &addr)) {
             if (elsp_find_dynsymbol(edg, symname, &addr)) {
                 dwprintf("[WARN]symbol %s not found!", symname);
-                addr=0xFFFF6666;//for debug
+                addr = 0xFFFF6666;//for debug
                 goto _err;
             } else {
                 addr = addr + rtmp->global_offset;
@@ -318,11 +318,13 @@ int elsp_load_section_data(elf_digested_t *edg, elf_section_t *shdr) {
             uint32_t size = MIN(MIN(PAGE_SIZE, les), PAGE_SIZE - (y % PAGE_SIZE));
             uint32_t foffset = shdr->sh_offset + y - shdr->sh_addr;
             if (shdr->sh_type == SHT_NOBITS) {
+
                 alloc_frame(page, false, true);
                 memset(y, 0, size);
                 //swap_insert_empty_page(pcb, pno + y);
             } else {
-                if (size == PAGE_SIZE && false) {//blocked for debug
+                if (size == PAGE_SIZE) {
+                    if (page->frame)free_frame(page);
                     swap_insert_pload_page(pcb, y, edg->fd, foffset);
                 } else {
                     alloc_frame(page, false, true);
@@ -468,7 +470,7 @@ int elsp_load_sections(elf_digested_t *edg) {
                     }
                     edg->strings_size = shdr->sh_size;
                 } else
-                    dprintf("ignore strtab:%x", x);
+                        dprintf("ignore strtab:%x", x);
                 break;
             case SHT_REL: {
                 bool inserted = false;
@@ -572,6 +574,20 @@ uint32_t elsp_get_entry(elf_digested_t *edg) {
     return (uint32_t) edg->global_offset + edg->ehdr.e_entry;
 }
 
+int elsp_unload_sections(elf_digested_t *edg) {
+    ASSERT(edg);
+    int c = 0;
+    page_directory_t *dir = getpcb(getpid())->page_dir;
+    for (uint32_t a = edg->global_offset; a <= edg->elf_end_addr; a += PAGE_SIZE) {
+        page_t *page = get_page(a, false, dir);
+        if (page && page->frame) {
+            free_frame(page);
+            c++;
+        }
+    }
+    dprintf("elf unload done.%x-%x count %x", edg->global_offset, edg->elf_end_addr, c);
+    return 0;
+}
 
 bool elf_load(pid_t pid, int8_t fd, uint32_t *entry_point, uint32_t *elf_end) {
     dprintf("try to load elf pid:%x fd:%x", pid, fd);

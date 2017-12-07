@@ -7,6 +7,8 @@
 #include <kmalloc.h>
 #include <vfs.h>
 #include <stat.h>
+#include <ext2.h>
+#include <errno.h>
 #include "ext2_fs_node.h"
 
 extern int ext2_find_inote(ext2_t *ext2_fs, uint32_t inode_id,
@@ -96,13 +98,19 @@ int32_t ext2_fs_node_readdir(fs_node_t *node, __fs_special_t *fsp, uint32_t coun
     ASSERT(fs->magic == EXT2_MAGIC);
     ext2_inode_t inode;
     CHK(ext2_find_inote(fs, node->inode, &inode), "inode not exist");
-    ext2_dir_iterator_t iter;
+    if (node->type != FS_DIRECTORY || !IS_DIR(inode.i_mode))return -ENOTDIR;
+    ext2_dir_iterator_t *iter;
     ext2_dir_t *dir;
-    ext2_inode_t cinode;
-    fs_node_t tmp_node;
     int x = 0;
-    ext2_dir_iterator_init(fs, &inode, &iter);
-    while (ext2_dir_iterator_next(&iter, &dir)) {
+    if (node->offset == 0) {
+        node->offset = (uint32_t) kmalloc(sizeof(ext2_dir_iterator_t));
+        iter = (ext2_dir_iterator_t *) node->offset;
+        ext2_dir_iterator_init(fs, &inode, iter);
+    } else {
+        iter = (ext2_dir_iterator_t *) node->offset;
+    }
+    int i = 0;
+    while ((i = ext2_dir_iterator_next(iter, &dir)) > 0) {
         ASSERT(dir->name_length < 256);
         memcpy(result[x].name, dir->name, dir->name_length);
         result[x].name[dir->name_length] = '\0';
@@ -113,15 +121,14 @@ int32_t ext2_fs_node_readdir(fs_node_t *node, __fs_special_t *fsp, uint32_t coun
         else if (dir->type_indicator == INODE_DIR_TYPE_INDICATOR_FILE)
             result[x].type = FS_FILE;
         else PANIC("Unknown file type:%x", dir->type_indicator);
-        //CHK(ext2_find_inote(fs, dir->inode_id, &cinode), "");
-        //ext2_get_fs_node(fs, &cinode, result[x].name, &result[x].node);
-        if (x >= count)break;
         x++;
+        if (x >= count)break;
     }
-    ext2_dir_iterator_exit(&iter);
+    if (i < 0)return i;
+    //ext2_dir_iterator_exit(iter);
     return x;
     _err:
-    return -1;
+    return -EIO;
 }
 
 int ext2_fs_node_finddir(fs_node_t *node, __fs_special_t *fsp, char *name, fs_node_t *result) {
@@ -187,7 +194,8 @@ int ext2_fs_node_make(fs_node_t *node, __fs_special_t *fsp, uint8_t type, char *
 }
 
 int ext2_fs_node_lseek(fs_node_t *node, __fs_special_t *fsp_, uint32_t offset) {
-    //do nothing
+    if (node->type == FS_DIRECTORY)return 1;
+    node->offset = offset;
     return 0;
 }
 
@@ -203,6 +211,19 @@ __fs_special_t *ext2_fs_node_mount(blk_dev_t *dev, fs_node_t *rootnode) {
     return 0;
 }
 
+int ext2_fs_node_open(file_handle_t *handler) {
+    return 0;
+}
+
+int ext2_fs_node_close(file_handle_t *handler) {
+    fs_node_t *node = &handler->node;
+    if (node->type == FS_DIRECTORY && node->offset) {
+        ext2_dir_iterator_exit((ext2_dir_iterator_t *) node->offset);
+        kfree(node->offset);
+    }
+    return 0;
+}
+
 void ext2_create_fstype() {
     strcpy(ext2_fs.name, STR("ext2"));
     ext2_fs.mount = ext2_fs_node_mount;
@@ -210,7 +231,9 @@ void ext2_create_fstype() {
     ext2_fs.write = ext2_fs_node_write;
     ext2_fs.readdir = ext2_fs_node_readdir;
     ext2_fs.finddir = ext2_fs_node_finddir;
-    ext2_fs.getnode = ext2_fs_node_get_node;
+    ext2_fs.readinode = ext2_fs_node_get_node;
     ext2_fs.make = ext2_fs_node_make;
     ext2_fs.lseek = ext2_fs_node_lseek;
+    ext2_fs.open = ext2_fs_node_open;
+    ext2_fs.close = ext2_fs_node_close;
 }

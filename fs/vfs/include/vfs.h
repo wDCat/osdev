@@ -17,7 +17,7 @@
 #define MAX_MOUNT_POINTS 64
 #define MAX_FILE_HANDLES 10
 #define MAX_PATH_LEN 1024
-
+#define MAX_LINK_LOOP 10
 #define SEEK_SET    0
 #define SEEK_CUR    1
 #define SEEK_END    2
@@ -26,7 +26,7 @@
 
 typedef __fs_special_t *(*mount_type_t)(void *dev, fs_node_t *node);
 
-typedef int (*get_node_by_id_type_t)(__fs_special_t *, uint32_t id, fs_node_t *node);
+typedef int (*readinode_type_t)(__fs_special_t *, uint32_t inode, fs_node_t *node);
 
 typedef int (*make_type_t)(struct fs_node *, __fs_special_t *, uint8_t type, char *name);
 
@@ -49,7 +49,7 @@ typedef struct fs__ {
     write_type_t write;
     open_type_t open;
     close_type_t close;
-    get_node_by_id_type_t getnode;
+    readinode_type_t readinode;
     make_type_t make;
     readdir_type_t readdir;
     finddir_type_t finddir;
@@ -78,6 +78,7 @@ typedef struct file_handle {
     mount_point_t *mp;
     int flags:1;
     int amode;
+    char *path;
     void *reserved;
 } file_handle_t;
 
@@ -145,6 +146,11 @@ off_t ktell(uint32_t pid, int8_t fd);
 
 off_t sys_tell(int8_t fd);
 
+int vfs_fix_path5(uint32_t pid, const char *name,
+                  const char *cwd, char *out, int max_len);
+
 int vfs_fix_path(uint32_t pid, const char *name, char *out, int max_len);
+
+int vfs_get_node4(vfs_t *vfs, const char *path, fs_node_t *node, bool follow_link);
 
 #endif //W2_VFS_H

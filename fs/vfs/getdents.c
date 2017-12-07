@@ -9,10 +9,7 @@
 #include "getdents.h"
 
 int sys_ls(const char *path, dirent_t *dirents, uint32_t count) {
-    CHK(vfs_cd(&vfs, path), "");
-    return vfs_ls(&vfs, dirents, count);
-    _err:
-    return -1;
+    return -ENOSYS;
 }
 
 inline uchar_t get_dirent_type_by_fstype(uchar_t x) {
@@ -46,12 +43,12 @@ int kgetdents(pid_t pid, unsigned int fd, struct linux_dirent *dirp, unsigned in
             memcpy(dirp->d_name, dirs[x].name, namelen);
             dirp->d_name[namelen] = '\0';
             dirp->d_ino = dirs[x].node;
-            dirp->d_off = sizeof(struct linux_dirent);//TODO compress
-            dirp->d_reclen = sizeof(struct linux_dirent);
+            dirp->d_reclen = sizeof(struct linux_dirent) - sizeof(char) * (MAX_FILENAME_LEN - namelen);
+            dirp->d_reclen = (unsigned short) (dirp->d_reclen + (4 - dirp->d_reclen % 4));
+            dirp->d_off = dirp->d_reclen;
             dirp->d_type = get_dirent_type_by_fstype(dirs[x].type);
-            dprintf("write %x o:%x inode:%x name:%s", dirp, dirp->d_name,
-                    dirp->d_ino, dirp->d_name);
-            dirp++;
+            //dprintf("write %x o:%x inode:%x name:%s type:%x", dirp, dirp->d_name, dirp->d_ino, dirp->d_name, dirs[x].type);
+            dirp = (struct linux_dirent *) ((uint32_t) dirp + dirp->d_off);
         }
         c -= cgot;
     }

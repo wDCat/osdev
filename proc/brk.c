@@ -3,6 +3,7 @@
 //
 
 #include <str.h>
+#include <page.h>
 #include "brk.h"
 #include "elfloader.h"
 
@@ -16,6 +17,10 @@ long kbrk(pid_t pid, void *addr) {
     if (naddr > pcb->program_break) {
         for (uint32_t x = pcb->program_break; x <= naddr; x += PAGE_SIZE) {
             alloc_frame(get_page(x, true, pcb->page_dir), false, true);
+            page_typeinfo_t *t = get_page_type(x, pcb->page_dir);
+            t->pid = pid;
+            t->free_on_proc_exit = true;
+            t->copy_on_fork = true;
         }
     } else if (naddr < pcb->program_break) {
         for (uint32_t x = pcb->program_break; x < naddr; x -= PAGE_SIZE) {

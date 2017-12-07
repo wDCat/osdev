@@ -10,6 +10,7 @@
 #include <page.h>
 #include <elfloader.h>
 #include <dynlibs.h>
+#include <open.h>
 #include "exit.h"
 
 void sys_exit(int32_t ret) {
@@ -75,6 +76,7 @@ void do_exit(pcb_t *pcb, int32_t ret) {
     pcb->reserved_page = 0;
     kfree(reserved_page);//Stack will not available.-
     do_schedule(NULL);
-    _err:
     PANIC("proc %x exited,but still be schedled", pcb->pid);
+    _err:
+    PANIC("fail to exit proc:%x", pcb->pid);
 }

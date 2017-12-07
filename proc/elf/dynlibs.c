@@ -14,6 +14,7 @@
 #include <page.h>
 #include <blkqueue.h>
 #include <umalloc.h>
+#include <open.h>
 #include "dynlibs.h"
 
 mutex_lock_t dynlibs_lock;
@@ -41,9 +42,9 @@ int dynlibs_find_symbol(pid_t pid, const char *name, uint32_t *out) {
         dynlib_t *lib = loaded_dynlibs[tree->loadinfo->no];
         elf_digested_t *edg = &lib->edg;
         ASSERT(lib);
-        dprintf("searching symbol in %s", lib->path);
+        //dprintf("searching symbol in %s", lib->path);
         if (elsp_find_dynsymbol(edg, name, out) == 0) {
-            dprintf("found %x+%x", tree->loadinfo->start_addr, *out);
+            //dprintf("found %x+%x", tree->loadinfo->start_addr, *out);
             *out = (uint32_t) *out + tree->loadinfo->start_addr;
             CHK(squeue_destory(&pre_iter), "");
             return 0;
